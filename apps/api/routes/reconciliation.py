@@ -225,7 +225,7 @@ def run_full_reconciliation(
         if not existing:
             db_exc = ExceptionDB(
                 id=exc.id,
-                org_id=current_user.org_id,
+                org_id=org_id,
                 batch_id=exc.batch_id,
                 category=exc.category,
                 severity=exc.severity,
