@@ -148,7 +148,47 @@ async def reset_db() -> None:
 
 def init_db_sync() -> None:
     """Initialize all database tables synchronously (for CLI/scripts)."""
+    from datetime import datetime, timezone
     Base.metadata.create_all(bind=sync_engine)
+    with get_sync_db() as db:
+        from packages.domain.db_models import OrganizationDB, UserDB, OrganizationMemberDB, OrgRazorpayConnectionDB
+        from packages.domain.auth_rbac import hash_password
+        demo_org = db.get(OrganizationDB, "org_nova_2026")
+        if not demo_org:
+            now = datetime.now(timezone.utc)
+            pw_hash, pw_salt = hash_password("Admin2026!")
+            demo_user = UserDB(
+                id="usr_demo_admin_2026",
+                email="admin@nova.com",
+                name="Nova Finance Admin",
+                pw_hash=pw_hash,
+                pw_salt=pw_salt,
+                created_at=now,
+                updated_at=now,
+            )
+            db.add(demo_user)
+            db.add(OrganizationDB(
+                id="org_nova_2026",
+                name="Nova Commerce Pvt Ltd",
+                owner_user_id="usr_demo_admin_2026",
+                created_at=now,
+                updated_at=now,
+            ))
+            db.add(OrganizationMemberDB(
+                id="mem_demo_admin_2026",
+                org_id="org_nova_2026",
+                user_id="usr_demo_admin_2026",
+                role="ADMIN",
+                status="ACTIVE",
+                created_at=now,
+            ))
+            db.add(OrgRazorpayConnectionDB(
+                id="conn_demo_nova",
+                org_id="org_nova_2026",
+                merchant_name="Nova Commerce Pvt Ltd",
+                status="connected",
+            ))
+            db.commit()
 
 
 def reset_db_sync() -> None:

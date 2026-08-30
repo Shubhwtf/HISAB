@@ -26,6 +26,8 @@ from packages.domain.db_models import (
     BankTransactionDB,
     TaxRecordDB,
     BatchDB,
+    OrganizationDB,
+    OrgRazorpayConnectionDB,
 )
 from packages.domain.money import format_inr, format_inr_compact
 from packages.evaluation.generator import generate_synthetic_dataset, export_razorpay_recon_csv
@@ -38,6 +40,21 @@ def seed_database_from_dataset(dataset, batch_name: str = "Batch #SETTLEMENT_202
     """
     reset_db_sync()
     with get_sync_db() as db:
+        demo_org = db.get(OrganizationDB, "org_nova_2026")
+        if not demo_org:
+            db.add(OrganizationDB(
+                id="org_nova_2026",
+                name="Nova Commerce Pvt Ltd",
+                owner_user_id="usr_demo_admin_2026",
+                created_at=datetime.now(timezone.utc),
+            ))
+            db.add(OrgRazorpayConnectionDB(
+                id="conn_demo_nova",
+                org_id="org_nova_2026",
+                merchant_name="Nova Commerce Pvt Ltd",
+                status="connected",
+            ))
+
         for c in dataset.customers:
             db.add(CustomerDB(
                 id=c.id,

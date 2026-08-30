@@ -168,7 +168,29 @@ pay_demo_106,order_demo_106,72250.00,1445.00,260.10,2026-08-28T16:00:00Z,UTRN992
         });
         resultData = await res.json();
       } else {
-        resultData = await fetchApi("/api/reconcile/run", { method: "POST" });
+        const queueRes = await fetchApi<{ job_id?: string; success?: boolean }>("/api/reconcile/async", { method: "POST" });
+        if (queueRes && queueRes.job_id) {
+          let pollAttempts = 0;
+          while (pollAttempts < 30) {
+            await new Promise((r) => setTimeout(r, 600));
+            const jobStatus = await fetchApi<{ status: string; progress_pct: number; stage?: string; result?: any }>(`/api/jobs/${queueRes.job_id}`);
+            if (jobStatus) {
+              if (jobStatus.stage) {
+                setProgressEvents((prev) => [...prev, `▶ [${jobStatus.progress_pct}%] ${jobStatus.stage}`]);
+              }
+              if (jobStatus.status === "COMPLETED") {
+                resultData = jobStatus.result || { success: true };
+                break;
+              } else if (jobStatus.status === "FAILED") {
+                throw new Error("Background reconciliation job failed.");
+              }
+            }
+            pollAttempts++;
+          }
+        }
+        if (!resultData) {
+          resultData = await fetchApi("/api/reconcile/run", { method: "POST" });
+        }
       }
 
       setUploadResult(resultData);

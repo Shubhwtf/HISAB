@@ -474,3 +474,59 @@ class ConversationDB(Base):
         Index("idx_conversations_org_user", "org_id", "user_id"),
     )
 
+
+class JobDB(Base):
+    """
+    Persistent, PostgreSQL-backed asynchronous background job record.
+    Authoritative state of all background executions scoped to Organization.
+    """
+    __tablename__ = "jobs"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    org_id: Mapped[str] = mapped_column(String(64), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True)
+    created_by_user_id: Mapped[Optional[str]] = mapped_column(String(64), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    type: Mapped[str] = mapped_column(String(64), nullable=False, index=True)  # RECONCILIATION | WEBHOOK_PROCESSING | RAZORPAY_SYNC
+    status: Mapped[str] = mapped_column(String(32), default="QUEUED", index=True)  # QUEUED | RUNNING | COMPLETED | FAILED | RETRYING | CANCELLED
+    progress_pct: Mapped[int] = mapped_column(Integer, default=0)
+    stage: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
+    payload: Mapped[Dict[str, Any]] = mapped_column(JSONType, default=dict)
+    result: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSONType, nullable=True)
+    error: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    max_attempts: Mapped[int] = mapped_column(Integer, default=3)
+    idempotency_key: Mapped[Optional[str]] = mapped_column(String(128), nullable=True, index=True)
+    last_heartbeat_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    started_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+    __table_args__ = (
+        Index("idx_jobs_org_status", "org_id", "status"),
+        Index("idx_jobs_org_type", "org_id", "type"),
+        Index("idx_jobs_org_idempotency", "org_id", "idempotency_key"),
+        Index("idx_jobs_heartbeat", "status", "last_heartbeat_at"),
+    )
+
+
+class WebhookEventDB(Base):
+    """
+    Authoritative, idempotent record of ingested webhooks.
+    """
+    __tablename__ = "webhook_events"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    org_id: Mapped[str] = mapped_column(String(64), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True)
+    event_type: Mapped[str] = mapped_column(String(64), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), default="PENDING", index=True)  # PENDING | PROCESSED | FAILED | IGNORED
+    payload: Mapped[Dict[str, Any]] = mapped_column(JSONType, default=dict)
+    signature_verified: Mapped[bool] = mapped_column(Boolean, default=True)
+    job_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, index=True)
+    processed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+    __table_args__ = (
+        UniqueConstraint("org_id", "id", name="uq_webhook_org_event"),
+        Index("idx_webhook_org_status", "org_id", "status"),
+    )
+

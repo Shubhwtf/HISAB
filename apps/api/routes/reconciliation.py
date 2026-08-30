@@ -33,6 +33,7 @@ from packages.domain.db_models import (
     TaxRecordDB,
     ExceptionDB,
     AuditEntryDB,
+    JobDB,
 )
 from packages.domain.money import format_inr
 from packages.domain.audit_ledger import append_audit_entry
@@ -42,6 +43,7 @@ from packages.controls.exception_engine import (
     summarize_exceptions,
 )
 from packages.controls.policy_gate import apply_safe_resolutions, PolicyGateConfig
+from packages.worker.queue import JobQueue, RECON_QUEUE
 
 router = APIRouter(prefix="/api/reconcile", tags=["Reconciliation"])
 
@@ -279,6 +281,53 @@ def run_full_reconciliation(
         unresolved_exposure_paise=unresolved_exposure,
         unresolved_exposure_formatted=format_inr(unresolved_exposure),
         execution_time_ms=round(elapsed_ms, 2),
+    )
+
+
+class AsyncReconciliationResponse(BaseModel):
+    success: bool
+    job_id: str
+    batch_id: str
+    status: str
+    message: str
+
+
+@router.post("/async", response_model=AsyncReconciliationResponse)
+def run_async_reconciliation(
+    batch_id: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: UserSession = Depends(require_permission(Permission.RUN_RECONCILIATION)),
+):
+    org_id = current_user.org_id
+    run_batch_id = batch_id or f"batch_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}"
+    now = datetime.now(timezone.utc)
+    job_id = f"job_rec_{run_batch_id}_{int(now.timestamp())}"
+
+    job = JobDB(
+        id=job_id,
+        org_id=org_id,
+        created_by_user_id=current_user.user_id,
+        type="RECONCILIATION",
+        status="QUEUED",
+        progress_pct=0,
+        stage="Queued for background worker",
+        payload={"batch_id": run_batch_id},
+        idempotency_key=f"rec:{org_id}:{run_batch_id}",
+        created_at=now,
+        updated_at=now,
+    )
+    db.add(job)
+    db.commit()
+
+    queue = JobQueue()
+    queue.enqueue(job_id, queue_name=RECON_QUEUE)
+
+    return AsyncReconciliationResponse(
+        success=True,
+        job_id=job_id,
+        batch_id=run_batch_id,
+        status="QUEUED",
+        message="Reconciliation batch job queued successfully for background worker execution.",
     )
 
 

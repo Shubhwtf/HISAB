@@ -31,6 +31,8 @@ from apps.api.routes.policy_simulator import router as policy_simulator_router
 from apps.api.routes.mapping import router as mapping_router
 from apps.api.routes.reports import router as reports_router
 from apps.api.routes.search import router as search_router
+from apps.api.routes.jobs import router as jobs_router
+from apps.api.routes.webhooks import router as webhooks_router
 
 logging.basicConfig(
     level=logging.INFO,
@@ -117,19 +119,56 @@ app.include_router(policy_simulator_router)
 app.include_router(mapping_router)
 app.include_router(reports_router)
 app.include_router(search_router)
+app.include_router(jobs_router)
+app.include_router(webhooks_router)
 
 
 @app.get("/healthz", tags=["Health"])
 @app.get("/api/health", tags=["Health"])
 def health_check():
     """
-    Service health check endpoint.
+    Component-level health check endpoint for API, Database, Redis, and Background Workers.
     """
+    import time
+    from sqlalchemy import text
+    from packages.domain.database import get_sync_db
+    from packages.domain.redis_client import get_redis_client, ping_redis
+
+    db_status = "healthy"
+    try:
+        with get_sync_db() as db:
+            db.execute(text("SELECT 1"))
+    except Exception as e:
+        db_status = f"unhealthy: {e}"
+
+    redis_status = "healthy" if ping_redis() else "degraded"
+
+    worker_status = "idle/no_heartbeat"
+    try:
+        r = get_redis_client()
+        last_hb = r.get("hisab:worker:heartbeat")
+        if last_hb:
+            age = time.time() - float(last_hb)
+            if age <= 60:
+                worker_status = "active"
+            else:
+                worker_status = f"stale ({round(age)}s ago)"
+    except Exception:
+        worker_status = "unreachable"
+
+    overall_status = "healthy" if (db_status == "healthy" and redis_status == "healthy") else "degraded"
+
     return {
-        "status": "healthy",
+        "status": overall_status,
         "service": "HISAB Finance Controller",
         "version": "1.0.0",
         "merchant": "Nova Commerce Pvt Ltd",
+        "components": {
+            "api": "healthy",
+            "database": db_status,
+            "redis": redis_status,
+            "worker": worker_status,
+        },
     }
 
 

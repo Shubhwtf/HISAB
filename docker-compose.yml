@@ -33,6 +33,39 @@ services:
       timeout: 5s
       retries: 5
 
+  api:
+    build: .
+    container_name: hisab_api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://hisab_user:hisab_password@postgres:5432/hisab
+      - SYNC_DATABASE_URL=postgresql+psycopg://hisab_user:hisab_password@postgres:5432/hisab
+      - REDIS_URL=redis://redis:6379/0
+      - ENVIRONMENT=production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    build: .
+    container_name: hisab_worker
+    restart: unless-stopped
+    command: ["python", "-m", "packages.worker.runner"]
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://hisab_user:hisab_password@postgres:5432/hisab
+      - SYNC_DATABASE_URL=postgresql+psycopg://hisab_user:hisab_password@postgres:5432/hisab
+      - REDIS_URL=redis://redis:6379/0
+      - ENVIRONMENT=production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
 volumes:
   postgres_data:
     name: hisab_postgres_data
