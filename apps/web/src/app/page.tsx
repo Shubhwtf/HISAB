@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import { TopNav } from "@/components/TopNav";
 import { LoginPage } from "@/components/LoginPage";
+import { LandingPage } from "@/components/LandingPage";
 import { MetricsRibbon } from "@/components/MetricsRibbon";
 import { DashboardCharts } from "@/components/DashboardCharts";
 import { RevenueVelocityChart } from "@/components/RevenueVelocityChart";
@@ -77,6 +78,8 @@ export default function ControlRoomPage() {
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isGateOpen, setIsGateOpen] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authInitialMode, setAuthInitialMode] = useState<"SIGN_IN" | "SIGN_UP_STEP_1">("SIGN_IN");
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("hisab-theme");
@@ -108,10 +111,9 @@ export default function ControlRoomPage() {
         const verified = await fetchApi<any>("/api/auth/me");
         if (verified && verified.role) {
           setUserRole(verified.role);
-          setUserName(verified.name);
-          setUserEmail(verified.email || "");
-          setOrgName(verified.org_name || "");
-          setIsRazorpayConnected(Boolean(verified.is_razorpay_connected));
+          setUserName(verified.name || "User");
+          if (verified.email) setUserEmail(verified.email);
+          if (verified.org_name) setOrgName(verified.org_name);
           setIsLoggedIn(true);
         } else {
           localStorage.removeItem("hisab-auth-session");
@@ -235,7 +237,36 @@ export default function ControlRoomPage() {
   }
 
   if (!isLoggedIn) {
-    return <LoginPage onLoginSuccess={handleLoginSuccess} />;
+    if (showAuthModal) {
+      return (
+        <LoginPage
+          onLoginSuccess={(sess) => {
+            setShowAuthModal(false);
+            handleLoginSuccess(sess);
+          }}
+          onClose={() => setShowAuthModal(false)}
+          initialMode={authInitialMode}
+        />
+      );
+    }
+    return (
+      <LandingPage
+        onOpenSignIn={() => {
+          setAuthInitialMode("SIGN_IN");
+          setShowAuthModal(true);
+        }}
+        onOpenSignUp={() => {
+          setAuthInitialMode("SIGN_UP_STEP_1");
+          setShowAuthModal(true);
+        }}
+        onOpenDocs={() => {
+          window.location.href = "/docs";
+        }}
+        isDarkMode={isDarkMode}
+        onToggleDarkMode={handleToggleDarkMode}
+        isLoggedIn={false}
+      />
+    );
   }
 
   return (

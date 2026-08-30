@@ -18,18 +18,21 @@ import {
   Globe,
   Coins,
   ChevronRight,
-  Info
+  Info,
+  X
 } from "lucide-react";
 import { fetchApi } from "@/lib/api";
 
 interface LoginPageProps {
   onLoginSuccess: (session: any) => void;
+  onClose?: () => void;
+  initialMode?: AuthMode;
 }
 
 type AuthMode = "SIGN_IN" | "SIGN_UP_STEP_1" | "SIGN_UP_STEP_2" | "ACCEPT_INVITE" | "ONBOARDING_CHECKLIST";
 
-export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
-  const [authMode, setAuthMode] = useState<AuthMode>("SIGN_IN");
+export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onClose, initialMode = "SIGN_IN" }) => {
+  const [authMode, setAuthMode] = useState<AuthMode>(initialMode);
   
   const [signInEmail, setSignInEmail] = useState("");
   const [signInPassword, setSignInPassword] = useState("");
@@ -201,7 +204,16 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#0A0A0A] text-[#0F172A] dark:text-[#EDEDED] flex flex-col justify-center items-center p-6 font-sans">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#0A0A0A] text-[#0F172A] dark:text-[#EDEDED] flex flex-col justify-center items-center p-6 font-sans relative">
+      {onClose && (
+        <button
+          onClick={onClose}
+          className="absolute top-6 right-6 p-2 rounded-xl text-[#64748B] dark:text-[#A1A1AA] hover:text-[#0F172A] dark:hover:text-white hover:bg-[#F1F5F9] dark:hover:bg-[#18181B] transition-colors"
+          title="Back to Landing Page"
+        >
+          <X className="w-5 h-5" />
+        </button>
+      )}
       <div className="max-w-xl w-full mx-auto space-y-6">
         
         <div className="text-center space-y-1.5">
