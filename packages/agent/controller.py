@@ -40,7 +40,7 @@ class AmbiguityResolutionResponse(BaseModel):
     reason_codes: List[str]
     explanation: str
     needs_human_review: bool
-    recommended_action: str  # AUTO_RESOLVE | HUMAN_REVIEW | ESCALATE
+    recommended_action: str
     execution_tier: str = "TIER_4_AI"
     is_fallback: bool = False
 
@@ -69,13 +69,11 @@ class AIController:
         4. Enforces zero-hallucination validation.
         5. Logs decision to cryptographic audit ledger.
         """
-        # Step 1: Tool invocation for forensics & candidate discovery
         forensics = inspect_dispute_and_double_loss(db, record_id)
         candidates = search_candidates(db, record_id, entity_type)
 
         is_double_loss = forensics.get("is_double_loss", False)
 
-        # Step 2: Immediate mandatory escalation for Double Loss
         if is_double_loss:
             resp = AmbiguityResolutionResponse(
                 selected_candidate=None,
@@ -102,7 +100,6 @@ class AIController:
             )
             return resp
 
-        # Step 3: Check if candidates exist
         if not candidates:
             fallback = resolve_with_deterministic_fallback(record_id, [], is_double_loss=False)
             return AmbiguityResolutionResponse(
@@ -116,11 +113,9 @@ class AIController:
                 is_fallback=True,
             )
 
-        # Step 4: AI Reasoning Engine (Simulated/Heuristic or External LLM)
         try:
             decision = self._reason_over_candidates(record_id, entity_type, candidates, forensics)
             
-            # Step 5: Zero-Hallucination Guard
             valid_candidate_ids = {c.candidate_id for c in candidates}
             if decision.selected_candidate and decision.selected_candidate not in valid_candidate_ids:
                 logger.warning(
@@ -153,7 +148,6 @@ class AIController:
                 is_fallback=True,
             )
 
-        # Step 6: Log decision to audit ledger
         append_audit_entry(
             db=db,
             case_id=record_id,
@@ -185,7 +179,6 @@ class AIController:
         """
         top = candidates[0]
         
-        # High confidence match
         if top.confidence_score >= 0.90:
             return AmbiguityResolutionResponse(
                 selected_candidate=top.candidate_id,
@@ -196,7 +189,7 @@ class AIController:
                     f"{top.confidence_score*100:.1f}% confidence. "
                     f"Reasons: {'; '.join(top.reasons)}."
                 ),
-                needs_human_review=(top.amount_paise > 500000),  # > ₹5,000 needs review
+                needs_human_review=(top.amount_paise > 500000),
                 recommended_action="AUTO_RESOLVE" if top.amount_paise <= 500000 else "HUMAN_REVIEW",
                 execution_tier="TIER_4_AI",
             )

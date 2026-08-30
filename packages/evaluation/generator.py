@@ -37,7 +37,7 @@ class GroundTruthRecord(BaseModel):
     is_anomaly: bool = False
     anomaly_type: Optional[str] = None
     expected_match_id: Optional[str] = None
-    expected_resolution: str = "EXACT_MATCH"  # EXACT_MATCH, AUTO_RESOLVE, ESCALATE, DISPUTE_CONTEST
+    expected_resolution: str = "EXACT_MATCH"
     expected_financial_impact_paise: int = 0
     ground_truth_root_cause: str = "Clean transaction reconciled with zero variance"
 
@@ -72,7 +72,6 @@ def generate_synthetic_dataset(
     random.seed(seed)
     start_time = base_date or datetime(2026, 8, 1, 10, 0, 0, tzinfo=timezone.utc)
 
-    # 1. Generate Customers
     customer_names = [
         ("Rahul Sharma", "rahul.s@example.com", "+919811001001"),
         ("Pooja Mehta", "pooja.m@example.com", "+919811001002"),
@@ -100,24 +99,22 @@ def generate_synthetic_dataset(
         )
         customers.append(cust)
 
-    # Standard order amounts in paise (₹500 to ₹72,000)
     standard_amounts_paise = [
-        50000,    # ₹500
-        120000,   # ₹1,200
-        250000,   # ₹2,500
-        499900,   # ₹4,999
-        750000,   # ₹7,500
-        1200000,  # ₹12,000
-        2500000,  # ₹25,000
-        5000000,  # ₹50,000
-        7200000,  # ₹72,000 (High value / signature)
+        50000,
+        120000,
+        250000,
+        499900,
+        750000,
+        1200000,
+        2500000,
+        5000000,
+        7200000,
     ]
 
     orders: List[Order] = []
     payments: List[Payment] = []
     ground_truth: Dict[str, GroundTruthRecord] = {}
 
-    # Determine payment counts to reach target record count
     num_payments = max(200, int(record_count * 0.5))
     
     current_time = start_time
@@ -138,7 +135,6 @@ def generate_synthetic_dataset(
         )
         orders.append(order)
 
-        # Select payment method
         method_roll = random.random()
         if method_roll < 0.60:
             method = "card"
@@ -189,18 +185,16 @@ def generate_synthetic_dataset(
         )
         payments.append(payment)
 
-        # Record clean ground truth
         ground_truth[pay_id] = GroundTruthRecord(
             record_id=pay_id,
             entity_type="payment",
             is_anomaly=False,
-            expected_match_id=None,  # Will link to settlement batch below
+            expected_match_id=None,
             expected_resolution="EXACT_MATCH",
             expected_financial_impact_paise=0,
             ground_truth_root_cause="Clean capture with expected MDR and GST deductions."
         )
 
-    # 2. Generate Refunds (~15% of payments)
     refunds: List[Refund] = []
     num_refunds = max(30, int(num_payments * 0.15))
     refunded_payments = random.sample(payments, num_refunds)
@@ -209,7 +203,6 @@ def generate_synthetic_dataset(
         rfnd_time = p.created_at + timedelta(hours=random.randint(1, 48))
         rfnd_id = f"rfnd_{3000 + i}"
         
-        # 80% full refunds, 20% partial refunds
         if random.random() < 0.80:
             rfnd_amount = p.amount_paise
         else:
@@ -228,7 +221,6 @@ def generate_synthetic_dataset(
         )
         refunds.append(rfnd)
 
-        # Update payment status
         p.status = "refunded" if rfnd_amount == p.amount_paise else "partially_refunded"
 
         ground_truth[rfnd_id] = GroundTruthRecord(
@@ -241,10 +233,8 @@ def generate_synthetic_dataset(
             ground_truth_root_cause="Legitimate source refund; transaction fee + GST non-reversed per policy."
         )
 
-    # 3. Generate Disputes (~5% of payments)
     disputes: List[Dispute] = []
     num_disputes = max(10, int(num_payments * 0.05))
-    # Pick payments that are NOT yet refunded for clean baseline disputes
     non_refunded_payments = [p for p in payments if p.status == "captured"]
     disputed_payments = random.sample(non_refunded_payments, min(num_disputes, len(non_refunded_payments)))
 
@@ -257,7 +247,7 @@ def generate_synthetic_dataset(
             order_id=p.order_id,
             amount_paise=p.amount_paise,
             deduction_amount_paise=p.amount_paise,
-            fee_paise=50000,  # ₹500 dispute admin fee
+            fee_paise=50000,
             status="open",
             reason_code=random.choice(["fraudulent", "goods_not_received", "duplicate_charge"]),
             respond_by=disp_time + timedelta(days=7),
@@ -275,12 +265,10 @@ def generate_synthetic_dataset(
             ground_truth_root_cause="Open chargeback dispute with pending evidence response window."
         )
 
-    # 4. Group into Settlement Batches (Daily settlements across 15 days)
     settlements: List[Settlement] = []
     settlement_lines: List[SettlementLine] = []
     bank_transactions: List[BankTransaction] = []
 
-    # Partition payments by 24-hour windows
     num_batches = 15
     batch_size = len(payments) // num_batches
     
@@ -302,7 +290,7 @@ def generate_synthetic_dataset(
         
         net_settlement_paise = gross_paise - fee_paise - tax_paise - refund_paise - dispute_paise
         
-        setl_date = start_time + timedelta(days=b_idx + 2)  # T+2 settlement
+        setl_date = start_time + timedelta(days=b_idx + 2)
 
         lines: List[SettlementLine] = []
         for p in batch_payments:
@@ -320,7 +308,6 @@ def generate_synthetic_dataset(
             )
             lines.append(sline)
             settlement_lines.append(sline)
-            # Update ground truth match ID
             ground_truth[p.id].expected_match_id = setl_id
 
         for r in batch_refunds:
@@ -381,7 +368,6 @@ def generate_synthetic_dataset(
             ground_truth_root_cause=f"Settlement batch of {len(lines)} movements matching bank UTR credit."
         )
 
-        # Generate matching Bank Transaction
         bank_tx = BankTransaction(
             id=f"bnk_{7000 + b_idx}",
             bank_account_number_masked="•••• 9876",
@@ -405,10 +391,8 @@ def generate_synthetic_dataset(
             ground_truth_root_cause="Bank credit line matching settlement net amount and UTR reference."
         )
 
-    # 5. Generate Section 194-O TDS Tax Records (Quarterly statement)
     tax_records: List[TaxRecord] = []
     total_turnover_paise = sum(p.amount_paise for p in payments)
-    # Section 194-O rate: 0.1% = 10 bps
     expected_tds_paise = (total_turnover_paise * 10) // 10000
 
     tax_rec = TaxRecord(

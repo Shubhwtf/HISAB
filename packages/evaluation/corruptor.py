@@ -24,9 +24,6 @@ def inject_corruptions(dataset: ScenarioDataset, seed: int = 101) -> ScenarioDat
     ds = copy.deepcopy(dataset)
     ds.seed = seed
 
-    # --------------------------------------------------------------------------
-    # 1. Signature Feature: Double-Loss Injection (Refund + Dispute on same order)
-    # --------------------------------------------------------------------------
     signature_payment = next(
         (p for p in ds.payments if p.amount_paise == 7200000 and p.method == "card"),
         ds.payments[0]
@@ -83,9 +80,6 @@ def inject_corruptions(dataset: ScenarioDataset, seed: int = 101) -> ScenarioDat
         ground_truth_root_cause="Chargeback on already refunded transaction creates double outflow exposure."
     )
 
-    # --------------------------------------------------------------------------
-    # 2. Corrupt Settlement Mapping (Missing settlement ID in transaction data)
-    # --------------------------------------------------------------------------
     unmapped_payments = [p for p in ds.payments if p.id != signature_payment.id][:5]
     for p in unmapped_payments:
         original_setl_id = p.settlement_id
@@ -101,15 +95,12 @@ def inject_corruptions(dataset: ScenarioDataset, seed: int = 101) -> ScenarioDat
             ground_truth_root_cause=f"Payment {p.id} settlement mapping removed from primary feed."
         )
 
-    # --------------------------------------------------------------------------
-    # 3. Altered Bank Reference (Shifted UTR in Bank Statement)
-    # --------------------------------------------------------------------------
     if len(ds.bank_transactions) > 1:
         corrupted_bank = ds.bank_transactions[1]
         original_ref = corrupted_bank.reference
         corrupted_bank.reference = f"{original_ref}_MOD"
         corrupted_bank.description = f"CMS/RAZORPAY/CORRUPTED/{original_ref}_MOD"
-        corrupted_bank.matched_settlement_id = None  # Unlinked in raw feed
+        corrupted_bank.matched_settlement_id = None
         ds.ground_truth[corrupted_bank.id] = GroundTruthRecord(
             record_id=corrupted_bank.id,
             entity_type="bank_transaction",
@@ -121,9 +112,6 @@ def inject_corruptions(dataset: ScenarioDataset, seed: int = 101) -> ScenarioDat
             ground_truth_root_cause=f"Bank statement UTR altered from {original_ref} to {corrupted_bank.reference}."
         )
 
-    # --------------------------------------------------------------------------
-    # 4. Duplicate Webhook / Duplicate Payment Record
-    # --------------------------------------------------------------------------
     dup_target = ds.payments[10]
     dup_payment = copy.deepcopy(dup_target)
     dup_payment.id = f"{dup_target.id}_DUP"
@@ -139,9 +127,6 @@ def inject_corruptions(dataset: ScenarioDataset, seed: int = 101) -> ScenarioDat
         ground_truth_root_cause=f"Duplicate payment event received for order {dup_target.order_id}."
     )
 
-    # --------------------------------------------------------------------------
-    # 5. Fee Discrepancy (Wrong MDR fee recorded)
-    # --------------------------------------------------------------------------
     fee_target = ds.payments[15]
     original_fee = fee_target.fee_paise
     fee_target.fee_paise = original_fee + 5000
@@ -156,9 +141,6 @@ def inject_corruptions(dataset: ScenarioDataset, seed: int = 101) -> ScenarioDat
         ground_truth_root_cause=f"Recorded fee ({fee_target.fee_paise} paise) deviates from configured schedule."
     )
 
-    # --------------------------------------------------------------------------
-    # 6. Bank Settlement Credit Shortfall
-    # --------------------------------------------------------------------------
     if len(ds.bank_transactions) > 3:
         shortfall_bank = ds.bank_transactions[3]
         shortfall_bank.amount_paise -= 11240
@@ -172,9 +154,6 @@ def inject_corruptions(dataset: ScenarioDataset, seed: int = 101) -> ScenarioDat
             ground_truth_root_cause="External bank credit amount is ₹112.40 less than settled batch total."
         )
 
-    # --------------------------------------------------------------------------
-    # 7. Section 194-O Tax Ledger Mismatch (Obsolete 1% Rate)
-    # --------------------------------------------------------------------------
     if ds.tax_records:
         obsolete_tax = copy.deepcopy(ds.tax_records[0])
         obsolete_tax.id = "tax_2026_q3_obsolete"

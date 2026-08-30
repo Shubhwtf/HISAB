@@ -25,7 +25,6 @@ export const ControlsMatrixView: React.FC = () => {
 
   return (
     <div className="bg-white dark:bg-[#111111] border border-[#E2E8F0] dark:border-[#262626] rounded-xl p-6 shadow-sm">
-      {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-[#E2E8F0] dark:border-[#262626] mb-6">
         <div>
           <div className="flex items-center space-x-2">

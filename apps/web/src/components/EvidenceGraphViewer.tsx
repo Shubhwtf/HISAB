@@ -36,7 +36,6 @@ export const EvidenceGraphViewer: React.FC<EvidenceGraphViewerProps> = ({ initia
 
   return (
     <div className="bg-white dark:bg-[#111111] border border-[#E2E8F0] dark:border-[#262626] rounded-xl p-6 shadow-sm">
-      {/* Header Search & Title */}
       <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-[#E2E8F0] dark:border-[#262626] mb-6">
         <div>
           <div className="flex items-center space-x-2">
@@ -52,7 +51,6 @@ export const EvidenceGraphViewer: React.FC<EvidenceGraphViewerProps> = ({ initia
           </p>
         </div>
 
-        {/* Payment ID Input */}
         <div className="flex items-center space-x-2">
           <input
             type="text"
@@ -84,7 +82,6 @@ export const EvidenceGraphViewer: React.FC<EvidenceGraphViewerProps> = ({ initia
 
       {dossier && !loading && (
         <div>
-          {/* Decision Status Banner */}
           <div className="flex items-center justify-between bg-[#F8FAFC] dark:bg-[#0E0E0E] p-4 rounded-xl border border-[#E2E8F0] dark:border-[#262626] mb-6">
             <div className="flex items-center space-x-3">
               <div className={`p-2 rounded-lg ${dossier.decision === 'MATCHED' ? 'bg-[#16A34A]' : 'bg-[#DC2626]'} text-white`}>
@@ -113,7 +110,6 @@ export const EvidenceGraphViewer: React.FC<EvidenceGraphViewerProps> = ({ initia
             </div>
           </div>
 
-          {/* Nodes Flow */}
           <div className="mb-6 overflow-x-auto pb-2">
             <div className="flex items-center justify-between min-w-[700px] gap-3">
               {dossier.evidence_graph.nodes.map((node, i) => (
@@ -140,7 +136,6 @@ export const EvidenceGraphViewer: React.FC<EvidenceGraphViewerProps> = ({ initia
             </div>
           </div>
 
-          {/* Interactive Evidence Proof Points */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className="space-y-2.5">
               <h4 className="text-xs font-bold text-[#0F172A] dark:text-[#EDEDED] uppercase tracking-wider flex items-center space-x-1.5">
@@ -175,7 +170,6 @@ export const EvidenceGraphViewer: React.FC<EvidenceGraphViewerProps> = ({ initia
               ))}
             </div>
 
-            {/* Controller Audit Steps */}
             <div>
               <h4 className="text-xs font-bold text-[#0F172A] dark:text-[#EDEDED] uppercase tracking-wider flex items-center space-x-1.5 mb-2.5">
                 <Layers className="w-3.5 h-3.5 text-[#0B72E7] dark:text-[#3395FF]" />

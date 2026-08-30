@@ -20,15 +20,15 @@ class TestPaymentEffects:
             id="pay_001",
             order_id="ord_001",
             customer_id="cust_001",
-            amount_paise=100000,  # ₹1,000.00
+            amount_paise=100000,
             method="card"
         )
         effect = calculate_payment_effect(payment)
         assert effect.classification == VarianceClassification.EXACT_MATCH
         assert effect.is_expected_variance is True
-        assert effect.fee_paise == 2000    # ₹20.00
-        assert effect.tax_paise == 360     # ₹3.60
-        assert effect.expected_merchant_effect_paise == 97640  # ₹976.40
+        assert effect.fee_paise == 2000
+        assert effect.tax_paise == 360
+        assert effect.expected_merchant_effect_paise == 97640
         assert effect.variance_paise == 0
 
     def test_payment_fee_mismatch(self):
@@ -37,7 +37,7 @@ class TestPaymentEffects:
             order_id="ord_002",
             customer_id="cust_002",
             amount_paise=100000,
-            fee_paise=5000,  # Wrong fee recorded
+            fee_paise=5000,
             tax_paise=900,
             net_paise=94100,
             method="card"
@@ -55,7 +55,7 @@ class TestRefundEffects:
             id="pay_100",
             order_id="ord_100",
             customer_id="cust_100",
-            amount_paise=100000,  # ₹1,000.00
+            amount_paise=100000,
             fee_paise=2000,
             tax_paise=360,
             net_paise=97640,
@@ -67,7 +67,7 @@ class TestRefundEffects:
         refund = Refund(
             id="rfnd_100",
             payment_id="pay_100",
-            amount_paise=100000,  # ₹1,000.00 (Full refund)
+            amount_paise=100000,
             source_instrument_ref="Visa •••• 4242",
             status="processed"
         )
@@ -83,7 +83,7 @@ class TestRefundEffects:
         refund = Refund(
             id="rfnd_101",
             payment_id="pay_100",
-            amount_paise=40000,  # ₹400.00
+            amount_paise=40000,
             source_instrument_ref="Visa •••• 4242",
             status="processed"
         )
@@ -109,7 +109,7 @@ class TestRefundEffects:
             id="rfnd_mismatch",
             payment_id="pay_100",
             amount_paise=100000,
-            source_instrument_ref="Mastercard •••• 9999",  # Different from Visa •••• 4242
+            source_instrument_ref="Mastercard •••• 9999",
             status="processed"
         )
         effect = calculate_refund_effect(refund, sample_payment)
@@ -120,13 +120,13 @@ class TestRefundEffects:
         prior_refund = Refund(
             id="rfnd_prior",
             payment_id="pay_100",
-            amount_paise=100000,  # First full refund
+            amount_paise=100000,
             source_instrument_ref="Visa •••• 4242"
         )
         second_refund = Refund(
             id="rfnd_dup",
             payment_id="pay_100",
-            amount_paise=100000,  # Second duplicate refund
+            amount_paise=100000,
             source_instrument_ref="Visa •••• 4242"
         )
         effect = calculate_refund_effect(
@@ -136,19 +136,19 @@ class TestRefundEffects:
         )
         assert effect.classification == VarianceClassification.DUPLICATE_REFUND
         assert effect.is_expected_variance is False
-        assert effect.variance_paise == -100000  # Excess outflow
+        assert effect.variance_paise == -100000
 
     def test_cumulative_over_refund_amount_mismatch(self, sample_payment):
         prior_refund = Refund(
             id="rfnd_p1",
             payment_id="pay_100",
-            amount_paise=70000,  # ₹700
+            amount_paise=70000,
             source_instrument_ref="Visa •••• 4242"
         )
         second_refund = Refund(
             id="rfnd_p2",
             payment_id="pay_100",
-            amount_paise=50000,  # ₹500 (total = ₹1,200 > ₹1,000)
+            amount_paise=50000,
             source_instrument_ref="Visa •••• 4242"
         )
         effect = calculate_refund_effect(
@@ -158,19 +158,19 @@ class TestRefundEffects:
         )
         assert effect.classification == VarianceClassification.REFUND_AMOUNT_MISMATCH
         assert effect.is_expected_variance is False
-        assert effect.variance_paise == -20000  # ₹200 excess
+        assert effect.variance_paise == -20000
 
     def test_unexpected_refund_variance(self, sample_payment):
         refund = Refund(
             id="rfnd_unexp",
             payment_id="pay_100",
-            amount_paise=50000,  # ₹500
+            amount_paise=50000,
             source_instrument_ref="Visa •••• 4242"
         )
         effect = calculate_refund_effect(
             refund=refund,
             payment=sample_payment,
-            observed_debit_paise=-55000  # ₹550 debited instead of ₹500
+            observed_debit_paise=-55000
         )
         assert effect.classification == VarianceClassification.UNEXPECTED_REFUND_VARIANCE
         assert effect.is_expected_variance is False
@@ -179,9 +179,6 @@ class TestRefundEffects:
 
 class TestSettlementBatchEffects:
     def test_reconciled_settlement_batch(self):
-        # 2 payments: ₹1,000 card (net 976.40), ₹2,000 card (net 1952.80)
-        # 1 refund: ₹500
-        # Expected net = 976.40 + 1952.80 - 500 = ₹2,429.20 (242,920 paise)
         p1 = Payment(id="p1", order_id="o1", customer_id="c1", amount_paise=100000, method="card")
         p2 = Payment(id="p2", order_id="o2", customer_id="c2", amount_paise=200000, method="card")
         r1 = Refund(id="r1", payment_id="p1", amount_paise=50000)
@@ -213,10 +210,9 @@ class TestSettlementBatchEffects:
         p1 = Payment(id="p1", order_id="o1", customer_id="c1", amount_paise=100000, method="card")
         d1 = Dispute(id="d1", payment_id="p1", amount_paise=100000, deduction_amount_paise=100000)
 
-        # Expected net: 100000 - 2000 - 360 - 100000 = -2360 paise (-₹23.60)
         settlement = Settlement(
             id="setl_002",
-            amount_paise=0,  # Observed is 0 instead of -2360
+            amount_paise=0,
             status="settled"
         )
 
@@ -245,13 +241,12 @@ class TestEffectFormattingAndDiscrepancies:
         p1 = Payment(id="p1", order_id="o1", customer_id="c1", amount_paise=100000)
         r1 = Refund(id="r1", payment_id="p1", amount_paise=20000)
         
-        # Pass mismatches in gross, fee, and refund amounts to trigger lines 367, 369, 371
         settlement = Settlement(
             id="setl_disc",
-            gross_amount_paise=90000, # mismatch (expected 100000)
-            fee_amount_paise=1000,   # mismatch (expected 2000)
+            gross_amount_paise=90000,
+            fee_amount_paise=1000,
             tax_amount_paise=180,
-            refund_amount_paise=10000,# mismatch (expected 20000)
+            refund_amount_paise=10000,
             amount_paise=78820
         )
         batch_effect = calculate_settlement_batch_effect(

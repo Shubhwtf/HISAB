@@ -41,13 +41,11 @@ def setup_db():
 
 class TestEndToEndPipeline:
     def test_full_reconciliation_lifecycle(self):
-        # 1. Generate & Corrupt Dataset
         clean_ds = generate_synthetic_dataset(record_count=500, seed=42)
         corrupted_ds = inject_corruptions(clean_ds, seed=101)
 
         assert corrupted_ds.total_record_count > 500
 
-        # 2. Batch Decomposition & Reconstruction
         batch_results, unmapped = decompose_and_reconstruct_batches(
             settlements=corrupted_ds.settlements,
             payments=corrupted_ds.payments,
@@ -58,7 +56,6 @@ class TestEndToEndPipeline:
         reconstructed_count = sum(len(res.reconstructed_mappings) for res in batch_results)
         assert reconstructed_count >= 1
 
-        # 3. Double-Loss Detection
         double_loss_alerts = []
         for o in corrupted_ds.orders:
             alert = detect_double_loss_for_order(
@@ -70,7 +67,6 @@ class TestEndToEndPipeline:
         assert len(double_loss_alerts) >= 1
         assert double_loss_alerts[0].total_potential_exposure_paise >= 14400000
 
-        # 4. Controls Execution & Exception Aggregation
         exceptions = run_all_controls_and_build_exceptions(
             batch_id="e2e_batch_01",
             orders=corrupted_ds.orders,
@@ -86,14 +82,11 @@ class TestEndToEndPipeline:
         assert summary.total_exceptions >= 8
         assert summary.critical_count >= 1
 
-        # 5. Safe Policy Gating
         resolved, unresolved = apply_safe_resolutions(exceptions, PolicyGateConfig())
         assert len(resolved) >= 1
         assert len(unresolved) >= 1
-        # Double loss must remain unresolved (for human escalation)
         assert any(u.category == "DOUBLE_LOSS" for u in unresolved)
 
-        # 6. Cryptographic Audit Ledger Verification
         with get_sync_db() as db:
             append_audit_entry(
                 db=db,
@@ -111,7 +104,6 @@ class TestEndToEndPipeline:
             assert is_valid is True
             assert err is None
 
-        # 7. Benchmark Verification
         report = run_comprehensive_benchmark(corrupted_ds)
         assert report.baseline_c_hisab.precision == 1.0
         assert report.baseline_c_hisab.recall == 1.0

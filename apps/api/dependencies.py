@@ -48,10 +48,8 @@ def get_current_user(
         list_user_memberships,
     )
 
-    # 1. Active Authenticated Session
     if x_session_token and x_session_token in ACTIVE_SESSIONS:
         session = ACTIVE_SESSIONS[x_session_token]
-        # If client requested a specific org, verify the authenticated user actually belongs to it
         if x_org_id and x_org_id != session.org_id:
             membership = get_user_membership(session.user_id, x_org_id)
             if not membership or membership.status != "ACTIVE":
@@ -66,7 +64,6 @@ def get_current_user(
             return create_user_session(USERS[session.user_id], org, conn, role=membership.role, is_demo=False)
         return session
 
-    # 2. Designated Hackathon Demo Evaluation Session for Nova Commerce
     if x_session_token and (x_session_token == "hisab_sess_demo_admin_2026" or x_session_token.startswith("hisab_sess_demo")):
         target_role = Role(x_user_role) if x_user_role and x_user_role in Role._value2member_map_ else Role.ADMIN
         user_map = {
@@ -83,7 +80,6 @@ def get_current_user(
         ACTIVE_SESSIONS[x_session_token] = sess
         return sess
 
-    # 3. STRICT AUTH GATE: Reject all unauthenticated attempts with 401 Unauthorized
     raise HTTPException(
         status_code=401,
         detail="Authentication required. Please sign in or explore demo mode."

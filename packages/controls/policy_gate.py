@@ -62,7 +62,6 @@ def evaluate_policy_for_exception(
     """
     cfg = config or PolicyGateConfig()
 
-    # 1. Invariant: Forbidden categories MUST NEVER be auto-resolved
     if exception.category in cfg.strictly_forbidden_categories:
         return PolicyDecision(
             exception_id=exception.id,
@@ -73,7 +72,6 @@ def evaluate_policy_for_exception(
             evidence_signals_count=len(exception.evidence),
         )
 
-    # 2. Invariant: High-value exposures cannot be auto-resolved
     if exception.financial_impact_paise > cfg.max_auto_resolve_exposure_paise:
         return PolicyDecision(
             exception_id=exception.id,
@@ -87,7 +85,6 @@ def evaluate_policy_for_exception(
             evidence_signals_count=len(exception.evidence),
         )
 
-    # 3. Invariant: Low-confidence predictions must be reviewed
     if exception.confidence < cfg.min_confidence:
         return PolicyDecision(
             exception_id=exception.id,
@@ -98,7 +95,6 @@ def evaluate_policy_for_exception(
             evidence_signals_count=len(exception.evidence),
         )
 
-    # 4. Invariant: Anomaly category must be explicitly allowlisted
     if exception.category not in cfg.allowlisted_categories:
         return PolicyDecision(
             exception_id=exception.id,
@@ -109,7 +105,6 @@ def evaluate_policy_for_exception(
             evidence_signals_count=len(exception.evidence),
         )
 
-    # 5. Passed all invariants -> Safe to auto-resolve
     return PolicyDecision(
         exception_id=exception.id,
         action=PolicyAction.AUTO_RESOLVE,

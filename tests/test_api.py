@@ -32,7 +32,6 @@ def seed_test_database():
         s1 = SettlementDB(id="setl_101", utr="UTR_API_101", gross_amount_paise=100000, fee_amount_paise=2000, tax_amount_paise=360, amount_paise=97640, status="settled", settled_at=now)
         b1 = BankTransactionDB(id="bnk_101", date=now, amount_paise=97640, reference="UTR_API_101", direction="credit")
 
-        # Double loss test records
         o_dbl = OrderDB(id="ord_dbl", customer_id="cust_1", amount_paise=7200000, status="paid")
         p_dbl = PaymentDB(id="pay_dbl", order_id="ord_dbl", customer_id="cust_1", amount_paise=7200000, method="card", instrument_ref="Visa •••• 4242", captured_at=now)
         r_dbl = RefundDB(id="rfnd_dbl", payment_id="pay_dbl", order_id="ord_dbl", amount_paise=7200000, source_instrument_ref="Visa •••• 4242", status="processed", created_at=now + timedelta(hours=2))
@@ -65,7 +64,7 @@ class TestFastAPIEndpoints:
         assert res.status_code == 200
         data = res.json()
         assert data["total_payments_count"] == 2
-        assert data["gross_turnover_paise"] == 7300000 # 1k + 72k
+        assert data["gross_turnover_paise"] == 7300000
         assert "₹73,000.00" in data["gross_turnover_formatted"]
 
     def test_run_full_reconciliation_pipeline(self, client):
@@ -98,10 +97,8 @@ class TestFastAPIEndpoints:
         assert "₹1,44,500.00" in dbl_data["alerts"][0]["total_exposure_formatted"]
 
     def test_exceptions_lifecycle_resolve_and_escalate(self, client):
-        # 1. Run recon to generate exceptions
         client.post("/api/reconcile/run")
 
-        # 2. List exceptions
         res_list = client.get("/api/controls/exceptions")
         assert res_list.status_code == 200
         items = res_list.json()["items"]
@@ -109,7 +106,6 @@ class TestFastAPIEndpoints:
 
         exc_id = items[0]["id"]
 
-        # 3. Escalate exception
         res_esc = client.post(f"/api/controls/exceptions/{exc_id}/escalate", json={
             "reason": "High exposure requires CFO review",
             "assigned_to": "CFO",
@@ -118,7 +114,6 @@ class TestFastAPIEndpoints:
         assert res_esc.status_code == 200
         assert res_esc.json()["status"] == "ESCALATED"
 
-        # 4. Resolve exception
         res_res = client.post(f"/api/controls/exceptions/{exc_id}/resolve", json={
             "justification": "Representment evidence submitted to acquiring bank",
             "actor_id": "FINANCE_LEAD",
@@ -137,7 +132,6 @@ class TestFastAPIEndpoints:
         assert len(data["evidence_graph"]["edges"]) >= 2
 
     def test_audit_ledger_and_tamper_verification(self, client):
-        # Trigger reconciliation to generate audit records
         client.post("/api/reconcile/run")
 
         res_entries = client.get("/api/audit/entries")

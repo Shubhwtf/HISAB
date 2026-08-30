@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 
 class FileManifestItem(BaseModel):
     filename: str
-    source_type: str  # payments | settlements | bank_statement | refunds | disputes | tax
+    source_type: str
     size_bytes: int
     sha256_hash: str
     row_count: int
@@ -56,7 +56,7 @@ class ReconSnapshot(BaseModel):
     currency: str = "INR"
     matching_mode: str = "TIERED_1_TO_3"
     resolution_mode: str = "SAFE_POLICY_GATED"
-    materiality_threshold_paise: int = 500000  # ₹5,000
+    materiality_threshold_paise: int = 500000
     file_manifest: List[FileManifestItem] = Field(default_factory=list)
     column_mappings: Dict[str, Dict[str, str]] = Field(default_factory=dict)
     rule_versions: RuleVersions = Field(default_factory=RuleVersions)
@@ -94,7 +94,6 @@ class SnapshotRepository:
     def _seed_default_snapshots_if_empty(self):
         existing = list(self.storage_dir.glob("*.json"))
         if not existing:
-            # Seed default v1, v2, v3 snapshots
             v1 = ReconSnapshot(
                 id="SNP-001",
                 name="August 2026 Initial Run",

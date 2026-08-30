@@ -78,7 +78,6 @@ export const SnapshotManagerView: React.FC<SnapshotManagerViewProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="bg-white dark:bg-[#111111] border border-[#E2E8F0] dark:border-[#262626] rounded-xl p-6 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-[#E2E8F0] dark:border-[#262626] mb-6">
           <div>
@@ -96,7 +95,6 @@ export const SnapshotManagerView: React.FC<SnapshotManagerViewProps> = ({
           </div>
         </div>
 
-        {/* Snapshot Cards Row */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {snapshots.map((s) => {
             const isCurrent = s.id === "SNP-003";
@@ -129,7 +127,6 @@ export const SnapshotManagerView: React.FC<SnapshotManagerViewProps> = ({
         </div>
       </div>
 
-      {/* "WHAT CHANGED?" COMPARISON MATRIX */}
       {comparison && (
         <div className="bg-white dark:bg-[#111111] border border-[#E2E8F0] dark:border-[#262626] rounded-xl p-6 shadow-sm space-y-5">
           <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-[#E2E8F0] dark:border-[#262626]">
@@ -163,7 +160,6 @@ export const SnapshotManagerView: React.FC<SnapshotManagerViewProps> = ({
             </div>
           )}
 
-          {/* Diffs Grid */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="p-3.5 rounded-xl bg-[#F8FAFC] dark:bg-[#0E0E0E] border border-[#E2E8F0] dark:border-[#262626]">
               <span className="text-[10px] uppercase font-bold text-[#16A34A]">Records Added</span>
@@ -190,7 +186,6 @@ export const SnapshotManagerView: React.FC<SnapshotManagerViewProps> = ({
             </div>
           </div>
 
-          {/* Categorized Changes Table */}
           <div className="space-y-2">
             <h4 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#EDEDED]">
               Detailed Change Manifest

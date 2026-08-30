@@ -18,13 +18,13 @@ router = APIRouter(prefix="/api/approvals", tags=["Maker-Checker Workflow"])
 
 class PrepareApprovalRequest(BaseModel):
     exception_id: str
-    proposed_action: str  # MANUAL_CLEARANCE | FEE_SCHEDULE_ADJUSTMENT | REPRESENTMENT_FILING
+    proposed_action: str
     justification: str
     analyst_name: str = "Priya Sharma (Analyst)"
 
 
 class DecideApprovalRequest(BaseModel):
-    decision: str  # APPROVED | REJECTED
+    decision: str
     manager_name: str = "Rajesh Gupta (Finance Manager)"
     comments: str = "Verified supporting invoice and acquiring bank statement reference."
 
@@ -119,7 +119,6 @@ def decide_approval(approval_id: str, req: DecideApprovalRequest, db: Session = 
     item["decided_at"] = datetime.now(timezone.utc).isoformat()
     item["manager_comments"] = req.comments
 
-    # Update database exception if approved
     if req.decision == "APPROVED":
         exc = db.get(ExceptionDB, item["exception_id"])
         if exc:

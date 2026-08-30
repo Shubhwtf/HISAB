@@ -49,9 +49,6 @@ def main():
     ))
     console.print()
 
-    # --------------------------------------------------------------------------
-    # Step 1: Scenario Setup & Synthetic Data Seeding
-    # --------------------------------------------------------------------------
     console.print("[bold yellow]STEP 1: Merchant Scenario & Controlled Anomaly Setup[/bold yellow]")
     with console.status("[bold green]Generating ground truth records for Nova Commerce Pvt Ltd..."):
         clean_ds = generate_synthetic_dataset(record_count=500, seed=42)
@@ -71,9 +68,6 @@ def main():
     console.print(summary_tbl)
     console.print()
 
-    # --------------------------------------------------------------------------
-    # Step 2: Tier 1-3 Matching & Batch Reconstruction
-    # --------------------------------------------------------------------------
     console.print("[bold yellow]STEP 2: Tiered Matching & Subset-Sum Batch Reconstruction[/bold yellow]")
     with console.status("[bold green]Decomposing multi-movement batches and resolving missing mappings..."):
         batch_results, unmapped = decompose_and_reconstruct_batches(
@@ -94,9 +88,6 @@ def main():
         console.print(f"  • Payment [bold cyan]{r.payment_id}[/bold cyan] → Batch [bold cyan]{r.settlement_id}[/bold cyan] ({r.confidence*100:.1f}% confidence | capture window validated)")
     console.print()
 
-    # --------------------------------------------------------------------------
-    # Step 3: Signature Feature #1 — Double-Loss Risk Forensics
-    # --------------------------------------------------------------------------
     console.print("[bold yellow]STEP 3: Signature Feature #1 — Double-Loss Outflow Forensics[/bold yellow]")
     with console.status("[bold green]Running forensic double-loss correlation across orders..."):
         double_loss_alert = None
@@ -121,16 +112,12 @@ def main():
         )
         console.print(dbl_panel)
 
-        # Timeline tree
         tree = Tree("[bold cyan]Forensic Chronological Timeline Progression[/bold cyan]")
         for event in double_loss_alert.timeline:
             tree.add(f"[dim]{event.timestamp}[/dim] → [bold white]{event.description}[/bold white] ([bold red]{event.amount_formatted}[/bold red])")
         console.print(tree)
     console.print()
 
-    # --------------------------------------------------------------------------
-    # Step 4: Signature Feature #2 — 'Prove It' Interactive Evidence Graph
-    # --------------------------------------------------------------------------
     console.print("[bold yellow]STEP 4: Signature Feature #2 — 'Prove It' Interactive Evidence Graph[/bold yellow]")
     sample_payment = corrupted_ds.payments[0]
     sample_order = next((o for o in corrupted_ds.orders if o.id == sample_payment.order_id), None)
@@ -161,9 +148,6 @@ def main():
     console.print(flow_tbl)
     console.print()
 
-    # --------------------------------------------------------------------------
-    # Step 5: Safe Policy Gating
-    # --------------------------------------------------------------------------
     console.print("[bold yellow]STEP 5: Safe Auto-Resolution Policy Gate Execution[/bold yellow]")
     exceptions = run_all_controls_and_build_exceptions(
         batch_id="demo_batch",
@@ -182,9 +166,6 @@ def main():
     console.print(f"  • [bold red]Retained for Escalation / Review (Double-Loss / High Risk):[/bold red] [bold white]{len(unresolved)}[/bold white] exceptions")
     console.print()
 
-    # --------------------------------------------------------------------------
-    # Step 6: 3-Way Comparative Benchmark Scorecard
-    # --------------------------------------------------------------------------
     console.print("[bold yellow]STEP 6: Three-Way Comparative Evaluation Benchmark[/bold yellow]")
     with console.status("[bold green]Executing 3-way evaluation benchmark across all records..."):
         report = run_comprehensive_benchmark(corrupted_ds)

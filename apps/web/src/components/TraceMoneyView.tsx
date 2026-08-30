@@ -71,7 +71,6 @@ export const TraceMoneyView: React.FC<TraceMoneyViewProps> = ({
 
   return (
     <div className="space-y-6 font-sans">
-      {/* Header & Quick Selector */}
       <div className="bg-white dark:bg-[#111111] border border-[#E2E8F0] dark:border-[#262626] rounded-2xl p-6 shadow-sm space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-[#E2E8F0] dark:border-[#262626]">
           <div className="flex items-center space-x-3">
@@ -102,7 +101,6 @@ export const TraceMoneyView: React.FC<TraceMoneyViewProps> = ({
           </div>
         </div>
 
-        {/* Trace Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {sampleTraces.map((tr) => {
             const isSelected = searchId === tr.id;
@@ -138,7 +136,6 @@ export const TraceMoneyView: React.FC<TraceMoneyViewProps> = ({
                   {tr.narrative}
                 </p>
 
-                {/* Polished Financial Metrics Strip */}
                 <div className="flex items-center justify-between text-xs pt-2.5 border-t border-[#E2E8F0] dark:border-[#262626]">
                   <div className="flex items-center space-x-3 text-[11px]">
                     <div>
@@ -168,7 +165,6 @@ export const TraceMoneyView: React.FC<TraceMoneyViewProps> = ({
         </div>
       </div>
 
-      {/* Embedded Evidence Graph Viewer */}
       <EvidenceGraphViewer initialPaymentId={searchId} />
     </div>
   );

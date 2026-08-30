@@ -162,7 +162,6 @@ def verify_audit_chain(entries: List[AuditEntryDB]) -> Tuple[bool, Optional[str]
     expected_previous_hash = GENESIS_HASH
 
     for i, entry in enumerate(sorted_entries):
-        # 1. Verify sequence increment
         expected_sequence = i + 1
         if entry.sequence != expected_sequence:
             return (
@@ -170,7 +169,6 @@ def verify_audit_chain(entries: List[AuditEntryDB]) -> Tuple[bool, Optional[str]
                 f"Broken sequence at index {i}: expected {expected_sequence}, found {entry.sequence}",
             )
 
-        # 2. Verify previous_hash linkage
         if entry.previous_hash != expected_previous_hash:
             return (
                 False,
@@ -178,7 +176,6 @@ def verify_audit_chain(entries: List[AuditEntryDB]) -> Tuple[bool, Optional[str]
                 f"entry.previous_hash '{entry.previous_hash}' != expected '{expected_previous_hash}'",
             )
 
-        # 3. Recompute current_hash from stored content
         computed_hash = compute_audit_hash(
             previous_hash=entry.previous_hash,
             sequence=entry.sequence,

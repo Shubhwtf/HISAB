@@ -23,7 +23,6 @@ export const SettingsCenter: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {/* Sub Tabs */}
         <div className="space-y-1">
           {[
             { id: "organization", label: "Organization Profile" },
@@ -45,7 +44,6 @@ export const SettingsCenter: React.FC = () => {
           ))}
         </div>
 
-        {/* Content */}
         <div className="md:col-span-3 space-y-4 text-xs">
           {activeSubTab === "organization" && (
             <div className="space-y-3 p-4 rounded-xl bg-[#F8FAFC] dark:bg-[#0E0E0E] border border-[#E2E8F0] dark:border-[#262626]">

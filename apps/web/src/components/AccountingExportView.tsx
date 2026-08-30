@@ -48,7 +48,6 @@ export const AccountingExportView: React.FC = () => {
           </a>
         </div>
 
-        {/* Journal Entries Table */}
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead className="border-b border-[#E2E8F0] dark:border-[#262626] text-[#64748B] uppercase text-[10px]">

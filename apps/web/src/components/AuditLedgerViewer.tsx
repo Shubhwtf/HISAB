@@ -42,7 +42,6 @@ export const AuditLedgerViewer: React.FC = () => {
 
   return (
     <div className="bg-white dark:bg-[#111111] border border-[#E2E8F0] dark:border-[#262626] rounded-xl p-6 shadow-sm">
-      {/* Header & Verification Trigger */}
       <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-[#E2E8F0] dark:border-[#262626] mb-6">
         <div>
           <div className="flex items-center space-x-2">
@@ -77,7 +76,6 @@ export const AuditLedgerViewer: React.FC = () => {
         </button>
       </div>
 
-      {/* Verification Status Banner */}
       {verifyResult && (
         <div className={`p-4 rounded-xl border mb-6 flex items-center justify-between ${
           verifyResult.is_valid ? 'bg-green-50 dark:bg-[#052E16] border-green-200 dark:border-green-800 text-[#16A34A]' : 'bg-red-50 dark:bg-[#3E0E0E] border-red-200 dark:border-red-800 text-[#DC2626]'
@@ -96,7 +94,6 @@ export const AuditLedgerViewer: React.FC = () => {
         </div>
       )}
 
-      {/* Audit Entries List */}
       <div className="space-y-3">
         {loading ? (
           <div className="text-center py-8 text-xs text-[#64748B] dark:text-[#A1A1AA]">Loading audit records...</div>
@@ -120,7 +117,6 @@ export const AuditLedgerViewer: React.FC = () => {
                 <span className="text-[#64748B] dark:text-[#A1A1AA] font-mono">{entry.created_at}</span>
               </div>
 
-              {/* Hashes */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-[11px] font-mono mb-2">
                 <div className="truncate text-[#64748B] dark:text-[#A1A1AA]">
                   <span className="font-bold mr-1">Prev:</span>
@@ -132,7 +128,6 @@ export const AuditLedgerViewer: React.FC = () => {
                 </div>
               </div>
 
-              {/* Payload summary */}
               <div className="bg-white dark:bg-[#111111] p-2 rounded-lg text-[11px] text-[#0F172A] dark:text-[#EDEDED] font-mono border border-[#E2E8F0] dark:border-[#262626]">
                 {JSON.stringify(entry.payload)}
               </div>

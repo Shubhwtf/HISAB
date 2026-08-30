@@ -31,33 +31,27 @@ type AuthMode = "SIGN_IN" | "SIGN_UP_STEP_1" | "SIGN_UP_STEP_2" | "ACCEPT_INVITE
 export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   const [authMode, setAuthMode] = useState<AuthMode>("SIGN_IN");
   
-  // Sign In State
   const [signInEmail, setSignInEmail] = useState("");
   const [signInPassword, setSignInPassword] = useState("");
   
-  // Sign Up State
   const [signUpName, setSignUpName] = useState("");
   const [signUpEmail, setSignUpEmail] = useState("");
   const [signUpPassword, setSignUpPassword] = useState("");
   const [signUpConfirmPassword, setSignUpConfirmPassword] = useState("");
   
-  // Org Creation State
   const [orgName, setOrgName] = useState("");
   const [orgType, setOrgType] = useState("E-Commerce / Direct-to-Consumer");
   const [orgCountry, setOrgCountry] = useState("India");
   const [orgCurrency, setOrgCurrency] = useState("INR");
 
-  // Invitation State
   const [inviteToken, setInviteToken] = useState<string | null>(null);
   const [inviteDetails, setInviteDetails] = useState<any>(null);
 
-  // Status & Error handling
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [createdSession, setCreatedSession] = useState<any>(null);
 
-  // Check URL parameters for ?invite=token
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
@@ -84,7 +78,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     }
   };
 
-  // 1. Standard Production Sign In (User + Org + Role automatically loaded)
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!signInEmail.trim() || !signInPassword.trim()) {
@@ -110,7 +103,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     }
   };
 
-  // 2. Sign Up: Step 1 -> Step 2
   const handleProceedToOrgStep = (e: React.FormEvent) => {
     e.preventDefault();
     if (!signUpName.trim() || !signUpEmail.trim() || !signUpPassword.trim()) {
@@ -129,7 +121,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     setAuthMode("SIGN_UP_STEP_2");
   };
 
-  // 3. Complete Sign Up (Creates User + Creates Org + Assigns Owner/Admin)
   const handleCompleteSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!orgName.trim()) {
@@ -161,7 +152,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     }
   };
 
-  // 4. Accept Invitation Sign Up
   const handleAcceptInvitationSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!signUpName.trim() || !signUpPassword.trim()) {
@@ -193,7 +183,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     }
   };
 
-  // 5. Hackathon Demo Persona Fast-Track
   const handleDemoSignIn = async (role: string) => {
     setLoading(true);
     setError(null);
@@ -215,7 +204,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#0A0A0A] text-[#0F172A] dark:text-[#EDEDED] flex flex-col justify-center items-center p-6 font-sans">
       <div className="max-w-xl w-full mx-auto space-y-6">
         
-        {/* Brand Header */}
         <div className="text-center space-y-1.5">
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-[#0B72E7] text-white shadow-lg shadow-blue-500/20 mb-1">
             <Shield className="w-6 h-6" />
@@ -228,7 +216,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           </p>
         </div>
 
-        {/* Error / Alert Banner */}
         {error && (
           <div className="p-3.5 rounded-xl bg-red-50 dark:bg-[#2A0808] border border-red-200 dark:border-red-900/60 text-[#DC2626] dark:text-red-400 text-xs font-medium flex items-center space-x-2.5">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
@@ -236,12 +223,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           </div>
         )}
 
-        {/* Main Authentication Card */}
         <div className="bg-white dark:bg-[#111111] border border-[#E2E8F0] dark:border-[#262626] rounded-2xl p-7 shadow-sm space-y-5">
           
-          {/* ========================================================================= */}
-          {/* MODE 1: Standard Sign In */}
-          {/* ========================================================================= */}
           {authMode === "SIGN_IN" && (
             <>
               <div className="border-b border-[#E2E8F0] dark:border-[#262626] pb-3.5">
@@ -323,9 +306,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             </>
           )}
 
-          {/* ========================================================================= */}
-          {/* MODE 2: Sign Up Step 1 (User Account) */}
-          {/* ========================================================================= */}
           {authMode === "SIGN_UP_STEP_1" && (
             <>
               <div className="border-b border-[#E2E8F0] dark:border-[#262626] pb-3.5 flex items-center justify-between">
@@ -424,9 +404,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             </>
           )}
 
-          {/* ========================================================================= */}
-          {/* MODE 3: Sign Up Step 2 (Create Organization) */}
-          {/* ========================================================================= */}
           {authMode === "SIGN_UP_STEP_2" && (
             <>
               <div className="border-b border-[#E2E8F0] dark:border-[#262626] pb-3.5 flex items-center justify-between">
@@ -447,7 +424,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 </button>
               </div>
 
-              {/* Informational Owner Callout */}
               <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 text-xs text-[#0B72E7] dark:text-[#3395FF] flex items-start space-x-2">
                 <Shield className="w-4 h-4 flex-shrink-0 mt-0.5" />
                 <div>
@@ -536,9 +512,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             </>
           )}
 
-          {/* ========================================================================= */}
-          {/* MODE 4: Accept Team Member Invitation */}
-          {/* ========================================================================= */}
           {authMode === "ACCEPT_INVITE" && (
             <>
               <div className="border-b border-[#E2E8F0] dark:border-[#262626] pb-3.5">
@@ -637,9 +610,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             </>
           )}
 
-          {/* ========================================================================= */}
-          {/* MODE 5: Admin Onboarding Checklist (After Org Creation) */}
-          {/* ========================================================================= */}
           {authMode === "ONBOARDING_CHECKLIST" && createdSession && (
             <>
               <div className="border-b border-[#E2E8F0] dark:border-[#262626] pb-3.5 text-center">
@@ -654,7 +624,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 </p>
               </div>
 
-              {/* Checklist */}
               <div className="space-y-2.5 text-xs">
                 <div className="p-3 rounded-xl bg-green-50/50 dark:bg-green-950/20 border border-green-200 dark:border-green-900/40 flex items-center justify-between">
                   <div className="flex items-center space-x-2.5">
@@ -697,7 +666,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 </div>
               </div>
 
-              {/* CTAs */}
               <div className="space-y-2 pt-2">
                 <button
                   type="button"
@@ -722,9 +690,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
         </div>
 
-        {/* ========================================================================= */}
-        {/* Visually Separated Hackathon Demo Environment Section */}
-        {/* ========================================================================= */}
         <div className="p-5 rounded-2xl bg-[#F1F5F9]/80 dark:bg-[#121212] border border-[#E2E8F0] dark:border-[#262626] space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">

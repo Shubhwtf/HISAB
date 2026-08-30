@@ -38,7 +38,6 @@ export const NewReconciliationWizard: React.FC<WizardProps> = ({
   const [matchingMode, setMatchingMode] = useState("TIERED_1_TO_3");
   const [materialityThreshold, setMaterialityThreshold] = useState("5000");
 
-  // Uploaded custom report state
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [fileContentText, setFileContentText] = useState<string>("");
   const [detectedColumns, setDetectedColumns] = useState<string[]>([
@@ -62,14 +61,12 @@ export const NewReconciliationWizard: React.FC<WizardProps> = ({
   if (!isOpen) return null;
 
   const parseCsvText = (text: string, filename: string) => {
-    // Strip UTF-8 BOM if present
     const cleanText = text.replace(/^\uFEFF/, "");
     setFileContentText(cleanText);
     setDetectedFilename(filename);
 
     const lines = cleanText.split(/\r?\n/).map((l) => l.trim()).filter((l) => l.length > 0);
     if (lines.length > 0) {
-      // Auto detect delimiter
       const firstLine = lines[0];
       let delimiter = ",";
       if (firstLine.includes("\t") && !firstLine.includes(",")) delimiter = "\t";
@@ -80,7 +77,6 @@ export const NewReconciliationWizard: React.FC<WizardProps> = ({
       setDetectedColumns(headers);
       setDetectedRowCount(Math.max(1, lines.length - 1));
 
-      // Source type heuristics
       const lowerName = filename.toLowerCase();
       const lowerHeaders = headers.map(h => h.toLowerCase());
       if (lowerName.includes("bank") || lowerHeaders.includes("narration")) {
@@ -95,7 +91,6 @@ export const NewReconciliationWizard: React.FC<WizardProps> = ({
         setDetectedSourceType("PAYMENTS");
       }
 
-      // Parse first 3 rows as sample
       const preview: any[] = [];
       for (let i = 1; i < Math.min(4, lines.length); i++) {
         const vals = lines[i].split(delimiter).map((v) => v.trim().replace(/^["']|["']$/g, ""));
@@ -192,7 +187,6 @@ pay_demo_106,order_demo_106,72250.00,1445.00,260.10,2026-08-28T16:00:00Z,UTRN992
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 font-sans">
       <div className="bg-white dark:bg-[#111111] border border-[#E2E8F0] dark:border-[#262626] rounded-2xl max-w-3xl w-full p-6 shadow-2xl space-y-6 relative overflow-hidden text-[#0F172A] dark:text-[#EDEDED]">
-        {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-[#E2E8F0] dark:border-[#262626]">
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 rounded-xl bg-[#0B72E7] text-white flex items-center justify-center font-bold text-sm shadow-sm">
@@ -216,7 +210,6 @@ pay_demo_106,order_demo_106,72250.00,1445.00,260.10,2026-08-28T16:00:00Z,UTRN992
           </button>
         </div>
 
-        {/* Step Indicator */}
         <div className="grid grid-cols-4 gap-2">
           {[
             { num: 1, label: "1. Config" },
@@ -239,7 +232,6 @@ pay_demo_106,order_demo_106,72250.00,1445.00,260.10,2026-08-28T16:00:00Z,UTRN992
           ))}
         </div>
 
-        {/* STEP 1: CONFIGURATION */}
         {step === 1 && (
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -312,7 +304,6 @@ pay_demo_106,order_demo_106,72250.00,1445.00,260.10,2026-08-28T16:00:00Z,UTRN992
           </div>
         )}
 
-        {/* STEP 2: UPLOAD REPORT */}
         {step === 2 && (
           <div className="space-y-4">
             <input
@@ -323,7 +314,6 @@ pay_demo_106,order_demo_106,72250.00,1445.00,260.10,2026-08-28T16:00:00Z,UTRN992
               className="hidden"
             />
 
-            {/* Drag & Drop Upload Zone */}
             <div
               onClick={() => fileInputRef.current?.click()}
               onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
@@ -355,7 +345,6 @@ pay_demo_106,order_demo_106,72250.00,1445.00,260.10,2026-08-28T16:00:00Z,UTRN992
               )}
             </div>
 
-            {/* Quick 1-Click Load Sample Button */}
             <div className="flex items-center justify-between p-3 rounded-xl bg-[#F8FAFC] dark:bg-[#0E0E0E] border border-[#E2E8F0] dark:border-[#262626] text-xs">
               <div className="flex items-center space-x-2 text-[#64748B]">
                 <FileSpreadsheet className="w-4 h-4 text-[#0B72E7]" />
@@ -370,7 +359,6 @@ pay_demo_106,order_demo_106,72250.00,1445.00,260.10,2026-08-28T16:00:00Z,UTRN992
               </button>
             </div>
 
-            {/* Detected Columns Pills */}
             <div className="p-3.5 rounded-xl bg-[#F8FAFC] dark:bg-[#0E0E0E] border border-[#E2E8F0] dark:border-[#262626] text-xs space-y-2">
               <div className="flex items-center justify-between">
                 <span className="font-bold text-[#0F172A] dark:text-[#EDEDED]">
@@ -402,7 +390,6 @@ pay_demo_106,order_demo_106,72250.00,1445.00,260.10,2026-08-28T16:00:00Z,UTRN992
           </div>
         )}
 
-        {/* STEP 3: DYNAMIC AI COLUMN MAPPING */}
         {step === 3 && (
           <DynamicDataMapper
             filename={detectedFilename}
@@ -416,7 +403,6 @@ pay_demo_106,order_demo_106,72250.00,1445.00,260.10,2026-08-28T16:00:00Z,UTRN992
           />
         )}
 
-        {/* STEP 4: SNAPSHOT & LIVE INSIGHTS */}
         {step === 4 && (
           <div className="space-y-4">
             {!uploadResult ? (
@@ -435,7 +421,6 @@ pay_demo_106,order_demo_106,72250.00,1445.00,260.10,2026-08-28T16:00:00Z,UTRN992
                   </p>
                 </div>
 
-                {/* Live Progress Logs */}
                 {progressEvents.length > 0 && (
                   <div className="p-4 rounded-xl bg-black text-green-400 font-mono text-xs space-y-1.5 max-h-44 overflow-y-auto">
                     {progressEvents.map((ev, idx) => (
@@ -472,7 +457,6 @@ pay_demo_106,order_demo_106,72250.00,1445.00,260.10,2026-08-28T16:00:00Z,UTRN992
                 </div>
               </>
             ) : (
-              /* REAL INSIGHTS DERIVED FROM THAT UPLOADED DATA */
               <div className="space-y-4 animate-in fade-in">
                 <div className="p-4 rounded-xl bg-green-50 dark:bg-[#052E16]/40 border border-green-200 dark:border-green-800 flex items-center justify-between">
                   <div className="flex items-center space-x-2.5">
@@ -491,7 +475,6 @@ pay_demo_106,order_demo_106,72250.00,1445.00,260.10,2026-08-28T16:00:00Z,UTRN992
                   </span>
                 </div>
 
-                {/* Insights Summary Cards */}
                 {uploadResult.insights && (
                   <div className="grid grid-cols-3 gap-3 text-xs">
                     <div className="p-3 rounded-xl bg-[#F8FAFC] dark:bg-[#0E0E0E] border border-[#E2E8F0] dark:border-[#262626]">

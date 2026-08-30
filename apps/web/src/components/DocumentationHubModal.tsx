@@ -40,7 +40,6 @@ export const DocumentationHubModal: React.FC<DocumentationHubModalProps> = ({
   const [activeSection, setActiveSection] = useState<string>("quickstart");
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
-  // Chat with Docs AI State
   const [docQuery, setDocQuery] = useState("");
   const [docLoading, setDocLoading] = useState(false);
   const [chatMessages, setChatMessages] = useState<Array<{ sender: "user" | "ai"; text: string }>>([
@@ -100,7 +99,6 @@ export const DocumentationHubModal: React.FC<DocumentationHubModalProps> = ({
         className="w-full max-w-6xl h-[88vh] bg-white dark:bg-[#111111] border border-[#E2E8F0] dark:border-[#262626] rounded-3xl shadow-2xl flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Top Modal Header */}
         <div className="h-16 bg-[#0A0A0A] border-b border-[#262626] px-6 flex items-center justify-between flex-shrink-0 text-white">
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 rounded-xl bg-[#0B72E7] flex items-center justify-center text-white font-bold text-xs shadow-sm">
@@ -127,9 +125,7 @@ export const DocumentationHubModal: React.FC<DocumentationHubModalProps> = ({
           </button>
         </div>
 
-        {/* Modal Main Body (2 Columns) */}
         <div className="flex-1 flex overflow-hidden">
-          {/* Left Navigation Sidebar */}
           <div className="w-64 bg-[#F8FAFC] dark:bg-[#0E0E0E] border-r border-[#E2E8F0] dark:border-[#262626] p-4 overflow-y-auto space-y-1.5 flex-shrink-0 text-xs">
             <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#A1A1AA] px-2 block mb-2">
               Documentation Index
@@ -162,10 +158,8 @@ export const DocumentationHubModal: React.FC<DocumentationHubModalProps> = ({
             })}
           </div>
 
-          {/* Right Content Area */}
           <div className="flex-1 overflow-y-auto p-8 space-y-6 bg-white dark:bg-[#111111] text-[#0F172A] dark:text-[#EDEDED]">
             
-            {/* SECTION 1: QUICK START & RAZORPAY INTEGRATION */}
             {activeSection === "quickstart" && (
               <div className="space-y-6 max-w-4xl">
                 <div>
@@ -177,7 +171,6 @@ export const DocumentationHubModal: React.FC<DocumentationHubModalProps> = ({
                   </p>
                 </div>
 
-                {/* Flowchart Diagram */}
                 <MermaidViewer
                   chart={`
 graph LR
@@ -208,7 +201,6 @@ graph LR
                   `}
                 />
 
-                {/* Integration Steps */}
                 <div className="space-y-4 text-xs">
                   <div className="p-4 rounded-2xl bg-[#F8FAFC] dark:bg-[#0E0E0E] border border-[#E2E8F0] dark:border-[#262626] space-y-2">
                     <span className="font-bold text-xs text-[#0F172A] dark:text-white flex items-center space-x-2">
@@ -253,7 +245,6 @@ graph LR
               </div>
             )}
 
-            {/* SECTION 2: MDR & GATEWAY ECONOMICS */}
             {activeSection === "mdr" && (
               <div className="space-y-6 max-w-4xl">
                 <div>
@@ -265,7 +256,6 @@ graph LR
                   </p>
                 </div>
 
-                {/* Mathematical Formula Card */}
                 <div className="p-5 rounded-2xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 space-y-3">
                   <span className="text-xs font-bold text-[#0B72E7] dark:text-[#3395FF] uppercase tracking-wider block">
                     Mathematical Calculation Invariant (Minor-Unit Paise Precision)
@@ -280,7 +270,6 @@ graph LR
                   </p>
                 </div>
 
-                {/* Standard Payment Rails Schedule */}
                 <div className="border border-[#E2E8F0] dark:border-[#262626] rounded-2xl overflow-hidden text-xs">
                   <table className="w-full text-left">
                     <thead className="bg-[#F8FAFC] dark:bg-[#0E0E0E] border-b border-[#E2E8F0] dark:border-[#262626] text-[11px] font-bold text-[#64748B]">
@@ -322,7 +311,6 @@ graph LR
               </div>
             )}
 
-            {/* SECTION 3: 18% GST & ITC MATCHING */}
             {activeSection === "gst" && (
               <div className="space-y-6 max-w-4xl">
                 <div>
@@ -365,7 +353,6 @@ graph TD
               </div>
             )}
 
-            {/* SECTION 4: SECTION 194-O TDS (0.10%) */}
             {activeSection === "tds194o" && (
               <div className="space-y-6 max-w-4xl">
                 <div>
@@ -390,7 +377,6 @@ graph TD
               </div>
             )}
 
-            {/* SECTION 5: 3-TIER MATCH ENGINE */}
             {activeSection === "engine" && (
               <div className="space-y-6 max-w-4xl">
                 <div>
@@ -453,7 +439,6 @@ graph TD
               </div>
             )}
 
-            {/* SECTION 6: 7 FINANCIAL CONTROLS */}
             {activeSection === "controls" && (
               <div className="space-y-6 max-w-4xl">
                 <div>
@@ -489,7 +474,6 @@ graph TD
               </div>
             )}
 
-            {/* SECTION 7: DOUBLE-LOSS FORENSICS */}
             {activeSection === "doubleloss" && (
               <div className="space-y-6 max-w-4xl">
                 <div>
@@ -523,7 +507,6 @@ graph TD
               </div>
             )}
 
-            {/* SECTION 8: CHAT WITH HISAB DOCS */}
             {activeSection === "chatdocs" && (
               <div className="space-y-4 max-w-4xl flex flex-col h-full">
                 <div>
@@ -538,7 +521,6 @@ graph TD
                   </p>
                 </div>
 
-                {/* Question Chips */}
                 <div className="flex flex-wrap gap-2 pt-1">
                   {[
                     "How is MDR calculated with 18% GST?",
@@ -556,7 +538,6 @@ graph TD
                   ))}
                 </div>
 
-                {/* Chat Conversation Scroll Area */}
                 <div className="p-4 rounded-2xl bg-[#F8FAFC] dark:bg-[#0E0E0E] border border-[#E2E8F0] dark:border-[#262626] space-y-3 min-h-[300px] max-h-[380px] overflow-y-auto text-xs">
                   {chatMessages.map((msg, i) => (
                     <div
@@ -587,7 +568,6 @@ graph TD
                   )}
                 </div>
 
-                {/* Input Bar */}
                 <div className="flex items-center space-x-2 pt-2">
                   <input
                     type="text"
@@ -612,7 +592,6 @@ graph TD
           </div>
         </div>
 
-        {/* Modal Footer */}
         <div className="p-4 bg-[#F8FAFC] dark:bg-[#0E0E0E] border-t border-[#E2E8F0] dark:border-[#262626] flex items-center justify-between text-xs text-[#64748B]">
           <span>HISAB Controller Engineering & Financial Docs</span>
           <div className="flex items-center space-x-3">

@@ -38,7 +38,6 @@ def setup_test_db():
 class TestDatabaseSync:
     def test_insert_and_query_hierarchy(self):
         with get_sync_db() as db:
-            # 1. Insert Customer
             cust = CustomerDB(
                 id="cust_test_1",
                 name="Aakash Verma",
@@ -48,7 +47,6 @@ class TestDatabaseSync:
             db.add(cust)
             db.commit()
 
-            # 2. Insert Order
             order = OrderDB(
                 id="order_test_1",
                 customer_id=cust.id,
@@ -59,7 +57,6 @@ class TestDatabaseSync:
             db.add(order)
             db.commit()
 
-            # 3. Insert Settlement
             settlement = SettlementDB(
                 id="setl_test_1",
                 utr="UTR99001122",
@@ -72,7 +69,6 @@ class TestDatabaseSync:
             db.add(settlement)
             db.commit()
 
-            # 4. Insert Payment
             payment = PaymentDB(
                 id="pay_test_1",
                 order_id=order.id,
@@ -86,7 +82,6 @@ class TestDatabaseSync:
             )
             db.add(payment)
 
-            # 5. Insert Settlement Line
             line = SettlementLineDB(
                 id="sline_test_1",
                 settlement_id=settlement.id,
@@ -99,7 +94,6 @@ class TestDatabaseSync:
             )
             db.add(line)
 
-            # 6. Insert Refund
             rfnd = RefundDB(
                 id="rfnd_test_1",
                 payment_id=payment.id,
@@ -109,7 +103,6 @@ class TestDatabaseSync:
             )
             db.add(rfnd)
 
-            # 7. Insert Dispute
             disp = DisputeDB(
                 id="disp_test_1",
                 payment_id=payment.id,
@@ -119,7 +112,6 @@ class TestDatabaseSync:
             )
             db.add(disp)
 
-            # 8. Insert Bank Transaction
             bank = BankTransactionDB(
                 id="bnk_test_1",
                 date=datetime.now(timezone.utc),
@@ -129,7 +121,6 @@ class TestDatabaseSync:
             )
             db.add(bank)
 
-            # 9. Insert Batch & Exception & Audit
             batch = BatchDB(
                 id="batch_test_1",
                 name="Settlement Batch 2026-08-28",
@@ -162,7 +153,6 @@ class TestDatabaseSync:
             db.add(audit)
             db.commit()
 
-            # Query and verify
             res_cust = db.scalars(select(CustomerDB).where(CustomerDB.id == "cust_test_1")).first()
             assert res_cust is not None
             assert len(res_cust.orders) == 1

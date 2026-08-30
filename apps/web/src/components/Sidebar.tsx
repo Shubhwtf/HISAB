@@ -97,9 +97,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <aside className="fixed top-16 left-0 bottom-0 w-[270px] bg-white dark:bg-[#111111] border-r border-[#E2E8F0] dark:border-[#262626] flex flex-col justify-between z-40 select-none text-[#0F172A] dark:text-[#EDEDED]">
-      {/* Top CTA Section */}
       <div className="flex flex-col min-h-0 flex-1 overflow-hidden">
-        {/* "+ NEW RECONCILIATION" Button & Theme Toggle */}
         <div className="p-3.5 flex items-center space-x-2 border-b border-[#E2E8F0] dark:border-[#262626] flex-shrink-0">
           {userRole !== "AUDITOR" ? (
             <button
@@ -124,7 +122,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </button>
         </div>
 
-        {/* Navigation Items */}
         <nav className="p-3 space-y-0.5 overflow-y-auto flex-1 text-[13.5px] leading-5 tracking-[0px]">
           <div className="px-3 py-1.5 text-[10px] font-bold text-[#64748B] dark:text-[#A1A1AA] uppercase tracking-wider">
             Reconciliation
@@ -202,7 +199,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </nav>
       </div>
 
-      {/* Bottom Pinned Profile & Account Settings (Razorpay Style) */}
       <div className="p-3 border-t border-[#E2E8F0] dark:border-[#262626] flex-shrink-0 bg-white dark:bg-[#111111]">
         <button
           onClick={() => setActiveTab("account-settings")}

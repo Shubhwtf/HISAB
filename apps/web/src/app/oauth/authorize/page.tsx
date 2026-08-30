@@ -26,7 +26,6 @@ function OAuthAuthorizeContent() {
 
   return (
     <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden font-sans text-slate-800 animate-in fade-in">
-      {/* Razorpay Brand Blue Header */}
       <div className="bg-[#0B72E7] text-white p-6 space-y-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2.5">
@@ -44,7 +43,6 @@ function OAuthAuthorizeContent() {
         </div>
       </div>
 
-      {/* Consent Content */}
       <div className="p-6 space-y-5 text-xs">
         <div className="text-center space-y-1">
           <h2 className="text-sm font-bold text-slate-900">Authorize HISAB Finance Controller</h2>
@@ -76,7 +74,6 @@ function OAuthAuthorizeContent() {
           <span>Encrypted token storage • Read-only access</span>
         </div>
 
-        {/* Action CTAs */}
         <div className="flex space-x-2.5 pt-2">
           <button
             type="button"

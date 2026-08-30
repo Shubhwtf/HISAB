@@ -27,7 +27,6 @@ export const ExecutiveReportModal: React.FC<ReportModalProps> = ({ isOpen, onClo
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
       <div className="bg-white dark:bg-[#111111] border border-[#E2E8F0] dark:border-[#262626] rounded-2xl max-w-4xl w-full p-8 shadow-2xl space-y-6 relative my-8">
-        {/* Top Action Bar */}
         <div className="flex items-center justify-between pb-4 border-b border-[#E2E8F0] dark:border-[#262626]">
           <div className="flex items-center space-x-2 text-xs text-[#64748B]">
             <span>Executive Reconciliation Report</span>
@@ -57,7 +56,6 @@ export const ExecutiveReportModal: React.FC<ReportModalProps> = ({ isOpen, onClo
           </div>
         </div>
 
-        {/* Printable Report Header */}
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center space-x-2 mb-1">
@@ -80,7 +78,6 @@ export const ExecutiveReportModal: React.FC<ReportModalProps> = ({ isOpen, onClo
           </div>
         </div>
 
-        {/* Executive Numbers Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="p-4 rounded-xl bg-[#F8FAFC] dark:bg-[#0E0E0E] border border-[#E2E8F0] dark:border-[#262626]">
             <span className="text-[10px] font-bold text-[#64748B] uppercase">Gross Captured Turnover</span>
@@ -103,7 +100,6 @@ export const ExecutiveReportModal: React.FC<ReportModalProps> = ({ isOpen, onClo
           </div>
         </div>
 
-        {/* The 7 Controls Matrix in Report */}
         <div>
           <h3 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#EDEDED] mb-3">
             The Seven Financial Controls Assurance Matrix
@@ -140,7 +136,6 @@ export const ExecutiveReportModal: React.FC<ReportModalProps> = ({ isOpen, onClo
           </div>
         </div>
 
-        {/* Cryptographic Certification Seal */}
         <div className="p-4 rounded-xl bg-[#F8FAFC] dark:bg-[#0E0E0E] border border-[#E2E8F0] dark:border-[#262626] flex items-center justify-between text-xs font-mono">
           <div className="flex items-center space-x-2 text-[#16A34A]">
             <ShieldCheck className="w-5 h-5 flex-shrink-0" />

@@ -17,7 +17,6 @@ export const InteractiveWaterfallChart: React.FC = () => {
 
   return (
     <div className="bg-white dark:bg-[#111111] border border-[#E2E8F0] dark:border-[#262626] rounded-2xl p-6 shadow-sm mb-6 font-sans space-y-4">
-      {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-[#E2E8F0] dark:border-[#262626]">
         <div className="flex items-center space-x-3">
           <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-[#0B254A] text-[#0B72E7] dark:text-[#3395FF]">
@@ -39,7 +38,6 @@ export const InteractiveWaterfallChart: React.FC = () => {
         </span>
       </div>
 
-      {/* Step Cards Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {steps.map((step, idx) => {
           const isHovered = hoveredIdx === idx;
@@ -77,7 +75,6 @@ export const InteractiveWaterfallChart: React.FC = () => {
         })}
       </div>
 
-      {/* Detail Explanation Bar */}
       <div className="bg-[#F8FAFC] dark:bg-[#0E0E0E] rounded-xl p-3.5 border border-[#E2E8F0] dark:border-[#262626] flex items-start space-x-3 text-xs">
         <Info className="w-4 h-4 text-[#0B72E7] dark:text-[#3395FF] flex-shrink-0 mt-0.5" />
         <div className="flex-1">

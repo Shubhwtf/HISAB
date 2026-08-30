@@ -38,7 +38,6 @@ export const DocumentationPageView: React.FC<DocumentationPageViewProps> = ({
   const [activeSection, setActiveSection] = useState<string>("quickstart");
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
-  // Chat with Docs AI State
   const [docQuery, setDocQuery] = useState("");
   const [docLoading, setDocLoading] = useState(false);
   const [chatMessages, setChatMessages] = useState<Array<{ sender: "user" | "ai"; text: string }>>([
@@ -92,7 +91,6 @@ export const DocumentationPageView: React.FC<DocumentationPageViewProps> = ({
 
   return (
     <div className="space-y-6 font-sans select-none animate-in fade-in">
-      {/* Top Banner & Title */}
       <div className="p-6 rounded-2xl bg-white dark:bg-[#111111] border border-[#E2E8F0] dark:border-[#262626] shadow-xs flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center space-x-3.5">
           <div className="p-3 rounded-xl bg-blue-50 dark:bg-[#0B254A] text-[#0B72E7] dark:text-[#3395FF]">
@@ -122,9 +120,7 @@ export const DocumentationPageView: React.FC<DocumentationPageViewProps> = ({
         </button>
       </div>
 
-      {/* Main Documentation Two-Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Section Navigation Card */}
         <div className="lg:col-span-3 bg-white dark:bg-[#111111] border border-[#E2E8F0] dark:border-[#262626] rounded-2xl p-3 shadow-xs space-y-1 sticky top-20">
           <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] dark:text-[#A1A1AA] px-3 py-1.5 block">
             Table of Contents
@@ -157,10 +153,8 @@ export const DocumentationPageView: React.FC<DocumentationPageViewProps> = ({
           })}
         </div>
 
-        {/* Right Content Reading Card */}
         <div className="lg:col-span-9 bg-white dark:bg-[#111111] border border-[#E2E8F0] dark:border-[#262626] rounded-2xl p-6 lg:p-8 shadow-xs space-y-6">
           
-          {/* SECTION 1: QUICK START & RAZORPAY INTEGRATION */}
           {activeSection === "quickstart" && (
             <div className="space-y-6">
               <div>
@@ -172,7 +166,6 @@ export const DocumentationPageView: React.FC<DocumentationPageViewProps> = ({
                 </p>
               </div>
 
-              {/* Aesthetic Mermaid Flowchart */}
               <MermaidViewer
                 chart={`
 graph LR
@@ -203,7 +196,6 @@ graph LR
                 `}
               />
 
-              {/* Integration Steps */}
               <div className="space-y-4 text-xs">
                 <div className="p-4 rounded-xl bg-[#F8FAFC] dark:bg-[#0E0E0E] border border-[#E2E8F0] dark:border-[#262626] space-y-2">
                   <span className="font-bold text-xs text-[#0F172A] dark:text-white flex items-center space-x-2">
@@ -248,7 +240,6 @@ graph LR
             </div>
           )}
 
-          {/* SECTION 2: MDR & GATEWAY ECONOMICS */}
           {activeSection === "mdr" && (
             <div className="space-y-6">
               <div>
@@ -260,7 +251,6 @@ graph LR
                 </p>
               </div>
 
-              {/* Mathematical Formula Card */}
               <div className="p-5 rounded-2xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 space-y-3">
                 <span className="text-xs font-bold text-[#0B72E7] dark:text-[#3395FF] uppercase tracking-wider block">
                   Exact Invariant Formula (Minor-Unit Paise Precision)
@@ -275,7 +265,6 @@ graph LR
                 </p>
               </div>
 
-              {/* Commercial Schedule Table */}
               <div className="border border-[#E2E8F0] dark:border-[#262626] rounded-xl overflow-hidden text-xs">
                 <table className="w-full text-left">
                   <thead className="bg-[#F8FAFC] dark:bg-[#0E0E0E] border-b border-[#E2E8F0] dark:border-[#262626] text-[11px] font-bold text-[#64748B]">
@@ -317,7 +306,6 @@ graph LR
             </div>
           )}
 
-          {/* SECTION 3: 18% GST & ITC MATCHING */}
           {activeSection === "gst" && (
             <div className="space-y-6">
               <div>
@@ -360,7 +348,6 @@ graph TD
             </div>
           )}
 
-          {/* SECTION 4: SECTION 194-O TDS (0.10%) */}
           {activeSection === "tds194o" && (
             <div className="space-y-6">
               <div>
@@ -385,7 +372,6 @@ graph TD
             </div>
           )}
 
-          {/* SECTION 5: 3-TIER MATCH ENGINE */}
           {activeSection === "engine" && (
             <div className="space-y-6">
               <div>
@@ -448,7 +434,6 @@ graph TD
             </div>
           )}
 
-          {/* SECTION 6: 7 FINANCIAL CONTROLS */}
           {activeSection === "controls" && (
             <div className="space-y-6">
               <div>
@@ -484,7 +469,6 @@ graph TD
             </div>
           )}
 
-          {/* SECTION 7: DOUBLE-LOSS FORENSICS */}
           {activeSection === "doubleloss" && (
             <div className="space-y-6">
               <div>
@@ -518,7 +502,6 @@ graph TD
             </div>
           )}
 
-          {/* SECTION 8: CHAT WITH HISAB DOCS */}
           {activeSection === "chatdocs" && (
             <div className="space-y-4">
               <div>
@@ -533,7 +516,6 @@ graph TD
                 </p>
               </div>
 
-              {/* Question Chips */}
               <div className="flex flex-wrap gap-2 pt-1">
                 {[
                   "How is MDR calculated with 18% GST?",
@@ -551,7 +533,6 @@ graph TD
                 ))}
               </div>
 
-              {/* Chat Conversation Scroll Area */}
               <div className="p-4 rounded-2xl bg-[#F8FAFC] dark:bg-[#0E0E0E] border border-[#E2E8F0] dark:border-[#262626] space-y-3 min-h-[340px] max-h-[500px] overflow-y-auto text-xs">
                 {chatMessages.map((msg, i) => (
                   <div
@@ -582,7 +563,6 @@ graph TD
                 )}
               </div>
 
-              {/* Input Bar */}
               <div className="flex items-center space-x-2 pt-2">
                 <input
                   type="text"

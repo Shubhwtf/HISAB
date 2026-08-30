@@ -27,10 +27,10 @@ class ControlStatus(str, Enum):
 
 
 class ControlSeverity(str, Enum):
-    CRITICAL = "CRITICAL"  # ₹1,00,000+ exposure or high risk
-    HIGH = "HIGH"          # ₹25,000 – ₹99,999 exposure
-    MEDIUM = "MEDIUM"      # ₹5,000 – ₹24,999 exposure
-    LOW = "LOW"            # <₹5,000 exposure
+    CRITICAL = "CRITICAL"
+    HIGH = "HIGH"
+    MEDIUM = "MEDIUM"
+    LOW = "LOW"
 
 
 class ControlResult(BaseModel):
@@ -85,10 +85,6 @@ def evaluate_financial_severity(
 
     return calculated
 
-
-# ------------------------------------------------------------------------------
-# 1. CTL_01_SETTLEMENT_BANK (Settlement-to-Bank Accuracy)
-# ------------------------------------------------------------------------------
 
 def run_ctl_01_settlement_bank(
     settlement: Settlement,
@@ -153,10 +149,6 @@ def run_ctl_01_settlement_bank(
     )
 
 
-# ------------------------------------------------------------------------------
-# 2. CTL_02_MISSING_TXN (Completeness / Missing Transactions)
-# ------------------------------------------------------------------------------
-
 def run_ctl_02_missing_txn(
     payment: Payment,
     is_settlement_mapped: bool,
@@ -187,15 +179,11 @@ def run_ctl_02_missing_txn(
         financial_impact_paise=payment.net_paise or payment.amount_paise,
         confidence=0.96,
         explanation=f"Payment {payment.id} of {payment.amount_formatted} has not been included in any settlement batch.",
-        recommended_action="AUTO_RESOLVE",  # Candidate for batch decomposition reconstruction
+        recommended_action="AUTO_RESOLVE",
         evidence={"payment_id": payment.id, "amount": payment.amount_paise, "captured_at": payment.captured_at.isoformat() if payment.captured_at else None},
         affected_records=[{"type": "payment", "id": payment.id}]
     )
 
-
-# ------------------------------------------------------------------------------
-# 3. CTL_03_DUPLICATE (Duplicate Payments & Refunds)
-# ------------------------------------------------------------------------------
 
 def run_ctl_03_duplicate(
     all_payments: List[Payment],
@@ -206,7 +194,6 @@ def run_ctl_03_duplicate(
     """
     results: List[ControlResult] = []
     
-    # 1. Check duplicate payments by (order_id, amount_paise)
     order_payment_map: Dict[str, List[Payment]] = {}
     for p in all_payments:
         if p.order_id:
@@ -214,7 +201,6 @@ def run_ctl_03_duplicate(
 
     for order_id, payments in order_payment_map.items():
         if len(payments) > 1:
-            # Check if amounts match exactly
             first_p = payments[0]
             if all(p.amount_paise == first_p.amount_paise for p in payments):
                 total_dup_amount = sum(p.amount_paise for p in payments[1:])
@@ -231,7 +217,6 @@ def run_ctl_03_duplicate(
                     affected_records=[{"type": "payment", "id": p.id} for p in payments]
                 ))
 
-    # 2. Check duplicate refunds
     payment_refund_map: Dict[str, List[Refund]] = {}
     for r in all_refunds:
         payment_refund_map.setdefault(r.payment_id, []).append(r)
@@ -256,10 +241,6 @@ def run_ctl_03_duplicate(
 
     return results
 
-
-# ------------------------------------------------------------------------------
-# 4. CTL_04_FEE_GST (Fee & GST Consistency)
-# ------------------------------------------------------------------------------
 
 def run_ctl_04_fee_gst(
     payment: Payment,
@@ -298,10 +279,6 @@ def run_ctl_04_fee_gst(
         affected_records=[{"type": "payment", "id": payment.id}]
     )
 
-
-# ------------------------------------------------------------------------------
-# 5. CTL_05_REFUND (Refund Correctness & Non-Reversal Validation)
-# ------------------------------------------------------------------------------
 
 def run_ctl_05_refund(
     refund: Refund,

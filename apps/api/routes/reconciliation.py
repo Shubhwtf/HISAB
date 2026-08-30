@@ -87,7 +87,6 @@ def get_reconciliation_summary(
     Returns executive-level summary of financial turnover, settlement progress, and unresolved exposures.
     Scoped strictly to the authenticated organization.
     """
-    # For a fresh organization with no connected Razorpay or imported data, return all 0
     if not current_user.is_demo_session and not current_user.is_razorpay_connected and current_user.org_id != "org_nova_2026":
         return ReconciliationSummaryResponse(
             gross_turnover_paise=0,
@@ -161,7 +160,6 @@ def run_full_reconciliation(
     run_batch_id = batch_id or f"batch_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}"
     org_id = current_user.org_id if isinstance(current_user, UserSession) else (getattr(current_user, "org_id", None) or "org_nova_2026")
 
-    # Load entities from database for this organization (seed demo dataset if database is completely empty and demo)
     p_rows = db.scalars(select(PaymentDB).where(PaymentDB.org_id == org_id)).all()
     if not p_rows and org_id == "org_nova_2026":
         from packages.evaluation.generator import generate_synthetic_dataset
@@ -195,7 +193,6 @@ def run_full_reconciliation(
     bank_txs = [BankTransaction.model_validate(b.__dict__) for b in b_rows]
     tax_records = [TaxRecord.model_validate(t.__dict__) for t in t_rows]
 
-    # 1. Tier 1-3 Matching & Batch Reconstruction
     batch_results, unmapped = decompose_and_reconstruct_batches(
         settlements=settlements,
         payments=payments,
@@ -204,14 +201,12 @@ def run_full_reconciliation(
     )
 
     reconstructed_count = sum(len(res.reconstructed_mappings) for res in batch_results)
-    # Apply reconstructed mappings to DB
     for res in batch_results:
         for recon in res.reconstructed_mappings:
             p_db = db.get(PaymentDB, recon.payment_id)
             if p_db and not p_db.settlement_id:
                 p_db.settlement_id = recon.settlement_id
 
-    # 2. Run All Controls
     exceptions = run_all_controls_and_build_exceptions(
         batch_id=run_batch_id,
         orders=orders,
@@ -223,10 +218,8 @@ def run_full_reconciliation(
         tax_records=tax_records,
     )
 
-    # 3. Policy Gate Safe Auto-Resolution
     resolved, unresolved = apply_safe_resolutions(exceptions, PolicyGateConfig())
 
-    # 4. Save Exceptions to Database
     for exc in exceptions:
         existing = db.get(ExceptionDB, exc.id)
         if not existing:
@@ -251,7 +244,6 @@ def run_full_reconciliation(
 
     db.commit()
 
-    # 5. Record Cryptographic Audit Ledger Entry
     unresolved_exposure = sum(e.financial_impact_paise for e in unresolved)
     append_audit_entry(
         db=db,
@@ -310,7 +302,6 @@ def list_settlements(
     results = []
 
     for s in settlements:
-        # Count constituent payments
         p_count = db.scalar(
             select(func.count(PaymentDB.id)).where(
                 PaymentDB.org_id == current_user.org_id,
@@ -365,7 +356,6 @@ async def upload_custom_recon_report(
     Supports UTF-8 BOM, delimiter auto-detection, arbitrary column headers, and dynamic entity linking.
     """
     content = await file.read()
-    # Decode with utf-8-sig to automatically strip UTF-8 BOM
     try:
         text = content.decode("utf-8-sig")
     except UnicodeDecodeError:
@@ -374,7 +364,6 @@ async def upload_custom_recon_report(
     if not text.strip():
         raise HTTPException(status_code=400, detail="Uploaded file is empty.")
     
-    # Auto-detect delimiter from first line
     first_line = text.strip().split("\n")[0]
     delimiter = ","
     if "\t" in first_line and "," not in first_line:
@@ -384,7 +373,6 @@ async def upload_custom_recon_report(
     elif "|" in first_line and "," not in first_line:
         delimiter = "|"
     
-    # Parse CSV with detected delimiter
     csv_reader = csv.DictReader(io.StringIO(text), delimiter=delimiter)
     raw_rows = list(csv_reader)
     
@@ -394,7 +382,6 @@ async def upload_custom_recon_report(
     headers = list(raw_rows[0].keys()) if raw_rows else []
     source_detection = detect_source_type(file.filename or "custom_report.csv", headers, raw_rows[:5])
     
-    # Build column lookup map from synonyms
     col_mapping: Dict[str, str] = {}
     for col in headers:
         if not col:
@@ -406,12 +393,10 @@ async def upload_custom_recon_report(
                 break
     
     def get_val(row: Dict[str, Any], canonical_key: str, fallback: Any = "") -> Any:
-        # First check mapped column
         if canonical_key in col_mapping:
             val = row.get(col_mapping[canonical_key])
             if val is not None and str(val).strip():
                 return str(val).strip()
-        # Direct check
         for k, v in row.items():
             if k and canonical_key.lower() in k.lower() and str(v).strip():
                 return str(v).strip()
@@ -422,7 +407,6 @@ async def upload_custom_recon_report(
     total_tax_paise = 0
     total_net_paise = 0
     
-    # Ensure default customer exists
     default_cust_id = "cust_nova_merchant"
     if not db.get(CustomerDB, default_cust_id):
         db.add(CustomerDB(
@@ -438,7 +422,6 @@ async def upload_custom_recon_report(
         oid = get_val(row, "order_id", f"order_upl_{i+1:04d}")
         cust_id = get_val(row, "customer_id", default_cust_id)
         
-        # Ensure Customer exists
         if not db.get(CustomerDB, cust_id):
             db.add(CustomerDB(
                 id=cust_id,
@@ -448,7 +431,6 @@ async def upload_custom_recon_report(
             ))
             db.flush()
 
-        # Parse amounts
         gross_raw = get_val(row, "gross_amount", "1500.00")
         gross_paise = parse_inr_to_paise(gross_raw)
         if gross_paise <= 0:
@@ -457,12 +439,12 @@ async def upload_custom_recon_report(
         fee_raw = get_val(row, "fee_amount", "0")
         fee_paise = parse_inr_to_paise(fee_raw)
         if fee_paise <= 0:
-            fee_paise = int(gross_paise * 0.02)  # Default 2.0% MDR
+            fee_paise = int(gross_paise * 0.02)
 
         tax_raw = get_val(row, "tax_amount", "0")
         tax_paise = parse_inr_to_paise(tax_raw)
         if tax_paise <= 0:
-            tax_paise = int(fee_paise * 0.18)   # Default 18.0% GST
+            tax_paise = int(fee_paise * 0.18)
 
         net_raw = get_val(row, "net_amount", "")
         if net_raw:
@@ -475,7 +457,6 @@ async def upload_custom_recon_report(
         total_tax_paise += tax_paise
         total_net_paise += net_paise
 
-        # Ensure Order exists
         if not db.get(OrderDB, oid):
             db.add(OrderDB(
                 id=oid,
@@ -488,7 +469,6 @@ async def upload_custom_recon_report(
             ))
             db.flush()
 
-        # Check for UTR / Settlement
         utr_val = get_val(row, "bank_reference_utr", "")
         setl_val = get_val(row, "settlement_id", f"setl_upl_{(i//3)+1:03d}" if utr_val else None)
         
@@ -506,7 +486,6 @@ async def upload_custom_recon_report(
             ))
             db.flush()
             
-            # Ensure Bank Transaction Feed matches the Settlement UTR
             bank_ref = utr_val or f"UTR_UPL_{setl_val}"
             existing_bank = db.scalars(select(BankTransactionDB).where(BankTransactionDB.reference == bank_ref)).first()
             if not existing_bank:
@@ -523,7 +502,6 @@ async def upload_custom_recon_report(
                 ))
                 db.flush()
 
-        # Create or update Payment
         existing_p = db.get(PaymentDB, pid)
         if not existing_p:
             db_p = PaymentDB(
@@ -549,7 +527,6 @@ async def upload_custom_recon_report(
             if setl_val:
                 existing_p.settlement_id = setl_val
 
-        # Check for Refund
         rfnd_id = get_val(row, "refund_id", "")
         if rfnd_id and not db.get(RefundDB, rfnd_id):
             db.add(RefundDB(
@@ -561,7 +538,6 @@ async def upload_custom_recon_report(
                 status="processed",
             ))
 
-        # Check for Dispute
         disp_id = get_val(row, "dispute_id", "")
         if disp_id and not db.get(DisputeDB, disp_id):
             db.add(DisputeDB(
@@ -576,11 +552,9 @@ async def upload_custom_recon_report(
 
     db.commit()
 
-    # Create immutable snapshot of the uploaded dataset
     snapshot_repo = SnapshotRepository()
     snapshot_id = f"SNP_UPL_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}"
     
-    # Run full reconciliation on updated dataset
     batch_run_id = f"batch_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}"
     res_run = run_full_reconciliation(batch_id=batch_run_id, db=db)
 
@@ -648,7 +622,6 @@ def close_reconciliation_batch(
             "message": "Batch closure rejected by Safe Policy Gate. Human controller review required."
         }
 
-    # Safe to close
     closed_time = datetime.now(timezone.utc).isoformat()
     audit_hash = append_audit_entry(
         db=db,
@@ -682,7 +655,6 @@ def get_reconciliation_timeline(
     """
     Returns live aggregated daily transaction and settlement velocity from database.
     """
-    # For a fresh organization with no connected Razorpay or imported data, return empty points
     if not current_user.is_demo_session and not current_user.is_razorpay_connected and current_user.org_id != "org_nova_2026":
         return {
             "points": [],
@@ -706,7 +678,6 @@ def get_reconciliation_timeline(
             }
         }
     
-    # Aggregate total figures directly from database
     total_gross = sum(p.amount_paise for p in payments)
     total_fee = sum(p.fee_paise + p.tax_paise for p in payments)
     total_settled = sum(p.net_paise for p in payments if p.settlement_id)

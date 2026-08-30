@@ -42,7 +42,6 @@ def main():
         corrupted_ds = inject_corruptions(clean_ds, seed=args.seed)
         report = run_comprehensive_benchmark(corrupted_ds)
 
-    # 1. Main Metrics Comparison Table
     table = Table(title="Reconciliation Architecture Performance Benchmark", header_style="bold magenta", border_style="dim")
     table.add_column("Architecture Paradigm", style="bold white", width=38)
     table.add_column("Precision", justify="center", width=12)
@@ -53,7 +52,6 @@ def main():
     table.add_column("Math Errors", justify="center", width=12)
     table.add_column("Latency (ms)", justify="right", width=14)
 
-    # Baseline A
     a = report.baseline_a_rules_only
     table.add_row(
         f"[yellow]A. {a.baseline_name}[/yellow]\n[dim]Exact ID matching only[/dim]",
@@ -66,7 +64,6 @@ def main():
         f"{a.execution_time_ms:.1f} ms"
     )
 
-    # Baseline B
     b = report.baseline_b_naive_llm
     table.add_row(
         f"[red]B. {b.baseline_name}[/red]\n[dim]Direct prompt without tools[/dim]",
@@ -79,7 +76,6 @@ def main():
         f"{b.execution_time_ms:.1f} ms"
     )
 
-    # Baseline C
     c = report.baseline_c_hisab
     table.add_row(
         f"[bold green]C. {c.baseline_name}[/bold green]\n[dim]Controller + Tools + Policy Gate[/dim]",
@@ -95,7 +91,6 @@ def main():
     console.print(table)
     console.print()
 
-    # 2. Exposure & Forensic Detection Highlights
     exp_table = Table(title="Financial Risk Exposure & Forensic Detection", header_style="bold cyan", border_style="dim")
     exp_table.add_column("Paradigm", style="bold white", width=38)
     exp_table.add_column("Total Exposure Detected", justify="right", width=26)
@@ -124,7 +119,6 @@ def main():
     console.print(exp_table)
     console.print()
 
-    # Export report
     export_path = Path(args.export)
     export_path.parent.mkdir(parents=True, exist_ok=True)
     with open(export_path, "w", encoding="utf-8") as f:

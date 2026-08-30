@@ -77,9 +77,7 @@ export const MermaidViewer: React.FC<MermaidViewerProps> = ({ chart, id = "merma
 
   return (
     <>
-      {/* 1. Main Diagram Card with Zoom Icon at Top-Left Corner */}
       <div className="relative p-6 pt-12 rounded-2xl bg-white dark:bg-[#111111] border border-[#E5E7EB] dark:border-[#262626] shadow-xs my-4 group select-none">
-        {/* Top-Left Corner Zoom Button */}
         <button
           onClick={() => setIsZoomOpen(true)}
           title="Click to zoom into diagram"
@@ -89,7 +87,6 @@ export const MermaidViewer: React.FC<MermaidViewerProps> = ({ chart, id = "merma
           <span className="text-[11px] font-semibold">Zoom</span>
         </button>
 
-        {/* Rendered SVG Content */}
         <div
           ref={containerRef}
           className="flex items-center justify-center overflow-x-auto [&_svg]:max-w-full [&_svg]:h-auto cursor-pointer"
@@ -98,7 +95,6 @@ export const MermaidViewer: React.FC<MermaidViewerProps> = ({ chart, id = "merma
         />
       </div>
 
-      {/* 2. Round-Bordered Zoom Dialogue Modal */}
       {isZoomOpen && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs select-none animate-in fade-in"
@@ -108,7 +104,6 @@ export const MermaidViewer: React.FC<MermaidViewerProps> = ({ chart, id = "merma
             className="w-full max-w-5xl bg-white dark:bg-[#111111] border border-[#E5E7EB] dark:border-[#262626] rounded-3xl p-6 lg:p-8 shadow-2xl space-y-6 text-[#111827] dark:text-[#FFFFFF] max-h-[92vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-[#E5E7EB] dark:border-[#262626] pb-4">
               <div className="flex items-center space-x-3">
                 <div className="p-2.5 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-[#0B72E7]">
@@ -132,13 +127,11 @@ export const MermaidViewer: React.FC<MermaidViewerProps> = ({ chart, id = "merma
               </button>
             </div>
 
-            {/* Magnified Diagram Canvas */}
             <div 
               className="p-6 rounded-3xl bg-[#FAFAFA] dark:bg-[#0A0A0A] border border-[#E5E7EB] dark:border-[#262626] flex items-center justify-center overflow-x-auto [&_svg]:max-w-full [&_svg]:h-auto [&_svg]:min-w-[500px]"
               dangerouslySetInnerHTML={{ __html: svgContent }}
             />
 
-            {/* Modal Footer */}
             <div className="flex items-center justify-between pt-2 text-xs">
               <span className="text-[#6B7280] dark:text-[#A1A1AA]">Press ESC or click close to dismiss</span>
               <button

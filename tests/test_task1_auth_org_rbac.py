@@ -30,10 +30,6 @@ from packages.domain.auth_rbac import (
 client = TestClient(app)
 
 
-# ------------------------------------------------------------------------------
-# 1. AUTHENTICATION TESTS
-# ------------------------------------------------------------------------------
-
 class TestAuthentication:
     def test_password_hashing_and_verification(self):
         password = "SecureEnterprisePassword2026!"
@@ -65,7 +61,6 @@ class TestAuthentication:
         assert "token" in data
 
     def test_signin_success_and_automatic_role_resolution(self):
-        # User does NOT send role; backend resolves role from organization membership
         res = client.post("/api/auth/signin", json={
             "email": "admin@novacommerce.com",
             "password": "demo123"
@@ -121,14 +116,9 @@ class TestAuthentication:
         logout_res = client.post("/api/auth/logout", headers={"X-Session-Token": token})
         assert logout_res.status_code == 200
 
-        # Subsequent request with invalidated token returns 401
         res_after = client.get("/api/auth/me", headers={"X-Session-Token": token})
         assert res_after.status_code == 401
 
-
-# ------------------------------------------------------------------------------
-# 2. ORGANIZATION & MULTI-TENANCY TESTS
-# ------------------------------------------------------------------------------
 
 class TestOrganization:
     def test_organization_profile_retrieval(self):
@@ -172,10 +162,6 @@ class TestOrganization:
         )
         assert res.status_code == 403
 
-
-# ------------------------------------------------------------------------------
-# 3. RBAC & SERVER-SIDE AUTHORIZATION ENFORCEMENT
-# ------------------------------------------------------------------------------
 
 class TestRBACPermissions:
     def test_admin_permissions(self):
@@ -230,10 +216,6 @@ class TestRBACPermissions:
         assert "run_reconciliation" in res.json()["detail"]
 
 
-# ------------------------------------------------------------------------------
-# 4. INVITATION & TEAM MANAGEMENT TESTS
-# ------------------------------------------------------------------------------
-
 class TestInvitationsAndTeam:
     def test_admin_create_invitation_success(self):
         admin_sess = client.post("/api/auth/signin", json={"email": "admin@novacommerce.com", "password": "demo123"}).json()
@@ -263,7 +245,6 @@ class TestInvitationsAndTeam:
         assert res.status_code == 403
 
     def test_accept_invitation_flow(self):
-        # 1. Create invite for Manager role
         admin_sess = client.post("/api/auth/signin", json={"email": "admin@novacommerce.com", "password": "demo123"}).json()
         invite = client.post(
             "/api/auth/invitations",
@@ -272,13 +253,11 @@ class TestInvitationsAndTeam:
         ).json()
         inv_token = invite["token"]
 
-        # 2. Inspect invitation details (Public endpoint)
         inspect_res = client.get(f"/api/auth/invitations/{inv_token}")
         assert inspect_res.status_code == 200
         assert inspect_res.json()["role"] == "FINANCE_MANAGER"
         assert inspect_res.json()["email"] == "sunita.mgr@novacommerce.com"
 
-        # 3. Accept invite and create account
         signup_res = client.post("/api/auth/signup", json={
             "name": "Sunita Rao",
             "email": "sunita.mgr@novacommerce.com",
@@ -291,7 +270,6 @@ class TestInvitationsAndTeam:
         assert user_sess["org_name"] == "Nova Commerce Pvt Ltd"
         assert user_sess["is_org_owner"] is False
 
-        # 4. Log in directly
         login_res = client.post("/api/auth/signin", json={
             "email": "sunita.mgr@novacommerce.com",
             "password": "sunitaPassword2026!"
@@ -308,11 +286,9 @@ class TestInvitationsAndTeam:
         ).json()
         inv_token = invite["token"]
 
-        # Manually expire the invitation
         if inv_token in INVITATIONS:
             INVITATIONS[inv_token].expires_at = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
 
-        # Inspection should fail
         res_inspect = client.get(f"/api/auth/invitations/{inv_token}")
         assert res_inspect.status_code == 404
 
@@ -325,28 +301,23 @@ class TestInvitationsAndTeam:
         ).json()
         inv_token = invite["token"]
 
-        # Resend
         resend_res = client.post(f"/api/auth/invitations/{inv_token}/resend", headers={"X-Session-Token": admin_sess["token"]})
         assert resend_res.status_code == 200
         assert resend_res.json()["success"] is True
 
-        # Cancel
         cancel_res = client.delete(f"/api/auth/invitations/{inv_token}", headers={"X-Session-Token": admin_sess["token"]})
         assert cancel_res.status_code == 200
         assert cancel_res.json()["success"] is True
 
-        # Ensure no longer inspectable
         assert client.get(f"/api/auth/invitations/{inv_token}").status_code == 404
 
     def test_change_member_role_and_suspend(self):
         admin_sess = client.post("/api/auth/signin", json={"email": "admin@novacommerce.com", "password": "demo123"}).json()
         members_data = client.get("/api/auth/members", headers={"X-Session-Token": admin_sess["token"]}).json()
         
-        # Find non-owner member
         non_owner = next(m for m in members_data["members"] if not m["is_owner"])
         mem_id = non_owner["membership_id"]
 
-        # Change role to AUDITOR
         patch_res = client.patch(
             f"/api/auth/members/{mem_id}",
             json={"role": "AUDITOR"},
@@ -355,7 +326,6 @@ class TestInvitationsAndTeam:
         assert patch_res.status_code == 200
         assert patch_res.json()["role"] == "AUDITOR"
 
-        # Suspend member
         suspend_res = client.patch(
             f"/api/auth/members/{mem_id}",
             json={"status": "SUSPENDED"},
@@ -364,7 +334,6 @@ class TestInvitationsAndTeam:
         assert suspend_res.status_code == 200
         assert suspend_res.json()["status"] == "SUSPENDED"
 
-        # Reactivate member
         reactivate_res = client.patch(
             f"/api/auth/members/{mem_id}",
             json={"status": "ACTIVE"},
@@ -374,16 +343,11 @@ class TestInvitationsAndTeam:
         assert reactivate_res.json()["status"] == "ACTIVE"
 
 
-# ------------------------------------------------------------------------------
-# 5. END-TO-END FLOW TESTS (FLOWS A, B, C, D)
-# ------------------------------------------------------------------------------
-
 class TestEndToEndFlows:
     def test_flow_a_create_account_and_invite_analyst(self):
         """
         FLOW A: Create Account -> Create Org -> Become Admin -> Dashboard -> Users & Access -> Invite Analyst
         """
-        # 1. Create account & Org
         res = client.post("/api/auth/signup", json={
             "name": "Aditi Roy",
             "email": "aditi@roypayments.com",
@@ -399,7 +363,6 @@ class TestEndToEndFlows:
         assert admin_sess["is_org_owner"] is True
         token = admin_sess["token"]
 
-        # 2. Invite Analyst
         invite_res = client.post(
             "/api/auth/invitations",
             json={"email": "karan.analyst@roypayments.com", "role": "ANALYST"},
@@ -413,7 +376,6 @@ class TestEndToEndFlows:
         """
         FLOW B: Accept Invitation -> Create Account -> Auto-Join Org -> Role=Analyst -> Normal Login
         """
-        # 1. Admin creates invitation
         admin_sess = client.post("/api/auth/signin", json={"email": "admin@novacommerce.com", "password": "demo123"}).json()
         invite = client.post(
             "/api/auth/invitations",
@@ -422,7 +384,6 @@ class TestEndToEndFlows:
         ).json()
         inv_token = invite["token"]
 
-        # 2. Accept and create account
         signup = client.post("/api/auth/signup", json={
             "name": "Neha Gupta",
             "email": "neha.analyst@novacommerce.com",
@@ -432,7 +393,6 @@ class TestEndToEndFlows:
         assert signup["role"] == "ANALYST"
         assert signup["org_name"] == "Nova Commerce Pvt Ltd"
 
-        # 3. Log in normally
         login = client.post("/api/auth/signin", json={
             "email": "neha.analyst@novacommerce.com",
             "password": "passNeha2026!"
@@ -447,7 +407,6 @@ class TestEndToEndFlows:
         analyst_sess = client.post("/api/auth/demo-signin", json={"role": "ANALYST"}).json()
         token = analyst_sess["token"]
 
-        # Attempt to invite a user (Admin only)
         res_invite = client.post(
             "/api/auth/invitations",
             json={"email": "illegal.invite@novacommerce.com", "role": "ADMIN"},
@@ -455,7 +414,6 @@ class TestEndToEndFlows:
         )
         assert res_invite.status_code == 403
 
-        # Attempt to connect Razorpay (Admin only)
         res_oauth = client.post(
             "/api/auth/razorpay-oauth-connect",
             headers={"X-Session-Token": token}
@@ -466,13 +424,10 @@ class TestEndToEndFlows:
         """
         FLOW D: Attempt Org A user -> Org B data -> STRICT ISOLATION
         """
-        # User in Org Nova Commerce
         nova_sess = client.post("/api/auth/signin", json={"email": "admin@novacommerce.com", "password": "demo123"}).json()
         
-        # User in Sethi Logistics
         sethi_sess = client.post("/api/auth/signin", json={"email": "vikram@sethilogistics.com", "password": "passVikram2026!"}).json()
 
-        # Members list for Sethi Logistics only returns Sethi members
         res = client.get("/api/auth/members", headers={"X-Session-Token": sethi_sess["token"]})
         assert res.status_code == 200
         data = res.json()

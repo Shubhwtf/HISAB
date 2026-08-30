@@ -29,7 +29,6 @@ export const DoubleLossBanner: React.FC<DoubleLossBannerProps> = ({ alerts, onVi
 
   return (
     <div className="bg-white dark:bg-[#111111] border border-red-200 dark:border-red-900/60 rounded-xl p-6 mb-6 shadow-sm">
-      {/* Header alert badge */}
       <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-red-100 dark:border-red-900/40">
         <div className="flex items-center space-x-3">
           <div className="p-2 rounded-lg bg-[#DC2626] text-white">
@@ -68,7 +67,6 @@ export const DoubleLossBanner: React.FC<DoubleLossBannerProps> = ({ alerts, onVi
         </div>
       </div>
 
-      {/* Exposure Financial Breakdown */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 my-5">
         <div className="bg-[#F8FAFC] dark:bg-[#0E0E0E] p-3.5 rounded-xl border border-[#E2E8F0] dark:border-[#262626]">
           <span className="text-[10px] text-[#64748B] dark:text-[#A1A1AA] uppercase font-bold">1. Original Sale Captured</span>
@@ -95,7 +93,6 @@ export const DoubleLossBanner: React.FC<DoubleLossBannerProps> = ({ alerts, onVi
         </div>
       </div>
 
-      {/* Chronological Timeline */}
       <div className="bg-[#F8FAFC] dark:bg-[#0E0E0E] rounded-xl p-4 border border-[#E2E8F0] dark:border-[#262626]">
         <h4 className="text-xs font-bold text-[#0F172A] dark:text-[#EDEDED] uppercase tracking-wider mb-3 flex items-center space-x-1.5">
           <Clock className="w-3.5 h-3.5 text-[#DC2626]" />

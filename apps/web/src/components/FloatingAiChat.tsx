@@ -66,7 +66,6 @@ export const FloatingAiChat: React.FC<FloatingAiChatProps> = ({
 
   return (
     <>
-      {/* Floating Bottom-Right Circular Button */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
@@ -80,10 +79,8 @@ export const FloatingAiChat: React.FC<FloatingAiChatProps> = ({
         </button>
       )}
 
-      {/* Floating Chat Drawer / Pop-up Window */}
       {isOpen && (
         <div className="fixed bottom-6 right-6 z-50 w-96 md:w-[440px] h-[580px] bg-white dark:bg-[#111111] border border-[#E2E8F0] dark:border-[#262626] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-5 font-sans">
-          {/* Header */}
           <div className="h-14 bg-[#0F172A] dark:bg-[#1E1E1E] text-white px-4 flex items-center justify-between flex-shrink-0">
             <div className="flex items-center space-x-2.5">
               <div className="w-7 h-7 rounded-lg bg-[#0B72E7] flex items-center justify-center font-bold text-xs text-white">
@@ -106,7 +103,6 @@ export const FloatingAiChat: React.FC<FloatingAiChatProps> = ({
             </button>
           </div>
 
-          {/* Messages Scroll Area */}
           <div className="flex-1 p-4 overflow-y-auto space-y-3.5 text-xs">
             {messages.map((msg, idx) => (
               <div
@@ -127,7 +123,6 @@ export const FloatingAiChat: React.FC<FloatingAiChatProps> = ({
                   )}
                 </div>
 
-                {/* Evidence Links in AI Response */}
                 {msg.evidence_links?.length > 0 && (
                   <div className="mt-2 space-y-1.5 w-full">
                     {msg.evidence_links.map((link: any, lIdx: number) => (
@@ -170,7 +165,6 @@ export const FloatingAiChat: React.FC<FloatingAiChatProps> = ({
             )}
           </div>
 
-          {/* Quick Prompts Strip */}
           <div className="px-3 py-2 border-t border-[#E2E8F0] dark:border-[#262626] bg-[#F8FAFC] dark:bg-[#0E0E0E] flex items-center space-x-1.5 overflow-x-auto text-[11px]">
             {quickPrompts.map((qp, idx) => (
               <button
@@ -183,7 +177,6 @@ export const FloatingAiChat: React.FC<FloatingAiChatProps> = ({
             ))}
           </div>
 
-          {/* Input Footer */}
           <div className="p-3 border-t border-[#E2E8F0] dark:border-[#262626] bg-white dark:bg-[#111111]">
             <div className="flex items-center space-x-2">
               <input

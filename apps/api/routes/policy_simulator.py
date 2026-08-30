@@ -10,7 +10,7 @@ router = APIRouter(prefix="/api/simulator", tags=["Policy Simulator"])
 
 
 class SimulatePolicyRequest(BaseModel):
-    materiality_threshold_paise: int = 500000  # Default ₹5,000
+    materiality_threshold_paise: int = 500000
     allow_fuzzy_utr_auto_resolve: bool = True
     allow_minor_fee_auto_resolve: bool = True
     dispute_deadline_alert_hours: int = 48
@@ -23,7 +23,6 @@ def simulate_policy_configuration(req: SimulatePolicyRequest):
     """
     thresh_rs = req.materiality_threshold_paise / 100
 
-    # Dynamic calculation based on threshold
     total_exceptions = 8
     auto_resolved = 2 if thresh_rs >= 5000 else (1 if thresh_rs >= 1000 else 0)
     if req.allow_minor_fee_auto_resolve and thresh_rs >= 50:

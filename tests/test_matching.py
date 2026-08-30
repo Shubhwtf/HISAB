@@ -75,7 +75,6 @@ class TestConstraintAndFuzzyMatcher:
     def test_fuzzy_bank_matching_altered_utr(self):
         now = datetime.now(timezone.utc)
         s1 = Settlement(id="setl_10", utr="UTR778211000", amount_paise=242920, settled_at=now)
-        # Bank has altered UTR with _MOD suffix but same amount and date
         b1 = BankTransaction(
             id="bnk_10",
             date=now + timedelta(hours=2),
@@ -112,9 +111,9 @@ class TestConstraintAndFuzzyMatcher:
 
 class TestBatchDecompositionAndReconstruction:
     def test_subset_sum_exact(self):
-        p1 = Payment(id="p1", order_id="o1", customer_id="c1", amount_paise=100000) # ₹1000
-        p2 = Payment(id="p2", order_id="o2", customer_id="c2", amount_paise=250000) # ₹2500
-        p3 = Payment(id="p3", order_id="o3", customer_id="c3", amount_paise=500000) # ₹5000
+        p1 = Payment(id="p1", order_id="o1", customer_id="c1", amount_paise=100000)
+        p2 = Payment(id="p2", order_id="o2", customer_id="c2", amount_paise=250000)
+        p3 = Payment(id="p3", order_id="o3", customer_id="c3", amount_paise=500000)
 
         result = find_subset_sum_exact([p1, p2, p3], target_paise=350000)
         assert result is not None
@@ -123,7 +122,6 @@ class TestBatchDecompositionAndReconstruction:
 
     def test_batch_reconstruction_for_unmapped_payment(self):
         now = datetime.now(timezone.utc)
-        # Settlement with gross = ₹3,500 (350000 paise)
         s1 = Settlement(
             id="setl_recon_1",
             utr="UTR_RECON_1",
@@ -134,9 +132,7 @@ class TestBatchDecompositionAndReconstruction:
             settled_at=now
         )
         
-        # Payment 1 is already linked to s1 (gross ₹1,000)
         p1 = Payment(id="p1", order_id="o1", customer_id="c1", amount_paise=100000, settlement_id="setl_recon_1", captured_at=now - timedelta(days=1))
-        # Payment 2 has lost its settlement_id (gross ₹2,500)
         p2 = Payment(id="p2", order_id="o2", customer_id="c2", amount_paise=250000, settlement_id=None, captured_at=now - timedelta(days=1))
 
         results, unmapped = decompose_and_reconstruct_batches(

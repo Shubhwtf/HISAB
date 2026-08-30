@@ -26,7 +26,6 @@ export const SettlementControlTower: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white dark:bg-[#111111] border border-[#E2E8F0] dark:border-[#262626] p-5 rounded-xl shadow-sm">
           <span className="text-[10px] font-bold text-[#64748B] dark:text-[#A1A1AA] uppercase">
@@ -59,7 +58,6 @@ export const SettlementControlTower: React.FC = () => {
         </div>
       </div>
 
-      {/* Settlement Batches Table */}
       <div className="bg-white dark:bg-[#111111] border border-[#E2E8F0] dark:border-[#262626] rounded-xl p-6 shadow-sm">
         <div className="flex items-center justify-between pb-4 border-b border-[#E2E8F0] dark:border-[#262626] mb-4">
           <div>

@@ -43,10 +43,6 @@ from packages.domain.auth_rbac import (
 router = APIRouter(prefix="/api/auth", tags=["Authentication & Tenancy"])
 
 
-# ------------------------------------------------------------------------------
-# Request / Response Schemas
-# ------------------------------------------------------------------------------
-
 class SignInRequest(BaseModel):
     email: str = "admin@novacommerce.com"
     password: str = "demo123"
@@ -54,7 +50,7 @@ class SignInRequest(BaseModel):
 
 
 class DemoSignInRequest(BaseModel):
-    role: str = "ADMIN"  # ADMIN | FINANCE_MANAGER | ANALYST | AUDITOR
+    role: str = "ADMIN"
 
 
 class SignUpRequest(BaseModel):
@@ -70,30 +66,26 @@ class SignUpRequest(BaseModel):
 
 class InviteMemberRequest(BaseModel):
     email: str
-    role: str = "ANALYST"  # FINANCE_MANAGER | ANALYST | AUDITOR
+    role: str = "ANALYST"
 
 
 class UpdateMemberRequest(BaseModel):
     role: Optional[str] = None
-    status: Optional[str] = None  # ACTIVE | SUSPENDED
+    status: Optional[str] = None
 
 
 class ConnectRazorpayOrgRequest(BaseModel):
-    auth_type: str = "OAUTH"  # OAUTH | API_KEY
+    auth_type: str = "OAUTH"
     key_id: Optional[str] = None
     key_secret: Optional[str] = None
     code: Optional[str] = None
-    environment: str = "TEST"  # TEST | LIVE
+    environment: str = "TEST"
 
 
 class SwitchRoleRequest(BaseModel):
     role: str = "ADMIN"
     org_id: Optional[str] = "org_nova_2026"
 
-
-# ------------------------------------------------------------------------------
-# 1. User Authentication Endpoints
-# ------------------------------------------------------------------------------
 
 @router.get("/me", response_model=UserSession)
 def get_current_session(current_user: UserSession = Depends(get_current_user)):
@@ -117,7 +109,6 @@ def signin_user(req: SignInRequest):
     if not user.is_active:
         raise HTTPException(status_code=403, detail="Your HISAB account has been deactivated.")
 
-    # Find organization membership
     membership = get_user_membership(user.id, req.org_id)
     if not membership:
         raise HTTPException(
@@ -195,7 +186,6 @@ def signup_user(req: SignUpRequest):
     USERS[user_id] = new_user
     USERS_BY_EMAIL[email_clean] = user_id
 
-    # Case A: Joining via Invitation
     if req.invite_token and req.invite_token in INVITATIONS:
         invitation = INVITATIONS[req.invite_token]
         if invitation.status != "PENDING":
@@ -205,7 +195,6 @@ def signup_user(req: SignUpRequest):
         if not org:
             raise HTTPException(status_code=404, detail="Organization associated with invitation not found.")
 
-        # Create membership with invited role
         mem_id = f"mem_{secrets.token_hex(6)}"
         membership = OrganizationMembership(
             id=mem_id,
@@ -223,7 +212,6 @@ def signup_user(req: SignUpRequest):
         ))
         return create_user_session(new_user, org, conn, role=membership.role, is_demo=False)
 
-    # Case B: Creating Brand-New Organization (User becomes Owner / Admin)
     org_name = (req.org_name or f"{req.name}'s Organization").strip()
     org_id = f"org_{secrets.token_hex(6)}"
 
@@ -242,7 +230,7 @@ def signup_user(req: SignUpRequest):
         id=mem_id,
         user_id=user_id,
         org_id=org_id,
-        role=Role.ADMIN,  # Automatically Owner / Admin
+        role=Role.ADMIN,
         status="ACTIVE",
     )
     MEMBERSHIPS[mem_id] = membership
@@ -270,10 +258,6 @@ def logout_user(x_session_token: Optional[str] = Header(None, alias="X-Session-T
     return {"success": True, "message": "Signed out successfully."}
 
 
-# ------------------------------------------------------------------------------
-# 2. Team Invitations & Member Management (Admin Only)
-# ------------------------------------------------------------------------------
-
 @router.get("/invitations/{token}")
 def get_invitation_details(token: str):
     """
@@ -283,7 +267,6 @@ def get_invitation_details(token: str):
     if not inv or inv.status != "PENDING":
         raise HTTPException(status_code=404, detail="Invitation not found or has expired.")
 
-    # Check expiry
     try:
         exp_dt = datetime.fromisoformat(inv.expires_at)
         if exp_dt < datetime.now(timezone.utc):
@@ -317,13 +300,11 @@ def create_team_invitation(
         raise HTTPException(status_code=400, detail=f"Invalid role. Must be one of {[r.value for r in Role]}.")
 
     assigned_role = Role(role_str)
-    # Only Admin can invite Admin
     if assigned_role == Role.ADMIN and current_user.role != Role.ADMIN:
         raise HTTPException(status_code=403, detail="Only an Administrator can invite or promote Admin users.")
 
     clean_email = req.email.strip().lower()
 
-    # Check if user is already an active member of this org
     existing_user_id = USERS_BY_EMAIL.get(clean_email)
     if existing_user_id:
         for mem in MEMBERSHIPS.values():
@@ -550,10 +531,6 @@ def remove_member_from_org(
     del MEMBERSHIPS[membership_id]
     return {"success": True, "message": "Member removed from organization."}
 
-
-# ------------------------------------------------------------------------------
-# 3. Organization-Level Razorpay Connection (Admin Only)
-# ------------------------------------------------------------------------------
 
 @router.get("/razorpay/status")
 def get_org_razorpay_status(current_user: UserSession = Depends(get_current_user)):

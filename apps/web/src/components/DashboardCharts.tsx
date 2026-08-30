@@ -25,7 +25,6 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({ onNavigateToTa
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 font-sans">
-      {/* 1. Payment Method Volume Distribution & Rails */}
       <div className="bg-white dark:bg-[#111111] border border-[#E2E8F0] dark:border-[#262626] rounded-2xl p-6 shadow-sm space-y-4">
         <div className="flex items-center justify-between pb-3 border-b border-[#E2E8F0] dark:border-[#262626]">
           <div>
@@ -39,7 +38,6 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({ onNavigateToTa
           </span>
         </div>
 
-        {/* SVG Donut Chart */}
         <div className="flex items-center justify-center my-2 relative">
           <svg className="w-36 h-36 transform -rotate-90" viewBox="0 0 100 100">
             <circle cx="50" cy="50" r="38" fill="none" stroke="currentColor" className="text-[#F1F5F9] dark:text-[#1E293B]" strokeWidth="14" />
@@ -86,7 +84,6 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({ onNavigateToTa
           </div>
         </div>
 
-        {/* Rail Items List */}
         <div className="space-y-2 pt-1">
           {rails.map((rail) => {
             const isSelected = activeRail === rail.id;
@@ -117,7 +114,6 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({ onNavigateToTa
         </div>
       </div>
 
-      {/* 2. Reconciliation Engine Ladder & Match Velocity */}
       <div className="bg-white dark:bg-[#111111] border border-[#E2E8F0] dark:border-[#262626] rounded-2xl p-6 shadow-sm space-y-4">
         <div className="flex items-center justify-between pb-3 border-b border-[#E2E8F0] dark:border-[#262626]">
           <div className="flex items-center space-x-2">
@@ -134,7 +130,6 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({ onNavigateToTa
           </span>
         </div>
 
-        {/* Stacked Resolution Bar */}
         <div className="w-full h-3.5 rounded-full bg-[#F1F5F9] dark:bg-[#1E1E1E] overflow-hidden flex my-2">
           <div className="h-full bg-[#16A34A]" style={{ width: "89.2%" }} title="Tier 1 Exact (89.2%)"></div>
           <div className="h-full bg-[#0B72E7]" style={{ width: "8.8%" }} title="Tier 2 Constraint (8.8%)"></div>

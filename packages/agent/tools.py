@@ -79,10 +79,6 @@ class ToolExecutionResult(BaseModel):
     message: str = ""
 
 
-# ------------------------------------------------------------------------------
-# 1. list_source_records & get_record
-# ------------------------------------------------------------------------------
-
 def list_source_records(
     db: Session,
     entity_type: str,
@@ -142,10 +138,6 @@ def get_record(
     return {k: v for k, v in row.__dict__.items() if not k.startswith("_")}
 
 
-# ------------------------------------------------------------------------------
-# 2. search_candidates
-# ------------------------------------------------------------------------------
-
 def search_candidates(
     db: Session,
     record_id: str,
@@ -161,13 +153,11 @@ def search_candidates(
         if not payment_row:
             return []
 
-        # Find settlements within capture time window
         settlements = db.scalars(select(SettlementDB)).all()
         for s in settlements:
             sched = DEFAULT_FEE_SCHEDULES.get(payment_row.method, DEFAULT_FEE_SCHEDULES["card"])
             fee_res = calculate_fee_and_tax(payment_row.amount_paise, sched)
             
-            # Check date proximity
             date_diff_days = 0.0
             if payment_row.captured_at and s.settled_at:
                 date_diff_days = abs((s.settled_at - payment_row.captured_at).total_seconds()) / 86400.0
@@ -190,10 +180,6 @@ def search_candidates(
 
     return sorted(candidates, key=lambda c: c.confidence_score, reverse=True)
 
-
-# ------------------------------------------------------------------------------
-# 3. calculate_expected_settlement & calculate_refund_effect
-# ------------------------------------------------------------------------------
 
 def calculate_expected_settlement(
     payment_amount_paise: int,
@@ -260,10 +246,6 @@ def inspect_dispute_and_double_loss(
     }
 
 
-# ------------------------------------------------------------------------------
-# 4. State Transitions & Evidence Verification
-# ------------------------------------------------------------------------------
-
 def match_payment_to_settlement(
     db: Session,
     payment_id: str,
@@ -286,7 +268,6 @@ def match_payment_to_settlement(
     payment_row.settlement_id = settlement_id
     db.commit()
 
-    # Append immutable audit entry
     append_audit_entry(
         db=db,
         case_id=payment_id,

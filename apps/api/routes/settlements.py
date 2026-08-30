@@ -49,7 +49,6 @@ def get_settlement_control_tower(
     total_net_settled = sum(s.amount_paise for s in settlements)
     total_bank_credited = sum(b.amount_paise for b in bank_txs)
 
-    # Cash in transit (settled by gateway in T+2 but not yet in bank statement)
     cash_in_transit_paise = max(0, total_net_settled - total_bank_credited)
 
     timeline_items = []

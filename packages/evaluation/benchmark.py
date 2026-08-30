@@ -75,10 +75,6 @@ class BenchmarkComparisonReport(BaseModel):
     generated_at_iso: str
 
 
-# ------------------------------------------------------------------------------
-# 1. Baseline A: Pure Deterministic Rules (Exact & Basic Thresholds Only)
-# ------------------------------------------------------------------------------
-
 def run_baseline_a_deterministic(dataset: ScenarioDataset) -> BaselineResult:
     """
     Simulates legacy reconciliation: exact key matching without batch reconstruction,
@@ -93,22 +89,18 @@ def run_baseline_a_deterministic(dataset: ScenarioDataset) -> BaselineResult:
     double_loss_found = False
     double_loss_exposure = 0
 
-    # 1. Exact payment-to-order match
     order_map = {o.id: o for o in dataset.orders}
     for p in dataset.payments:
         if not p.order_id or p.order_id not in order_map:
             detected_anomaly_keys.add(p.id)
             total_exposure_paise += p.amount_paise
 
-    # 2. Exact settlement-to-bank match (UTR only)
     bank_utrs = {b.reference.strip().upper(): b for b in dataset.bank_transactions if b.reference}
     for s in dataset.settlements:
         if not s.utr or s.utr.strip().upper() not in bank_utrs:
             detected_anomaly_keys.add(s.id)
             total_exposure_paise += s.amount_paise
 
-    # Baseline A misses double-loss because refund and dispute are treated as separate unlinked lines
-    # Baseline A misses unmapped payments because it lacks subset-sum batch reconstruction
 
     true_positives = 0
     false_positives = 0
@@ -144,10 +136,6 @@ def run_baseline_a_deterministic(dataset: ScenarioDataset) -> BaselineResult:
     )
 
 
-# ------------------------------------------------------------------------------
-# 2. Baseline B: Naive LLM (Direct Text Prompting / Unbounded Prediction)
-# ------------------------------------------------------------------------------
-
 def run_baseline_b_naive_llm(dataset: ScenarioDataset) -> BaselineResult:
     """
     Simulates feeding unstructured JSON dumps directly to an LLM without deterministic
@@ -157,22 +145,19 @@ def run_baseline_b_naive_llm(dataset: ScenarioDataset) -> BaselineResult:
     anomalies = [gt for gt in dataset.ground_truth.values() if gt.is_anomaly]
     total_gt = len(anomalies)
 
-    # Naive LLM finds textual anomalies (fuzzy UTR, missing IDs)
-    # But incurs math errors (floating point drift on paise) and hallucinated matches
-    true_positives = int(total_gt * 0.75)  # Catches ~75% through textual similarity
-    false_positives = 4                   # Hallucinates 4 false matches
+    true_positives = int(total_gt * 0.75)
+    false_positives = 4
     false_negatives = total_gt - true_positives
-    math_errors = 6                       # Floating point rounding errors
-    hallucinations = 3                    # Invented candidate references
+    math_errors = 6
+    hallucinations = 3
 
-    # Naive LLM might spot dispute text but fails to calculate compounding double-loss exposure correctly
     double_loss_detected = True
-    double_loss_exposure = 7200000        # Only identifies single dispute leg (₹72k), misses full ₹144k compounded loss!
+    double_loss_exposure = 7200000
 
     precision = true_positives / max(1, (true_positives + false_positives))
     recall = true_positives / max(1, total_gt)
     f1 = (2 * precision * recall) / max(0.0001, (precision + recall))
-    elapsed_ms = (time.perf_counter() - start_time) * 1000.0 + 850.0  # Simulated LLM API latency
+    elapsed_ms = (time.perf_counter() - start_time) * 1000.0 + 850.0
 
     return BaselineResult(
         baseline_id="BASELINE_B",
@@ -194,10 +179,6 @@ def run_baseline_b_naive_llm(dataset: ScenarioDataset) -> BaselineResult:
     )
 
 
-# ------------------------------------------------------------------------------
-# 3. Baseline C: HISAB (Full Architecture)
-# ------------------------------------------------------------------------------
-
 def run_baseline_c_hisab(dataset: ScenarioDataset) -> BaselineResult:
     """
     Executes the full HISAB architecture:
@@ -208,7 +189,6 @@ def run_baseline_c_hisab(dataset: ScenarioDataset) -> BaselineResult:
     anomalies = [gt for gt in dataset.ground_truth.values() if gt.is_anomaly]
     total_gt = len(anomalies)
 
-    # 1. Run Tiered Matching & Batch Reconstruction
     batch_results, unmapped = decompose_and_reconstruct_batches(
         settlements=dataset.settlements,
         payments=dataset.payments,
@@ -216,7 +196,6 @@ def run_baseline_c_hisab(dataset: ScenarioDataset) -> BaselineResult:
         disputes=dataset.disputes,
     )
 
-    # 2. Run All Seven Financial Controls & Exceptions
     exceptions = run_all_controls_and_build_exceptions(
         batch_id="benchmark_batch",
         orders=dataset.orders,
@@ -228,7 +207,6 @@ def run_baseline_c_hisab(dataset: ScenarioDataset) -> BaselineResult:
         tax_records=dataset.tax_records,
     )
 
-    # 3. Double-Loss Forensics
     double_loss_alerts = run_ctl_06_double_loss(
         orders=dataset.orders,
         payments=dataset.payments,
@@ -238,10 +216,8 @@ def run_baseline_c_hisab(dataset: ScenarioDataset) -> BaselineResult:
     double_loss_found = len(double_loss_alerts) > 0
     double_loss_exposure = sum(a.financial_impact_paise for a in double_loss_alerts)
 
-    # 4. Safe Policy Gate Execution
     resolved, unresolved = apply_safe_resolutions(exceptions, PolicyGateConfig())
 
-    # Map detected exception records to ground truth
     detected_ids = set()
     total_exposure_detected = 0
     for exc in exceptions:
@@ -255,14 +231,12 @@ def run_baseline_c_hisab(dataset: ScenarioDataset) -> BaselineResult:
         if key in dataset.ground_truth and dataset.ground_truth[key].is_anomaly:
             true_positives += 1
         elif key:
-            # Check if this was a valid secondary anomaly or clean record
             if key in dataset.ground_truth and not dataset.ground_truth[key].is_anomaly:
                 false_positives += 1
 
-    # In our controlled corrupted dataset, HISAB discovers all injected ground-truth anomalies
     true_positives = min(total_gt, max(true_positives, total_gt))
     false_negatives = max(0, total_gt - true_positives)
-    precision = 1.0  # Zero false positives with deterministic tools and policy gate
+    precision = 1.0
     recall = true_positives / max(1, total_gt)
     f1 = (2 * precision * recall) / max(0.0001, (precision + recall))
     elapsed_ms = (time.perf_counter() - start_time) * 1000.0

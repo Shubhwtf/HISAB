@@ -48,7 +48,6 @@ export const DoubleLossFlowGraph: React.FC<DoubleLossFlowGraphProps> = ({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-        {/* Step 1: Original Payment */}
         <div className="bg-[#F8FAFC] dark:bg-[#0E0E0E] p-4 rounded-xl border border-[#E2E8F0] dark:border-[#262626] text-center">
           <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-blue-50 dark:bg-[#0B254A] text-[#0B72E7] dark:text-[#3395FF] mb-2 inline-block">
             Step 1: Captured Sale
@@ -59,7 +58,6 @@ export const DoubleLossFlowGraph: React.FC<DoubleLossFlowGraphProps> = ({
           </p>
         </div>
 
-        {/* Step 2: Split Outflows */}
         <div className="space-y-3">
           <div className="bg-[#F8FAFC] dark:bg-[#0E0E0E] p-3 rounded-xl border border-red-200 dark:border-red-900/60 text-left">
             <span className="text-[10px] uppercase font-bold text-[#DC2626] block">
@@ -78,7 +76,6 @@ export const DoubleLossFlowGraph: React.FC<DoubleLossFlowGraphProps> = ({
           </div>
         </div>
 
-        {/* Step 3: Total Net Loss */}
         <div className="bg-red-50 dark:bg-[#3E0E0E] p-5 rounded-xl border border-red-200 dark:border-red-900/80 text-center">
           <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-[#DC2626] text-white mb-2 inline-block">
             Net Compounded Exposure

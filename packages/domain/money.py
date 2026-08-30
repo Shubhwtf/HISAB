@@ -41,7 +41,6 @@ def format_inr(paise: int, show_symbol: bool = True) -> str:
     rupees = abs_paise // 100
     remainder_paise = abs_paise % 100
     
-    # Format rupees with Indian numbering (last 3 digits, then pairs of 2 digits)
     rupee_str = str(rupees)
     if len(rupee_str) <= 3:
         formatted_rupees = rupee_str
@@ -91,10 +90,10 @@ def format_inr_compact(paise: int) -> str:
     abs_paise = abs(paise)
     abs_rupees = abs_paise / 100.0
 
-    if abs_rupees >= 10000000:  # >= 1 Crore (100 Lakhs)
+    if abs_rupees >= 10000000:
         cr = abs_rupees / 10000000.0
         val_str = f"₹{cr:.2f}Cr"
-    elif abs_rupees >= 100000:  # >= 1 Lakh
+    elif abs_rupees >= 100000:
         lakh = abs_rupees / 100000.0
         val_str = f"₹{lakh:.2f}L"
     else:

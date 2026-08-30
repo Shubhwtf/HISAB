@@ -5,25 +5,18 @@ from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 from alembic import context
 
-# Ensure current directory is in sys.path
 sys.path.insert(0, os.path.abspath("."))
 
 from packages.domain.db_models import Base
 from packages.domain.database import SYNC_DATABASE_URL
 
-# this is the Alembic Config object, which provides
-# access to the values within the .ini file in use.
 config = context.config
 
-# Interpret the config file for Python logging.
-# This line sets up loggers basically.
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Set target metadata for 'autogenerate' support
 target_metadata = Base.metadata
 
-# Override URL with environment configuration
 config.set_main_option("sqlalchemy.url", SYNC_DATABASE_URL)
 
 

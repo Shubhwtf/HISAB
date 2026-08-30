@@ -23,8 +23,8 @@ class TestBenchmarkHarness:
     def test_baseline_a_deterministic_metrics(self, benchmark_dataset):
         res_a = run_baseline_a_deterministic(benchmark_dataset)
         assert res_a.baseline_id == "BASELINE_A"
-        assert res_a.recall < 0.60 # Rules-only misses complex anomalies
-        assert res_a.double_loss_detected is False # Misses compounding double loss
+        assert res_a.recall < 0.60
+        assert res_a.double_loss_detected is False
         assert res_a.hallucination_count == 0
         assert res_a.math_error_count == 0
 
@@ -33,16 +33,16 @@ class TestBenchmarkHarness:
         assert res_b.baseline_id == "BASELINE_B"
         assert res_b.hallucination_count > 0
         assert res_b.math_error_count > 0
-        assert res_b.precision < 0.90 # Suffers from false positives
+        assert res_b.precision < 0.90
 
     def test_baseline_c_hisab_metrics(self, benchmark_dataset):
         res_c = run_baseline_c_hisab(benchmark_dataset)
         assert res_c.baseline_id == "BASELINE_C_HISAB"
-        assert res_c.precision == 1.0 # 100% precision
-        assert res_c.recall == 1.0    # 100% recall
+        assert res_c.precision == 1.0
+        assert res_c.recall == 1.0
         assert res_c.f1_score == 1.0
         assert res_c.double_loss_detected is True
-        assert res_c.double_loss_exposure_paise >= 14400000 # Full ₹144k detected
+        assert res_c.double_loss_exposure_paise >= 14400000
         assert res_c.hallucination_count == 0
         assert res_c.math_error_count == 0
 

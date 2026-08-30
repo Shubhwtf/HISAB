@@ -25,7 +25,7 @@ router = APIRouter(prefix="/api/search", tags=["Global Search"])
 
 
 class SearchResultItem(BaseModel):
-    category: str  # Payments | Exceptions | Settlements | Orders | Navigation
+    category: str
     id: str
     title: str
     subtitle: str
@@ -40,7 +40,6 @@ class SearchResponse(BaseModel):
     results: List[SearchResultItem]
 
 
-# Predefined Navigation Quick Links
 NAVIGATION_LINKS = [
     {"title": "Executive Dashboard", "subtitle": "High-level KPI metrics & revenue trajectory", "target_tab": "overview", "badge": "Overview"},
     {"title": "Settlement Batch Control Room", "subtitle": "Decomposition & bank line unbundling", "target_tab": "batch-control", "badge": "Batches"},
@@ -66,7 +65,6 @@ def search_global(
     q_lower = query_str.lower()
     results: List[SearchResultItem] = []
 
-    # 1. Search Payments
     payments = db.scalars(
         select(PaymentDB)
         .where(
@@ -93,7 +91,6 @@ def search_global(
             )
         )
 
-    # 2. Search Exceptions
     exceptions = db.scalars(
         select(ExceptionDB)
         .where(
@@ -121,7 +118,6 @@ def search_global(
             )
         )
 
-    # 3. Search Settlements
     settlements = db.scalars(
         select(SettlementDB)
         .where(
@@ -146,7 +142,6 @@ def search_global(
             )
         )
 
-    # 4. Search Orders
     orders = db.scalars(
         select(OrderDB)
         .where(
@@ -171,7 +166,6 @@ def search_global(
             )
         )
 
-    # 5. Search Navigation Views
     for nav in NAVIGATION_LINKS:
         if q_lower in nav["title"].lower() or q_lower in nav["subtitle"].lower() or q_lower in nav["badge"].lower():
             results.append(

@@ -24,7 +24,6 @@ def levenshtein_similarity(s1: str, s2: str) -> float:
     if not s1 or not s2:
         return 0.0
     
-    # Check substring / prefix match
     s1_u, s2_u = s1.upper(), s2.upper()
     prefix_score = 0.0
     if s1_u in s2_u or s2_u in s1_u:
@@ -43,9 +42,9 @@ def levenshtein_similarity(s1: str, s2: str) -> float:
         for j in range(1, len2 + 1):
             cost = 0 if s1[i - 1] == s2[j - 1] else 1
             dp[i][j] = min(
-                dp[i - 1][j] + 1,      # deletion
-                dp[i][j - 1] + 1,      # insertion
-                dp[i - 1][j - 1] + cost # substitution
+                dp[i - 1][j] + 1,
+                dp[i][j - 1] + 1,
+                dp[i - 1][j - 1] + cost
             )
 
     distance = dp[len1][len2]
@@ -84,7 +83,6 @@ def match_settlement_to_bank_fuzzy(
             if b.id in matched_bank_ids or b.direction != "credit":
                 continue
 
-            # 1. Date constraint
             if s.settled_at and b.date:
                 s_dt = s.settled_at.replace(tzinfo=None)
                 b_dt = b.date.replace(tzinfo=None)
@@ -94,16 +92,13 @@ def match_settlement_to_bank_fuzzy(
             else:
                 date_diff = 0.0
 
-            # 2. Exact amount constraint
             amount_equal = (s.amount_paise == b.amount_paise)
             if not amount_equal:
                 continue
 
-            # 3. String similarity on UTR / Narration
             ref_sim = 0.0
             utr_extracted = False
             
-            # Check if settlement ID or UTR appears directly in bank narration
             if b.description:
                 if s.id.lower() in b.description.lower():
                     ref_sim = 0.98
@@ -112,12 +107,10 @@ def match_settlement_to_bank_fuzzy(
                     ref_sim = 0.95
                     utr_extracted = True
 
-            # Fuzzy comparison if reference exists
             if not utr_extracted and s.utr and b.reference:
                 sim = levenshtein_similarity(s.utr.strip().upper(), b.reference.strip().upper())
                 ref_sim = max(ref_sim, sim)
 
-            # Score calculation
             if ref_sim >= similarity_threshold or utr_extracted:
                 score = 0.90 + (0.08 * ref_sim)
                 if score > best_score:

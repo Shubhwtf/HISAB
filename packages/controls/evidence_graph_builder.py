@@ -103,7 +103,7 @@ class PaymentDossier(BaseModel):
     """
     payment_id: str
     order_id: str
-    decision: str  # MATCHED | FLAGGED_EXCEPTION | POTENTIAL_DOUBLE_LOSS
+    decision: str
     overall_confidence: float
     reconciled_amount_paise: int
     unresolved_exposure_paise: int
@@ -126,7 +126,6 @@ def build_evidence_graph_for_payment(
     edges: List[EvidenceEdge] = []
     reasoning: List[str] = []
 
-    # 1. Order Node
     order_id = order.id if order else payment.order_id
     nodes.append({
         "id": order_id,
@@ -136,7 +135,6 @@ def build_evidence_graph_for_payment(
         "status": order.status if order else "paid",
     })
 
-    # 2. Payment Node
     nodes.append({
         "id": payment.id,
         "type": "PAYMENT",
@@ -148,7 +146,6 @@ def build_evidence_graph_for_payment(
         "status": payment.status,
     })
 
-    # Edge: Order -> Payment
     edges.append(EvidenceEdge(
         source_id=order_id,
         target_id=payment.id,
@@ -163,7 +160,6 @@ def build_evidence_graph_for_payment(
     ))
     reasoning.append(f"1. Order {order_id} captured via payment {payment.id} for {payment.amount_formatted}.")
 
-    # 3. Refund Nodes & Edges
     payment_refunds = refunds or []
     has_full_refund = False
     total_refund_paise = sum(r.amount_paise for r in payment_refunds)
@@ -194,7 +190,6 @@ def build_evidence_graph_for_payment(
             has_full_refund = True
         reasoning.append(f"2. Customer refund of {r.amount_formatted} issued ({r.id}) to original payment method.")
 
-    # 4. Dispute Nodes & Edges
     payment_disputes = disputes or []
     has_active_dispute = any(d.status in ("open", "under_review", "evidence_submitted") for d in payment_disputes)
     
@@ -223,7 +218,6 @@ def build_evidence_graph_for_payment(
         ))
         reasoning.append(f"3. Bank chargeback dispute of {d.exposure_formatted} raised ({d.id}).")
 
-    # 5. Settlement Node & Edge
     if settlement:
         nodes.append({
             "id": settlement.id,
@@ -252,7 +246,6 @@ def build_evidence_graph_for_payment(
         ))
         reasoning.append(f"4. Payment net contribution ({breakdown.net_formatted}) reconciled into settlement batch {settlement.id}.")
 
-        # 6. Bank Transaction Node & Edge
         if bank_transaction:
             nodes.append({
                 "id": bank_transaction.id,
@@ -276,7 +269,6 @@ def build_evidence_graph_for_payment(
             ))
             reasoning.append(f"5. Settlement batch {settlement.id} reconciled to external bank credit via UTR {settlement.utr}.")
 
-    # Decision synthesis
     if total_refund_paise > 0 and has_active_dispute:
         decision = "POTENTIAL_DOUBLE_LOSS"
         confidence = 0.984

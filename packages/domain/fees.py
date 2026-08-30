@@ -54,7 +54,6 @@ class FeeBreakdown(BaseModel):
         return format_inr(self.net_paise)
 
 
-# Standard default schedules
 DEFAULT_FEE_SCHEDULES: Dict[str, FeeSchedule] = {
     "card": FeeSchedule(name="Standard Domestic Card", mdr_bps=200, fixed_fee_paise=0, gst_bps=1800),
     "upi": FeeSchedule(name="Standard UPI P2M", mdr_bps=0, fixed_fee_paise=0, gst_bps=1800),
@@ -93,14 +92,11 @@ def calculate_fee_and_tax(
             schedule_name=schedule.name,
         )
 
-    # 1. Calculate MDR fee: (gross * bps) / 10000
     variable_fee_paise = round_half_up(gross_paise * schedule.mdr_bps, 10000)
     total_fee_paise = variable_fee_paise + schedule.fixed_fee_paise
 
-    # 2. Calculate GST on processing fee: (fee * gst_bps) / 10000
     tax_paise = round_half_up(total_fee_paise * schedule.gst_bps, 10000)
 
-    # 3. Calculate total deductions and net credit
     total_deductions_paise = total_fee_paise + tax_paise
     net_paise = gross_paise - total_deductions_paise
 

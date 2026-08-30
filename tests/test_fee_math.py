@@ -14,11 +14,8 @@ class TestRoundHalfUp:
         assert round_half_up(104, 10) == 10
 
     def test_half_up_boundary(self):
-        # 250 / 100 = 2.5 -> rounds to 3
         assert round_half_up(250, 100) == 3
-        # 249 / 100 = 2.49 -> rounds to 2
         assert round_half_up(249, 100) == 2
-        # 36000 / 10000 = 3.6 -> rounds to 4
         assert round_half_up(36000, 10000) == 4
 
     def test_negative_rounding(self):
@@ -61,8 +58,8 @@ class TestMoneyClass:
         assert m.formatted == "₹72,000.50"
 
     def test_money_arithmetic(self):
-        m1 = Money(paise=100000)  # ₹1,000
-        m2 = Money(paise=25000)   # ₹250
+        m1 = Money(paise=100000)
+        m2 = Money(paise=25000)
         
         sum_m = m1 + m2
         assert sum_m.paise == 125000
@@ -88,10 +85,6 @@ class TestMoneyClass:
 
 class TestFeeCalculations:
     def test_standard_card_fee_calculation(self):
-        # Transaction = ₹1,000.00 (100,000 paise)
-        # MDR = 2.0% (200 bps) -> ₹20.00 (2000 paise)
-        # GST = 18.0% (1800 bps) on fee -> ₹3.60 (360 paise)
-        # Net = ₹976.40 (97640 paise)
         breakdown = calculate_fee_and_tax(100000, DEFAULT_FEE_SCHEDULES["card"])
         assert breakdown.gross_paise == 100000
         assert breakdown.fee_paise == 2000
@@ -103,10 +96,6 @@ class TestFeeCalculations:
         assert breakdown.net_formatted == "₹976.40"
 
     def test_high_value_transaction(self):
-        # Transaction = ₹72,000.00 (7,200,000 paise)
-        # MDR = 2.0% -> ₹1,440.00 (144,000 paise)
-        # GST = 18.0% -> ₹259.20 (25,920 paise)
-        # Net = ₹70,300.80 (7,030,080 paise)
         breakdown = calculate_fee_and_tax(7200000, DEFAULT_FEE_SCHEDULES["card"])
         assert breakdown.gross_paise == 7200000
         assert breakdown.fee_paise == 144000
@@ -115,7 +104,6 @@ class TestFeeCalculations:
         assert breakdown.net_paise == 7030080
 
     def test_upi_zero_mdr(self):
-        # UPI P2M standard = 0% MDR
         breakdown = calculate_fee_and_tax(500000, DEFAULT_FEE_SCHEDULES["upi"])
         assert breakdown.gross_paise == 500000
         assert breakdown.fee_paise == 0
@@ -126,16 +114,10 @@ class TestFeeCalculations:
     def test_custom_schedule_with_fixed_fee(self):
         schedule = FeeSchedule(
             name="Custom Gateway Tier",
-            mdr_bps=150,           # 1.5%
-            fixed_fee_paise=300,   # ₹3.00 flat
-            gst_bps=1800           # 18%
+            mdr_bps=150,
+            fixed_fee_paise=300,
+            gst_bps=1800
         )
-        # Gross = ₹2,000.00 (200,000 paise)
-        # Variable fee = 200,000 * 150 / 10000 = 3000 paise (₹30.00)
-        # Total fee = 3000 + 300 = 3300 paise (₹33.00)
-        # GST = 3300 * 1800 / 10000 = 594 paise (₹5.94)
-        # Total deduction = 3300 + 594 = 3894 paise (₹38.94)
-        # Net = 200,000 - 3894 = 196,106 paise (₹1,961.06)
         breakdown = calculate_fee_and_tax(200000, schedule)
         assert breakdown.gross_paise == 200000
         assert breakdown.fee_paise == 3300

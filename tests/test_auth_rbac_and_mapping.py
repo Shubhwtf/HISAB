@@ -38,27 +38,22 @@ class TestAuthAndRBAC:
         assert verify_password("WrongPassword", pw_hash, salt) is False
 
     def test_role_permission_boundaries(self):
-        # Admin has all permissions
         assert check_user_permission(Role.ADMIN, Permission.MANAGE_RAZORPAY_CONNECTION) is True
         assert check_user_permission(Role.ADMIN, Permission.CLOSE_BATCHES) is True
 
-        # Finance Manager can close batches but cannot change Razorpay connection
         assert check_user_permission(Role.FINANCE_MANAGER, Permission.CLOSE_BATCHES) is True
         assert check_user_permission(Role.FINANCE_MANAGER, Permission.MANAGE_RAZORPAY_CONNECTION) is False
 
-        # Analyst can prepare resolutions but cannot close batches or change connections
         assert check_user_permission(Role.ANALYST, Permission.PREPARE_RESOLUTIONS) is True
         assert check_user_permission(Role.ANALYST, Permission.CLOSE_BATCHES) is False
         assert check_user_permission(Role.ANALYST, Permission.MANAGE_RAZORPAY_CONNECTION) is False
 
-        # Auditor is read-only
         assert check_user_permission(Role.AUDITOR, Permission.VIEW_FINANCIAL_DATA) is True
         assert check_user_permission(Role.AUDITOR, Permission.UPLOAD_FINANCIAL_DATA) is False
         assert check_user_permission(Role.AUDITOR, Permission.APPROVE_RESOLUTIONS) is False
         assert check_user_permission(Role.AUDITOR, Permission.CLOSE_BATCHES) is False
 
     def test_signin_success_and_invalid_credentials(self):
-        # Success (Role is resolved automatically from organization membership, NOT passed by user)
         res = client.post("/api/auth/signin", json={"email": "admin@novacommerce.com", "password": "demo123"})
         assert res.status_code == 200
         data = res.json()
@@ -67,12 +62,10 @@ class TestAuthAndRBAC:
         assert data["org_name"] == "Nova Commerce Pvt Ltd"
         assert "token" in data
 
-        # Invalid password
         res_fail = client.post("/api/auth/signin", json={"email": "admin@novacommerce.com", "password": "wrong"})
         assert res_fail.status_code == 401
 
     def test_signup_creates_new_org_and_admin(self):
-        # Step 1 & 2: User creates account and new organization
         res = client.post("/api/auth/signup", json={
             "name": "Kavita Rao",
             "email": "kavita@solarenergetics.in",
@@ -86,13 +79,12 @@ class TestAuthAndRBAC:
         data = res.json()
         assert data["name"] == "Kavita Rao"
         assert data["email"] == "kavita@solarenergetics.in"
-        assert data["role"] == "ADMIN"  # Creator automatically becomes Admin/Owner
+        assert data["role"] == "ADMIN"
         assert data["is_org_owner"] is True
         assert data["org_name"] == "Solar Energetics Ltd"
-        assert data["is_razorpay_connected"] is False  # Starts disconnected
+        assert data["is_razorpay_connected"] is False
 
     def test_admin_invitation_and_member_join_flow(self):
-        # 1. Admin invites a new team member as ANALYST
         admin_sess = client.post("/api/auth/signin", json={"email": "admin@novacommerce.com", "password": "demo123"}).json()
         token = admin_sess["token"]
 
@@ -106,13 +98,11 @@ class TestAuthAndRBAC:
         assert "invite_link" in invite_data
         invite_token = invite_data["invite_link"].split("invite=")[-1]
 
-        # 2. Inspect invitation details
         res_inspect = client.get(f"/api/auth/invitations/{invite_token}")
         assert res_inspect.status_code == 200
         assert res_inspect.json()["role"] == "ANALYST"
         assert res_inspect.json()["org_name"] == "Nova Commerce Pvt Ltd"
 
-        # 3. Deepak accepts invitation and signs up
         res_join = client.post("/api/auth/signup", json={
             "name": "Deepak Verma",
             "email": "deepak@novacommerce.com",
@@ -121,12 +111,11 @@ class TestAuthAndRBAC:
         })
         assert res_join.status_code == 200
         join_data = res_join.json()
-        assert join_data["role"] == "ANALYST"  # Receives invited role
+        assert join_data["role"] == "ANALYST"
         assert join_data["org_name"] == "Nova Commerce Pvt Ltd"
         assert "upload_financial_data" in join_data["permissions"]
         assert "manage_users" not in join_data["permissions"]
 
-        # 4. Deepak logs in directly with email & password -> automatically loads ANALYST role
         res_login = client.post("/api/auth/signin", json={
             "email": "deepak@novacommerce.com",
             "password": "mySecurePassword123!"
@@ -143,14 +132,12 @@ class TestAuthAndRBAC:
         assert "view_financial_data" in data["permissions"]
 
     def test_admin_only_razorpay_oauth_connect_enforcement(self):
-        # Non-admin (Analyst) attempting OAuth connection modification -> 403 Forbidden
         res_analyst = client.post(
             "/api/auth/razorpay-oauth-connect",
             headers={"X-User-Role": "ANALYST", "X-Session-Token": "hisab_sess_demo_analyst"}
         )
         assert res_analyst.status_code == 403
 
-        # Admin allowed
         res_admin = client.post(
             "/api/auth/razorpay-oauth-connect",
             headers={"X-User-Role": "ADMIN", "X-Session-Token": "hisab_sess_demo_admin_2026"}
@@ -161,17 +148,14 @@ class TestAuthAndRBAC:
 
 class TestDynamicSchemaMapping:
     def test_source_type_detection(self):
-        # Settlement recon file
         s_res = detect_source_type("settlement_recon_august.csv", ["payment_id", "settlement_id", "amount", "utr"])
         assert s_res.detected_source_type in ("SETTLEMENT_RECONCILIATION", "SETTLEMENTS")
         assert s_res.confidence >= 0.95
 
-        # Bank statement file
         b_res = detect_source_type("hdfc_current_account.csv", ["date", "narration", "credit", "ref_no"])
         assert b_res.detected_source_type == "BANK_STATEMENT"
         assert b_res.confidence >= 0.95
 
-        # Refunds file
         r_res = detect_source_type("refunds_aug.csv", ["refund_id", "payment_id", "amount"])
         assert r_res.detected_source_type == "REFUNDS"
         assert r_res.confidence >= 0.95
@@ -188,7 +172,6 @@ class TestDynamicSchemaMapping:
         assert map_dict["UTR No"] == "bank_reference_utr"
 
     def test_zero_hallucination_canonical_field_guard(self):
-        # Even with bizarre source column names, all target fields MUST belong to canonical schema
         cols = ["RandomCol1", "InventedHeader_XYZ", "SomeCustomString"]
         mappings = map_columns_dynamically(cols, source_type="PAYMENTS")
         for m in mappings:

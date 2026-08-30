@@ -97,8 +97,7 @@ class TestAuditLedger:
             
             all_entries = list(db.scalars(select(AuditEntryDB).order_by(AuditEntryDB.sequence.asc())).all())
             
-            # Intentionally tamper with entry 2 payload
-            all_entries[1].payload = {"amount": 999999}  # Modified payload!
+            all_entries[1].payload = {"amount": 999999}
 
             is_valid, err = verify_audit_chain(all_entries)
             assert is_valid is False
@@ -111,7 +110,6 @@ class TestAuditLedger:
 
             all_entries = list(db.scalars(select(AuditEntryDB).order_by(AuditEntryDB.sequence.asc())).all())
             
-            # Maliciously change ESCALATE to AUTO_RESOLVE
             all_entries[1].action = "AUTO_RESOLVE"
 
             is_valid, err = verify_audit_chain(all_entries)
@@ -125,7 +123,6 @@ class TestAuditLedger:
 
             all_entries = list(db.scalars(select(AuditEntryDB).order_by(AuditEntryDB.sequence.asc())).all())
             
-            # Alter previous_hash
             all_entries[1].previous_hash = "f" * 64
 
             is_valid, err = verify_audit_chain(all_entries)

@@ -58,7 +58,7 @@ class TestExceptionEngine:
         summary = summarize_exceptions(exceptions)
         assert summary.total_exceptions >= 8
         assert summary.critical_count >= 1
-        assert summary.total_exposure_paise > 10000000 # > ₹1 Lakh
+        assert summary.total_exposure_paise > 10000000
 
 
 class TestPolicyGate:
@@ -67,7 +67,7 @@ class TestPolicyGate:
             id="exc_safe_1",
             category="BANK_CREDIT_UNMATCHED",
             severity="LOW",
-            financial_impact_paise=242920, # ₹2,429.20 <= ₹5,000
+            financial_impact_paise=242920,
             confidence=0.96,
             root_cause="Altered bank reference matching exact amount and date",
             evidence={"score": "0.96", "matched_setl": "setl_1"}
@@ -97,7 +97,7 @@ class TestPolicyGate:
             id="exc_high_1",
             category="MISSING_SETTLEMENT",
             severity="HIGH",
-            financial_impact_paise=7200000, # ₹72,000 > ₹5,000 limit
+            financial_impact_paise=7200000,
             confidence=0.99,
             root_cause="High value unmapped payment",
             evidence={"amount": 7200000}
@@ -112,8 +112,8 @@ class TestPolicyGate:
             id="exc_low_1",
             category="MISSING_SETTLEMENT",
             severity="LOW",
-            financial_impact_paise=100000, # ₹1,000
-            confidence=0.82, # < 0.95
+            financial_impact_paise=100000,
+            confidence=0.82,
             root_cause="Uncertain match",
             evidence={"amount": 100000}
         )

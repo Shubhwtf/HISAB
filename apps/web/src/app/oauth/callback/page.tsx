@@ -26,7 +26,6 @@ function OAuthCallbackContent() {
           }),
         });
 
-        // Sign in to the connected organization
         await fetchApi("/api/auth/signin", {
           method: "POST",
           body: JSON.stringify({

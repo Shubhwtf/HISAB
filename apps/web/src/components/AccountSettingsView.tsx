@@ -80,7 +80,6 @@ export const AccountSettingsView: React.FC<AccountSettingsViewProps> = ({
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  // Members & Invitations State
   const [members, setMembers] = useState<Member[]>([]);
   const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
   const [orgName, setOrgName] = useState(propOrgName);
@@ -88,13 +87,11 @@ export const AccountSettingsView: React.FC<AccountSettingsViewProps> = ({
   const [isEditingGstin, setIsEditingGstin] = useState(false);
   const [tempGstin, setTempGstin] = useState("");
   
-  // Invite Form Modal
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("ANALYST");
   const [lastCreatedInviteLink, setLastCreatedInviteLink] = useState<string | null>(null);
 
-  // Razorpay Connection State
   const [rzpStatus, setRzpStatus] = useState<RazorpayStatus | null>(null);
   const [syncing, setSyncing] = useState(false);
 
@@ -279,7 +276,6 @@ export const AccountSettingsView: React.FC<AccountSettingsViewProps> = ({
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-12 font-sans">
       
-      {/* Page Title */}
       <div>
         <h1 className="text-xl font-bold tracking-tight text-[#0F172A] dark:text-[#EDEDED]">
           Account & Organization Settings
@@ -289,7 +285,6 @@ export const AccountSettingsView: React.FC<AccountSettingsViewProps> = ({
         </p>
       </div>
 
-      {/* Global Notice Alert */}
       {notice && (
         <div className={`p-3.5 rounded-xl border text-xs font-semibold flex items-center space-x-2.5 ${
           notice.type === "success" 
@@ -301,9 +296,6 @@ export const AccountSettingsView: React.FC<AccountSettingsViewProps> = ({
         </div>
       )}
 
-      {/* ========================================================================= */}
-      {/* 1. Merchant Organization Profile */}
-      {/* ========================================================================= */}
       <div className="bg-white dark:bg-[#111111] border border-[#E2E8F0] dark:border-[#262626] rounded-2xl p-6 shadow-sm space-y-4">
         <div className="flex items-center justify-between border-b border-[#E2E8F0] dark:border-[#262626] pb-3">
           <div className="flex items-center space-x-2.5">
@@ -382,9 +374,6 @@ export const AccountSettingsView: React.FC<AccountSettingsViewProps> = ({
         </div>
       </div>
 
-      {/* ========================================================================= */}
-      {/* 2. Team Members & RBAC Access Management */}
-      {/* ========================================================================= */}
       <div className="bg-white dark:bg-[#111111] border border-[#E2E8F0] dark:border-[#262626] rounded-2xl p-6 shadow-sm space-y-4">
         <div className="flex items-center justify-between border-b border-[#E2E8F0] dark:border-[#262626] pb-3">
           <div className="flex items-center space-x-2.5">
@@ -415,7 +404,6 @@ export const AccountSettingsView: React.FC<AccountSettingsViewProps> = ({
           )}
         </div>
 
-        {/* Invite Member Modal */}
         {showInviteModal && (
           <div className="p-4 rounded-xl bg-[#F8FAFC] dark:bg-[#161616] border border-[#E2E8F0] dark:border-[#262626] space-y-3.5 text-xs">
             <div className="flex items-center justify-between">
@@ -489,7 +477,6 @@ export const AccountSettingsView: React.FC<AccountSettingsViewProps> = ({
           </div>
         )}
 
-        {/* Members Table */}
         <div className="border border-[#E2E8F0] dark:border-[#262626] rounded-xl overflow-hidden text-xs">
           <table className="w-full text-left">
             <thead className="bg-[#F8FAFC] dark:bg-[#161616] border-b border-[#E2E8F0] dark:border-[#262626] text-[10px] uppercase font-bold text-[#64748B]">
@@ -578,7 +565,6 @@ export const AccountSettingsView: React.FC<AccountSettingsViewProps> = ({
           </table>
         </div>
 
-        {/* Pending Invites List */}
         {pendingInvites.length > 0 && (
           <div className="space-y-2 pt-2">
             <div className="text-[11px] font-bold uppercase tracking-wider text-[#64748B]">
@@ -611,9 +597,6 @@ export const AccountSettingsView: React.FC<AccountSettingsViewProps> = ({
         )}
       </div>
 
-      {/* ========================================================================= */}
-      {/* 3. Organization-Level Razorpay Gateway Connection */}
-      {/* ========================================================================= */}
       <div className="bg-white dark:bg-[#111111] border border-[#E2E8F0] dark:border-[#262626] rounded-2xl p-6 shadow-sm space-y-4">
         <div className="flex items-center justify-between border-b border-[#E2E8F0] dark:border-[#262626] pb-3">
           <div className="flex items-center space-x-2.5">
@@ -674,7 +657,6 @@ export const AccountSettingsView: React.FC<AccountSettingsViewProps> = ({
           </div>
         </div>
 
-        {/* Gateway Action Buttons */}
         <div className="flex flex-wrap items-center gap-2.5 pt-1">
           {rzpStatus?.is_connected ? (
             <>
@@ -711,9 +693,6 @@ export const AccountSettingsView: React.FC<AccountSettingsViewProps> = ({
         </div>
       </div>
 
-      {/* ========================================================================= */}
-      {/* 4. Sign Out */}
-      {/* ========================================================================= */}
       <div className="flex justify-between items-center pt-2">
         <div className="text-xs text-[#64748B] dark:text-[#888888]">
           Signed in as <span className="font-semibold text-[#0F172A] dark:text-white">{userName}</span> ({userRole})

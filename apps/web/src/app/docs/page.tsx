@@ -65,7 +65,6 @@ export default function DocsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  // Pinned Docs AI Copilot State
   const [docQuery, setDocQuery] = useState("");
   const [docLoading, setDocLoading] = useState(false);
   const [isCopilotOpen, setIsCopilotOpen] = useState(false);
@@ -124,7 +123,6 @@ export default function DocsPage() {
     }
   };
 
-  // Structured Sections & Submenu Mapping
   const sections: SectionItem[] = [
     {
       id: "intro",
@@ -248,10 +246,8 @@ export default function DocsPage() {
 
   return (
     <div className={`min-h-screen ${isDarkMode ? "dark bg-[#0A0A0A] text-[#EDEDED]" : "bg-[#FFFFFF] text-[#000000]"} font-sans select-none transition-colors`}>
-      {/* 1. TOP HEADER (1rem Font, Bigger Dashboard Button with Padding) */}
       <header className="sticky top-0 z-50 h-16 bg-[#0A0A0A] border-b border-[#262626] select-none text-white">
         <div className="w-full max-w-[92rem] mx-auto px-6 lg:px-12 flex items-center justify-between h-full">
-          {/* Left: Branding */}
           <div className="flex items-center space-x-3">
             <Link href="/" className="flex items-center space-x-2.5 hover:opacity-90 transition-opacity">
               <img src="/logo.svg" alt="HISAB Logo" className="w-7 h-7 rounded-lg object-contain" />
@@ -266,7 +262,6 @@ export default function DocsPage() {
             </div>
           </div>
 
-          {/* Middle: Working Search Box */}
           <div className="flex-1 max-w-md mx-6 relative">
             <div className="relative">
               <Search className="w-4 h-4 absolute left-3.5 top-3 text-[#71717A]" />
@@ -291,7 +286,6 @@ export default function DocsPage() {
               )}
             </div>
 
-            {/* Search Dropdown */}
             {searchQuery.trim() && (
               <div className="absolute left-0 right-0 mt-2 bg-white dark:bg-[#141414] border border-[#E5E7EB] dark:border-[#27272A] rounded-2xl shadow-2xl p-2 z-50 max-h-80 overflow-y-auto text-sm text-[#111827] dark:text-white space-y-1">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-[#6B7280] dark:text-[#A1A1AA] px-3 py-1.5 block">
@@ -330,7 +324,6 @@ export default function DocsPage() {
             )}
           </div>
 
-          {/* Right: Theme Toggle & Bigger Dashboard Button (Enhanced Vertical Padding) */}
           <div className="flex items-center space-x-3">
             <button
               onClick={toggleDarkMode}
@@ -351,7 +344,6 @@ export default function DocsPage() {
         </div>
       </header>
 
-      {/* 2. SUBMENU BAR (TIGHTLY GROUPED ON THE LEFT, NO WIDE GAPS, SINGLE BIG ACTIVE UNDERLINE) */}
       <nav className="sticky top-16 z-40 bg-[#FAFAFA] dark:bg-[#0E0E0E] border-b border-[#E5E7EB] dark:border-[#262626] select-none">
         <div className="w-full max-w-[92rem] mx-auto px-6 lg:px-12 py-1 flex items-center justify-start gap-3 overflow-hidden text-[0.875rem] font-semibold leading-[1.25rem] tracking-[0px]">
           {sections.map((sec) => {
@@ -375,14 +367,9 @@ export default function DocsPage() {
         </div>
       </nav>
 
-      {/* 3. MAIN PAGE CONTAINER */}
       <div className="w-full max-w-[92rem] mx-auto px-6 lg:px-12 py-8">
         {activeSectionId === "chat" ? (
-          /* ========================================================================= */
-          /* DEDICATED FULL-WIDTH CHAT VIEW WITH PINNED SEARCH / SEND BOX              */
-          /* ========================================================================= */
           <div className="w-full max-w-4xl mx-auto h-[calc(100vh-14rem)] min-h-[580px] bg-white dark:bg-[#111111] border border-[#E5E7EB] dark:border-[#262626] rounded-3xl p-6 lg:p-7 shadow-xs flex flex-col overflow-hidden animate-in fade-in">
-            {/* Header (Pinned Top) */}
             <div className="border-b border-[#E5E7EB] dark:border-[#262626] pb-4 flex flex-wrap items-center justify-between gap-4 flex-shrink-0">
               <div className="flex items-center space-x-3">
                 <div className="p-2.5 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-[#0B72E7] dark:text-[#3395FF]">
@@ -410,7 +397,6 @@ export default function DocsPage() {
               </div>
             </div>
 
-            {/* Chat Transcript Feed (Scrollable Middle Area) */}
             <div
               ref={chatScrollRef}
               className="p-4 lg:p-5 rounded-2xl bg-[#FAFAFA] dark:bg-[#0E0E0E] border border-[#E5E7EB] dark:border-[#262626] space-y-4 flex-1 min-h-0 overflow-y-auto text-[15px] leading-relaxed my-4"
@@ -444,7 +430,6 @@ export default function DocsPage() {
               )}
             </div>
 
-            {/* PINNED Search / Message Input Bar (Pinned Bottom) */}
             <div className="flex items-center space-x-3 pt-3 border-t border-[#E5E7EB] dark:border-[#262626] flex-shrink-0 bg-white dark:bg-[#111111] sticky bottom-0 z-10">
               <input
                 type="text"
@@ -465,10 +450,8 @@ export default function DocsPage() {
             </div>
           </div>
         ) : (
-          /* THREE-COLUMN ARTICLE & PINNED COPILOT VIEW */
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             
-            {/* COLUMN 1: LEFT SIDEBAR (DARK TEXT IN LIGHT MODE, FULL HIGH-CONTRAST) */}
             <aside className="lg:col-span-3 bg-white dark:bg-[#111111] border border-[#E5E7EB] dark:border-[#262626] rounded-2xl p-4 shadow-xs space-y-3 sticky top-28 max-h-[82vh] overflow-y-auto">
               <div className="space-y-1.5">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-[#6B7280] dark:text-[#A1A1AA] px-2.5 block">
@@ -509,10 +492,8 @@ export default function DocsPage() {
               </div>
             </aside>
 
-            {/* COLUMN 2: MIDDLE MAIN ARTICLE CONTENT */}
             <main className="lg:col-span-6 space-y-8 bg-white dark:bg-[#111111] border border-[#E5E7EB] dark:border-[#262626] rounded-3xl p-6 lg:p-10 shadow-xs text-[15px] leading-relaxed text-[#111827] dark:text-[#D1D5DB]">
               
-              {/* ARTICLE 1A: OVERVIEW & MISSION */}
               {activeDocId === "overview" && (
                 <article className="space-y-8">
                   <div className="border-b border-[#E5E7EB] dark:border-[#262626] pb-5">
@@ -528,7 +509,6 @@ export default function DocsPage() {
                     </p>
                   </div>
 
-                  {/* Anchor 1: Reconciliation Blindspot */}
                   <div id="problem-statement" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                     <div className="flex items-center space-x-2.5">
                       <span className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950 text-[#0B72E7] dark:text-[#3395FF]">
@@ -547,7 +527,6 @@ export default function DocsPage() {
                     </p>
                   </div>
 
-                  {/* Anchor 2: Systemic Failure Modes */}
                   <div id="failure-modes" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                     <div className="flex items-center space-x-2.5">
                       <span className="p-1.5 rounded-lg bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400">
@@ -586,7 +565,6 @@ export default function DocsPage() {
                     </div>
                   </div>
 
-                  {/* Anchor 3: The HISAB Solution */}
                   <div id="hisab-mission" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                     <div className="flex items-center space-x-2.5">
                       <span className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400">
@@ -604,7 +582,6 @@ export default function DocsPage() {
                 </article>
               )}
 
-              {/* ARTICLE 1B: 4-WAY LEDGERS & RULES */}
               {activeDocId === "ledgers" && (
                 <article className="space-y-8">
                   <div className="border-b border-[#E5E7EB] dark:border-[#262626] pb-5">
@@ -620,7 +597,6 @@ export default function DocsPage() {
                     </p>
                   </div>
 
-                  {/* Anchor 1: The 4-Way Ledger Model */}
                   <div id="four-ledgers" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                     <h3 className="font-bold text-base text-[#09090B] dark:text-white">
                       The Four Core Ledgers
@@ -649,7 +625,6 @@ export default function DocsPage() {
                     </div>
                   </div>
 
-                  {/* Anchor 2: Continuous Guardrails */}
                   <div id="core-capabilities" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                     <h3 className="font-bold text-base text-[#09090B] dark:text-white">
                       Continuous Guardrails & Capabilities
@@ -685,7 +660,6 @@ export default function DocsPage() {
                 </article>
               )}
 
-              {/* ARTICLE 1C: 4-WAY MONEY TRAIL FLOW */}
               {activeDocId === "money-trail" && (
                 <article className="space-y-8">
                   <div className="border-b border-[#E5E7EB] dark:border-[#262626] pb-5">
@@ -701,7 +675,6 @@ export default function DocsPage() {
                     </p>
                   </div>
 
-                  {/* Anchor 1: End-to-End Flowchart */}
                   <div id="flow-diagram" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                     <h3 className="font-bold text-base text-[#09090B] dark:text-white">
                       Real-Time Money Journey Flowchart
@@ -740,7 +713,6 @@ graph LR
                     />
                   </div>
 
-                  {/* Anchor 2: Lifecycle Stage Breakdown */}
                   <div id="lifecycle-breakdown" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                     <h3 className="font-bold text-base text-[#09090B] dark:text-white">
                       4-Stage Processing Lifecycle
@@ -776,7 +748,6 @@ graph LR
                 </article>
               )}
 
-              {/* ARTICLE 1D: 60-SECOND QUICKSTART */}
               {activeDocId === "quickstart" && (
                 <article className="space-y-8">
                   <div className="border-b border-[#E5E7EB] dark:border-[#262626] pb-5">
@@ -792,7 +763,6 @@ graph LR
                     </p>
                   </div>
 
-                  {/* Anchor 1: Local Environment Startup */}
                   <div id="local-startup" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                     <div className="flex items-center space-x-2.5">
                       <span className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950 text-[#0B72E7] dark:text-[#3395FF]">
@@ -821,7 +791,6 @@ graph LR
                     </div>
                   </div>
 
-                  {/* Anchor 2: Gateway Verification */}
                   <div id="health-verification" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                     <div className="flex items-center space-x-2.5">
                       <span className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400">
@@ -843,7 +812,6 @@ graph LR
                 </article>
               )}
 
-              {/* ARTICLE 2: RAZORPAY WEBHOOK RAIL (EXHAUSTIVE & DESCRIPTIVE) */}
               {activeDocId === "razorpay-ingest" && (
                 <article className="space-y-8">
                   <div className="border-b border-[#E5E7EB] dark:border-[#262626] pb-5">
@@ -859,7 +827,6 @@ graph LR
                     </p>
                   </div>
 
-                  {/* Anchor 1: Endpoint Setup */}
                   <div id="webhook-setup" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                     <div className="flex items-center space-x-2.5">
                       <span className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950 text-[#0B72E7] dark:text-[#3395FF]">
@@ -900,7 +867,6 @@ graph LR
                     </div>
                   </div>
 
-                  {/* Anchor 2: Supported Events & Payloads */}
                   <div id="events" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                     <div className="flex items-center space-x-2.5">
                       <span className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950 text-[#0B72E7] dark:text-[#3395FF]">
@@ -977,7 +943,6 @@ graph LR
                     </div>
                   </div>
 
-                  {/* Anchor 3: HMAC Verification & Security */}
                   <div id="signature-verify" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                     <div className="flex items-center space-x-2.5">
                       <span className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400">
@@ -1018,7 +983,6 @@ async def verify_razorpay_webhook(
                 </article>
               )}
 
-              {/* ARTICLE 3: ENVIRONMENT CONFIGURATION (EXHAUSTIVE & DESCRIPTIVE) */}
               {activeDocId === "env-config" && (
                 <article className="space-y-8">
                   <div className="border-b border-[#E5E7EB] dark:border-[#262626] pb-5">
@@ -1034,7 +998,6 @@ async def verify_razorpay_webhook(
                     </p>
                   </div>
 
-                  {/* Anchor 1: Core Variables & Secrets */}
                   <div id="env-vars" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                     <div className="flex items-center space-x-2.5">
                       <span className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950 text-[#0B72E7] dark:text-[#3395FF]">
@@ -1132,7 +1095,6 @@ JWT_SECRET_KEY=hisab_jwt_secret_high_entropy_random_string_2026`}</pre>
                     </div>
                   </div>
 
-                  {/* Anchor 2: Redis Caching & Lock Topology */}
                   <div id="redis-cache" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                     <div className="flex items-center space-x-2.5">
                       <span className="p-1.5 rounded-lg bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400">
@@ -1174,9 +1136,6 @@ JWT_SECRET_KEY=hisab_jwt_secret_high_entropy_random_string_2026`}</pre>
                 </article>
               )}
 
-              {/* ------------------------------------------------------------- */}
-              {/* ARCHITECTURE ARTICLE 1: INTERNAL WORKING PIPELINE */}
-                  {/* ------------------------------------------------------------- */}
                   {activeDocId === "working" && (
                     <article className="space-y-8">
                       <div className="border-b border-[#E5E7EB] dark:border-[#262626] pb-5">
@@ -1192,7 +1151,6 @@ JWT_SECRET_KEY=hisab_jwt_secret_high_entropy_random_string_2026`}</pre>
                         </p>
                       </div>
 
-                      {/* Anchor 1: Event Pipeline Flow */}
                       <div id="pipeline" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                         <h3 className="font-bold text-base text-[#09090B] dark:text-white">
                           End-to-End Ingestion to Merkle Sealing Pipeline
@@ -1243,7 +1201,6 @@ graph TD
                         </div>
                       </div>
 
-                      {/* Anchor 2: State Transition Machine */}
                       <div id="state-lifecycle" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                         <h3 className="font-bold text-base text-[#09090B] dark:text-white">
                           Transaction State Transition Machine
@@ -1269,7 +1226,6 @@ stateDiagram-v2
                         />
                       </div>
 
-                      {/* Anchor 3: Event Ingestion & Idempotency */}
                       <div id="event-driven" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                         <h3 className="font-bold text-base text-[#09090B] dark:text-white">
                           Event Ingestion & Redis Idempotency Gate
@@ -1295,9 +1251,6 @@ stateDiagram-v2
                     </article>
                   )}
 
-                  {/* ------------------------------------------------------------- */}
-                  {/* ARCHITECTURE ARTICLE 2: 3-TIER MATCHER ENGINE */}
-                  {/* ------------------------------------------------------------- */}
                   {activeDocId === "engine" && (
                     <article className="space-y-8">
                       <div className="border-b border-[#E5E7EB] dark:border-[#262626] pb-5">
@@ -1326,7 +1279,6 @@ graph TD
                         `}
                       />
 
-                      {/* Anchor 1: Tier 1 Exact Match */}
                       <div id="tier1" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E5E7EB] dark:border-[#262626] pb-3">
                           <div>
@@ -1358,7 +1310,6 @@ graph TD
                         </div>
                       </div>
 
-                      {/* Anchor 2: Tier 2 Window Match */}
                       <div id="tier2" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E5E7EB] dark:border-[#262626] pb-3">
                           <div>
@@ -1381,7 +1332,6 @@ graph TD
                         </ul>
                       </div>
 
-                      {/* Anchor 3: Tier 3 Subset-Sum Knapsack */}
                       <div id="tier3" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E5E7EB] dark:border-[#262626] pb-3">
                           <div>
@@ -1413,7 +1363,6 @@ graph TD
                         </div>
                       </div>
 
-                      {/* Anchor 4: Throughput Benchmarks */}
                       <div id="benchmark" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                         <h3 className="font-bold text-base text-[#09090B] dark:text-white">
                           Algorithm Throughput & Latency Benchmarks (10,000 Transactions)
@@ -1458,9 +1407,6 @@ graph TD
                     </article>
                   )}
 
-                  {/* ------------------------------------------------------------- */}
-                  {/* ARCHITECTURE ARTICLE 3: MATHEMATICAL INVARIANTS */}
-                  {/* ------------------------------------------------------------- */}
                   {activeDocId === "invariants" && (
                     <article className="space-y-8">
                       <div className="border-b border-[#E5E7EB] dark:border-[#262626] pb-5">
@@ -1476,7 +1422,6 @@ graph TD
                         </p>
                       </div>
 
-                      {/* Anchor 1: Net Settlement Formula */}
                       <div id="proof-formulas" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                         <div className="flex items-center space-x-2">
                           <span className="px-2.5 py-1 rounded bg-[#0B72E7] text-white font-mono font-bold text-xs">Invariant #1</span>
@@ -1501,7 +1446,6 @@ graph TD
                         </div>
                       </div>
 
-                      {/* Anchor 2: Zero-Tolerance Proof */}
                       <div id="zero-drift" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                         <div className="flex items-center space-x-2">
                           <span className="px-2.5 py-1 rounded bg-emerald-600 text-white font-mono font-bold text-xs">Invariant #2</span>
@@ -1523,7 +1467,6 @@ graph TD
                         </p>
                       </div>
 
-                      {/* Anchor 3: Merkle Tree Batch Sealing */}
                       <div id="merkle-proof" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                         <div className="flex items-center space-x-2">
                           <span className="px-2.5 py-1 rounded bg-purple-600 text-white font-mono font-bold text-xs">Proof Seal</span>
@@ -1551,9 +1494,6 @@ graph TD
                     </article>
                   )}
 
-                  {/* ------------------------------------------------------------- */}
-                  {/* ARCHITECTURE ARTICLE 4: REDIS IDEMPOTENCY & RESILIENCE */}
-                  {/* ------------------------------------------------------------- */}
                   {activeDocId === "idempotency-engine" && (
                     <article className="space-y-8">
                       <div className="border-b border-[#E5E7EB] dark:border-[#262626] pb-5">
@@ -1569,7 +1509,6 @@ graph TD
                         </p>
                       </div>
 
-                      {/* Anchor 1: Distributed Mutex Locks */}
                       <div id="distributed-locks" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                         <div className="flex items-center space-x-2.5">
                           <span className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950 text-[#0B72E7] dark:text-[#3395FF]">
@@ -1596,7 +1535,6 @@ graph TD
                         </div>
                       </div>
 
-                      {/* Anchor 2: Webhook Deduplication Gate */}
                       <div id="dedup-gate" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                         <div className="flex items-center space-x-2.5">
                           <span className="p-1.5 rounded-lg bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400">
@@ -1612,7 +1550,6 @@ graph TD
                         </p>
                       </div>
 
-                      {/* Anchor 3: Crash Recovery & Replay */}
                       <div id="crash-recovery" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                         <div className="flex items-center space-x-2.5">
                           <span className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400">
@@ -1630,9 +1567,6 @@ graph TD
                     </article>
                   )}
 
-                  {/* ------------------------------------------------------------- */}
-                  {/* MECHANICS ARTICLE 1: MDR CALCULATION */}
-                  {/* ------------------------------------------------------------- */}
                   {activeDocId === "mdr" && (
                     <article className="space-y-8">
                       <div className="border-b border-[#E5E7EB] dark:border-[#262626] pb-5">
@@ -1648,7 +1582,6 @@ graph TD
                         </p>
                       </div>
 
-                      {/* Anchor 1: Paise Invariant Formula */}
                       <div id="mdr-formula" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                         <div className="flex items-center space-x-2.5">
                           <span className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950 text-[#0B72E7] dark:text-[#3395FF]">
@@ -1670,7 +1603,6 @@ graph TD
                         </p>
                       </div>
 
-                      {/* Anchor 2: Card & UPI Schedules */}
                       <div id="rate-schedules" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                         <h3 className="font-bold text-base text-[#09090B] dark:text-white">
                           Payment Rail Interchange Schedule Reference
@@ -1716,7 +1648,6 @@ graph TD
                         </div>
                       </div>
 
-                      {/* Anchor 3: Interchange Network Costs */}
                       <div id="interchange-cost" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                         <div className="flex items-center space-x-2.5">
                           <span className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400">
@@ -1749,9 +1680,6 @@ graph TD
                     </article>
                   )}
 
-                  {/* ------------------------------------------------------------- */}
-                  {/* MECHANICS ARTICLE 2: 18% GST & GSTR-2B ITC */}
-                  {/* ------------------------------------------------------------- */}
                   {activeDocId === "gst" && (
                     <article className="space-y-8">
                       <div className="border-b border-[#E5E7EB] dark:border-[#262626] pb-5">
@@ -1767,7 +1695,6 @@ graph TD
                         </p>
                       </div>
 
-                      {/* Anchor 1: GST Flowchart */}
                       <div id="gst-flow" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                         <h3 className="font-bold text-base text-[#09090B] dark:text-white">
                           GST Deduction & Tax Invoice Flowchart
@@ -1786,7 +1713,6 @@ graph TD
                         />
                       </div>
 
-                      {/* Anchor 2: ITC Matching */}
                       <div id="itc-matching" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                         <div className="flex items-center space-x-2.5">
                           <span className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400">
@@ -1806,7 +1732,6 @@ graph TD
                         </div>
                       </div>
 
-                      {/* Anchor 3: Monthly Tax Audit */}
                       <div id="gstr2b-reconciliation" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                         <h3 className="font-bold text-base text-[#09090B] dark:text-white">
                           Monthly Tax Audit & GSTIN Verification
@@ -1818,9 +1743,6 @@ graph TD
                     </article>
                   )}
 
-                  {/* ------------------------------------------------------------- */}
-                  {/* MECHANICS ARTICLE 3: SECTION 194-O TDS */}
-                  {/* ------------------------------------------------------------- */}
                   {activeDocId === "tds194o" && (
                     <article className="space-y-8">
                       <div className="border-b border-[#E5E7EB] dark:border-[#262626] pb-5">
@@ -1836,7 +1758,6 @@ graph TD
                         </p>
                       </div>
 
-                      {/* Anchor 1: Statutory Rate & Invariants */}
                       <div id="tds-schedule" className="space-y-5 p-6 rounded-2xl bg-amber-50/40 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/60">
                         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-200/70 dark:border-amber-800/60 pb-3">
                           <div>
@@ -1872,7 +1793,6 @@ graph TD
                           </div>
                         </div>
 
-                        {/* Code Implementation */}
                         <div className="p-4 rounded-xl bg-[#0A0A0A] text-slate-200 font-mono text-xs overflow-x-auto space-y-1.5 border border-[#262626]">
                           <div className="text-slate-400"># Section 194-O Integer Paise Formula (0.10% = 10 bps)</div>
                           <pre>{`def calculate_194o_tds(gross_amount_paise: int, has_pan: bool = True) -> int:
@@ -1884,7 +1804,6 @@ graph TD
                         </div>
                       </div>
 
-                      {/* Anchor 2: Form 26AS Audit */}
                       <div id="form-26as" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                         <div className="flex items-center space-x-2.5">
                           <span className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950 text-[#0B72E7] dark:text-[#3395FF]">
@@ -1933,7 +1852,6 @@ graph TD
                         </div>
                       </div>
 
-                      {/* Anchor 3: Quarterly TAN Audit */}
                       <div id="quarterly-tan-audit" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                         <h3 className="font-bold text-base text-[#09090B] dark:text-white">
                           Form 16A Certificate Cross-Matching & Reconciliation
@@ -1957,9 +1875,6 @@ graph TD
                     </article>
                   )}
 
-                  {/* ------------------------------------------------------------- */}
-                  {/* MECHANICS ARTICLE 4: COMPOSITE SETTLEMENTS */}
-                  {/* ------------------------------------------------------------- */}
                   {activeDocId === "composite-settlements" && (
                     <article className="space-y-8">
                       <div className="border-b border-[#E5E7EB] dark:border-[#262626] pb-5">
@@ -1975,7 +1890,6 @@ graph TD
                         </p>
                       </div>
 
-                      {/* Anchor 1: Net Settlement Equation */}
                       <div id="net-payout-formula" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                         <div className="flex items-center space-x-2.5">
                           <span className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950 text-[#0B72E7] dark:text-[#3395FF]">
@@ -1991,7 +1905,6 @@ graph TD
                         </div>
                       </div>
 
-                      {/* Anchor 2: Settlement Batch Manifest */}
                       <div id="batch-manifest" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                         <h3 className="font-bold text-base text-[#09090B] dark:text-white">
                           Settlement Batch Manifest Structure
@@ -2001,7 +1914,6 @@ graph TD
                         </p>
                       </div>
 
-                      {/* Anchor 3: T+2 Bank Float Timeline */}
                       <div id="bank-float-timeline" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                         <div className="flex items-center space-x-2.5">
                           <span className="p-1.5 rounded-lg bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400">
@@ -2019,9 +1931,6 @@ graph TD
                     </article>
                   )}
 
-                  {/* ------------------------------------------------------------- */}
-                  {/* CONTROLS ARTICLE 1: 7 CORE FINANCIAL ASSERTIONS */}
-                  {/* ------------------------------------------------------------- */}
                   {activeDocId === "controls-overview" && (
                     <article className="space-y-8">
                       <div className="border-b border-[#E5E7EB] dark:border-[#262626] pb-5">
@@ -2037,7 +1946,6 @@ graph TD
                         </p>
                       </div>
 
-                      {/* Anchor 1: Controls 01 through 07 */}
                       <div id="ctl-list" className="space-y-3">
                         {[
                           { id: "CTL_01", title: "Order-to-Capture Completeness", rule: "All customer order receipts must correspond to a verified Razorpay captured payment payload with zero phantom checkouts." },
@@ -2060,7 +1968,6 @@ graph TD
                         ))}
                       </div>
 
-                      {/* Anchor 2: Assertion Verification Matrix */}
                       <div id="assertion-matrix" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                         <div className="flex items-center space-x-2.5">
                           <span className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400">
@@ -2076,7 +1983,6 @@ graph TD
                         </p>
                       </div>
 
-                      {/* Anchor 3: Continuous Audit Loop */}
                       <div id="continuous-monitoring" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                         <h3 className="font-bold text-base text-[#09090B] dark:text-white">
                           Continuous Audit Loop & Automated Interception
@@ -2088,9 +1994,6 @@ graph TD
                     </article>
                   )}
 
-                  {/* ------------------------------------------------------------- */}
-                  {/* CONTROLS ARTICLE 2: CONTROL CATALOG DEEP-DIVE */}
-                  {/* ------------------------------------------------------------- */}
                   {activeDocId === "controls-deepdive" && (
                     <article className="space-y-8">
                       <div className="border-b border-[#E5E7EB] dark:border-[#262626] pb-5">
@@ -2106,7 +2009,6 @@ graph TD
                         </p>
                       </div>
 
-                      {/* Anchor 1: CTL_01 to CTL_03 */}
                       <div id="ctl-01-03" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                         <h3 className="font-bold text-base text-[#09090B] dark:text-white">
                           CTL_01 to CTL_03 (Ingestion & Fee Assertions)
@@ -2127,7 +2029,6 @@ graph TD
                         </div>
                       </div>
 
-                      {/* Anchor 2: CTL_04 to CTL_05 */}
                       <div id="ctl-04-05" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                         <h3 className="font-bold text-base text-[#09090B] dark:text-white">
                           CTL_04 to CTL_05 (Bank Statement & TDS Withholding)
@@ -2144,7 +2045,6 @@ graph TD
                         </div>
                       </div>
 
-                      {/* Anchor 3: CTL_06 to CTL_07 */}
                       <div id="ctl-06-07" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                         <h3 className="font-bold text-base text-[#09090B] dark:text-white">
                           CTL_06 to CTL_07 (Double-Loss Blocker & Audit Sealing)
@@ -2163,9 +2063,6 @@ graph TD
                     </article>
                   )}
 
-                  {/* ------------------------------------------------------------- */}
-                  {/* CONTROLS ARTICLE 3: AUTOMATED VIOLATION INTERCEPTORS */}
-                  {/* ------------------------------------------------------------- */}
                   {activeDocId === "controls-engine" && (
                     <article className="space-y-8">
                       <div className="border-b border-[#E5E7EB] dark:border-[#262626] pb-5">
@@ -2181,7 +2078,6 @@ graph TD
                         </p>
                       </div>
 
-                      {/* Anchor 1: Violation Interception Pipeline */}
                       <div id="violation-handling" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                         <div className="flex items-center space-x-2.5">
                           <span className="p-1.5 rounded-lg bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400">
@@ -2197,7 +2093,6 @@ graph TD
                         </p>
                       </div>
 
-                      {/* Anchor 2: Quarantine Queue Isolation */}
                       <div id="quarantine-queue" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                         <h3 className="font-bold text-base text-[#09090B] dark:text-white">
                           Quarantine Queue Isolation Architecture
@@ -2207,7 +2102,6 @@ graph TD
                         </p>
                       </div>
 
-                      {/* Anchor 3: Resolution SLA Timers */}
                       <div id="sla-enforcement" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                         <div className="flex items-center space-x-2.5">
                           <span className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950 text-[#0B72E7] dark:text-[#3395FF]">
@@ -2225,9 +2119,6 @@ graph TD
                     </article>
                   )}
 
-                  {/* ------------------------------------------------------------- */}
-                  {/* FORENSICS ARTICLE 1: DOUBLE-LOSS EXPLOIT ANATOMY */}
-                  {/* ------------------------------------------------------------- */}
                   {activeDocId === "doubleloss" && (
                     <article className="space-y-8">
                       <div className="border-b border-[#E5E7EB] dark:border-[#262626] pb-5">
@@ -2243,7 +2134,6 @@ graph TD
                         </p>
                       </div>
 
-                      {/* Anchor 1: Double-Loss Vector */}
                       <div id="hazard-vector" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                         <h3 className="font-bold text-base text-[#09090B] dark:text-white">
                           The Double-Loss Outflow Vector
@@ -2262,7 +2152,6 @@ graph TD
                         />
                       </div>
 
-                      {/* Anchor 2: Collision Timing Mechanics */}
                       <div id="collision-timeline" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                         <div className="flex items-center space-x-2.5">
                           <span className="p-1.5 rounded-lg bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400">
@@ -2278,7 +2167,6 @@ graph TD
                         </p>
                       </div>
 
-                      {/* Anchor 3: Financial Impact Analysis */}
                       <div id="impact-analysis" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                         <h3 className="font-bold text-base text-[#09090B] dark:text-white">
                           Financial Impact on High-Value B2C / D2C Merchants
@@ -2290,9 +2178,6 @@ graph TD
                     </article>
                   )}
 
-                  {/* ------------------------------------------------------------- */}
-                  {/* FORENSICS ARTICLE 2: SURVEILLANCE STATE MACHINE */}
-                  {/* ------------------------------------------------------------- */}
                   {activeDocId === "forensics-fsm" && (
                     <article className="space-y-8">
                       <div className="border-b border-[#E5E7EB] dark:border-[#262626] pb-5">
@@ -2308,7 +2193,6 @@ graph TD
                         </p>
                       </div>
 
-                      {/* Anchor 1: Surveillance FSM States */}
                       <div id="surveillance-state-machine" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                         <h3 className="font-bold text-base text-[#09090B] dark:text-white">
                           Surveillance FSM Lifecycle States
@@ -2330,7 +2214,6 @@ stateDiagram-v2
                         />
                       </div>
 
-                      {/* Anchor 2: Real-time Webhook Intercept */}
                       <div id="realtime-intercept" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                         <div className="flex items-center space-x-2.5">
                           <span className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950 text-[#0B72E7] dark:text-[#3395FF]">
@@ -2346,7 +2229,6 @@ stateDiagram-v2
                         </p>
                       </div>
 
-                      {/* Anchor 3: Settlement Quarantine Lock */}
                       <div id="quarantine-lock" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                         <div className="flex items-center space-x-2.5">
                           <span className="p-1.5 rounded-lg bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400">
@@ -2364,9 +2246,6 @@ stateDiagram-v2
                     </article>
                   )}
 
-                  {/* ------------------------------------------------------------- */}
-                  {/* FORENSICS ARTICLE 3: 1-CLICK DISPUTE DEFENSE PACK */}
-                  {/* ------------------------------------------------------------- */}
                   {activeDocId === "evidence-pack" && (
                     <article className="space-y-8">
                       <div className="border-b border-[#E5E7EB] dark:border-[#262626] pb-5">
@@ -2382,7 +2261,6 @@ stateDiagram-v2
                         </p>
                       </div>
 
-                      {/* Anchor 1: Dispute Defense Bundle */}
                       <div id="evidence-pack" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                         <div className="flex items-center space-x-2.5">
                           <span className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400">
@@ -2417,7 +2295,6 @@ stateDiagram-v2
                         </div>
                       </div>
 
-                      {/* Anchor 2: Signed PDF Engine */}
                       <div id="pdf-generator" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                         <h3 className="font-bold text-base text-[#09090B] dark:text-white">
                           Signed PDF Compilation Engine
@@ -2427,7 +2304,6 @@ stateDiagram-v2
                         </p>
                       </div>
 
-                      {/* Anchor 3: Razorpay Dispute API Submission */}
                       <div id="razorpay-dispute-api" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                         <div className="flex items-center space-x-2.5">
                           <span className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950 text-[#0B72E7] dark:text-[#3395FF]">
@@ -2445,9 +2321,6 @@ stateDiagram-v2
                     </article>
                   )}
 
-                  {/* ------------------------------------------------------------- */}
-                  {/* ARTICLE: RECONCILIATION API (EXHAUSTIVE & HIGHLY DESCRIPTIVE) */}
-                  {/* ------------------------------------------------------------- */}
                   {activeDocId === "api-reconcile" && (
                     <article className="space-y-8">
                       <div id="post-reconcile" className="border-b border-[#E5E7EB] dark:border-[#262626] pb-5">
@@ -2463,9 +2336,6 @@ stateDiagram-v2
                     </p>
                   </div>
 
-                  {/* ------------------------------------------------------------- */}
-                  {/* ENDPOINT 1: POST /api/reconcile/run */}
-                  {/* ------------------------------------------------------------- */}
                   <div className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E5E7EB] dark:border-[#262626] pb-3">
                       <div className="flex items-center space-x-2.5">
@@ -2496,9 +2366,9 @@ stateDiagram-v2
                       <span className="text-xs font-bold text-[#52525B] dark:text-[#A1A1AA] uppercase block">Request Body Schema (JSON):</span>
                       <div className="p-4 rounded-xl bg-[#0A0A0A] text-slate-200 font-mono text-xs overflow-x-auto relative">
                         <pre>{`{
-  "batch_id": "batch_settlement_2026_08_30",  // Unique identifier for the settlement cycle (String, Required)
-  "force_recompute": false,                   // When true, invalidates existing caches and re-evaluates all records (Boolean, Optional)
-  "tolerance_window_days": 2                  // Bank clearing tolerance window (Integer, Optional, Default: 2)
+  "batch_id": "batch_settlement_2026_08_30",
+  "force_recompute": false,
+  "tolerance_window_days": 2
 }`}</pre>
                         <button 
                           onClick={() => handleCopy('{\n  "batch_id": "batch_settlement_2026_08_30",\n  "force_recompute": false,\n  "tolerance_window_days": 2\n}', 'req-rec-run')}
@@ -2529,9 +2399,6 @@ stateDiagram-v2
                     </div>
                   </div>
 
-                  {/* ------------------------------------------------------------- */}
-                  {/* ENDPOINT 2: GET /api/reconcile/summary */}
-                  {/* ------------------------------------------------------------- */}
                   <div id="get-summary" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E5E7EB] dark:border-[#262626] pb-3">
                       <div className="flex items-center space-x-2.5">
@@ -2572,9 +2439,6 @@ stateDiagram-v2
                     </div>
                   </div>
 
-                  {/* ------------------------------------------------------------- */}
-                  {/* ENDPOINT 3: GET /api/reconcile/timeline */}
-                  {/* ------------------------------------------------------------- */}
                   <div id="get-timeline" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E5E7EB] dark:border-[#262626] pb-3">
                       <div className="flex items-center space-x-2.5">
@@ -2643,9 +2507,6 @@ stateDiagram-v2
                     </div>
                   </div>
 
-                  {/* ------------------------------------------------------------- */}
-                  {/* ENDPOINT 4: GET /api/reconcile/records */}
-                  {/* ------------------------------------------------------------- */}
                   <div id="get-records" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E5E7EB] dark:border-[#262626] pb-3">
                       <div className="flex items-center space-x-2.5">
@@ -2726,10 +2587,6 @@ stateDiagram-v2
                 </article>
               )}
 
-              {/* ------------------------------------------------------------- */}
-              {/* ------------------------------------------------------------- */}
-              {/* ARTICLE: CONTROLS & DOUBLE-LOSS API */}
-              {/* ------------------------------------------------------------- */}
               {activeDocId === "api-controls" && (
                 <article className="space-y-8">
                   <div className="border-b border-[#E5E7EB] dark:border-[#262626] pb-5">
@@ -2745,7 +2602,6 @@ stateDiagram-v2
                     </p>
                   </div>
 
-                  {/* Anchor 1: GET /api/controls/summary */}
                   <div id="get-controls-summary" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E5E7EB] dark:border-[#262626] pb-3">
                       <div className="flex items-center space-x-2.5">
@@ -2793,7 +2649,6 @@ stateDiagram-v2
                     </div>
                   </div>
 
-                  {/* Anchor 2: GET /api/controls/exceptions */}
                   <div id="get-exceptions" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E5E7EB] dark:border-[#262626] pb-3">
                       <div className="flex items-center space-x-2.5">
@@ -2864,7 +2719,6 @@ stateDiagram-v2
                     </div>
                   </div>
 
-                  {/* Anchor 3: GET /api/controls/double-loss */}
                   <div id="get-doubleloss" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E5E7EB] dark:border-[#262626] pb-3">
                       <div className="flex items-center space-x-2.5">
@@ -2917,9 +2771,6 @@ stateDiagram-v2
                 </article>
               )}
 
-              {/* ------------------------------------------------------------- */}
-              {/* ARTICLE: EVIDENCE & MONEY FLOW TRACE API */}
-              {/* ------------------------------------------------------------- */}
               {activeDocId === "api-evidence" && (
                 <article className="space-y-8">
                   <div className="border-b border-[#E5E7EB] dark:border-[#262626] pb-5">
@@ -2935,7 +2786,6 @@ stateDiagram-v2
                     </p>
                   </div>
 
-                  {/* Anchor 1: GET /api/evidence/{payment_id} */}
                   <div id="get-evidence" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E5E7EB] dark:border-[#262626] pb-3">
                       <div className="flex items-center space-x-2.5">
@@ -2992,7 +2842,6 @@ stateDiagram-v2
                     </div>
                   </div>
 
-                  {/* Anchor 2: GET /api/evidence/graph/{payment_id} */}
                   <div id="get-graph" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E5E7EB] dark:border-[#262626] pb-3">
                       <div className="flex items-center space-x-2.5">
@@ -3033,9 +2882,6 @@ stateDiagram-v2
                 </article>
               )}
 
-              {/* ------------------------------------------------------------- */}
-              {/* ARTICLE: AUDIT & MERKLE PROOFS API */}
-              {/* ------------------------------------------------------------- */}
               {activeDocId === "api-audit" && (
                 <article className="space-y-8">
                   <div className="border-b border-[#E5E7EB] dark:border-[#262626] pb-5">
@@ -3051,7 +2897,6 @@ stateDiagram-v2
                     </p>
                   </div>
 
-                  {/* Anchor 1: GET /api/audit/ledger */}
                   <div id="get-ledger" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E5E7EB] dark:border-[#262626] pb-3">
                       <div className="flex items-center space-x-2.5">
@@ -3090,7 +2935,6 @@ stateDiagram-v2
                     </div>
                   </div>
 
-                  {/* Anchor 2: GET /api/audit/verify/{log_id} */}
                   <div id="get-verify" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E5E7EB] dark:border-[#262626] pb-3">
                       <div className="flex items-center space-x-2.5">
@@ -3124,7 +2968,6 @@ stateDiagram-v2
                     </div>
                   </div>
 
-                  {/* Anchor 3: GET /api/audit/merkle-root */}
                   <div id="get-merkle" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E5E7EB] dark:border-[#262626] pb-3">
                       <div className="flex items-center space-x-2.5">
@@ -3157,9 +3000,6 @@ stateDiagram-v2
                 </article>
               )}
 
-              {/* ------------------------------------------------------------- */}
-              {/* ARTICLE: MAKER-CHECKER APPROVALS API */}
-              {/* ------------------------------------------------------------- */}
               {activeDocId === "api-approvals" && (
                 <article className="space-y-8">
                   <div className="border-b border-[#E5E7EB] dark:border-[#262626] pb-5">
@@ -3175,7 +3015,6 @@ stateDiagram-v2
                     </p>
                   </div>
 
-                  {/* Anchor 1: GET /api/approvals/pending */}
                   <div id="get-approvals-pending" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E5E7EB] dark:border-[#262626] pb-3">
                       <div className="flex items-center space-x-2.5">
@@ -3215,7 +3054,6 @@ stateDiagram-v2
                     </div>
                   </div>
 
-                  {/* Anchor 2: POST /api/approvals/submit */}
                   <div id="post-approvals-submit" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E5E7EB] dark:border-[#262626] pb-3">
                       <div className="flex items-center space-x-2.5">
@@ -3260,9 +3098,6 @@ stateDiagram-v2
                 </article>
               )}
 
-              {/* ------------------------------------------------------------- */}
-              {/* ARTICLE: DATA SOURCES & SYNC API */}
-              {/* ------------------------------------------------------------- */}
               {activeDocId === "api-sources" && (
                 <article className="space-y-8">
                   <div className="border-b border-[#E5E7EB] dark:border-[#262626] pb-5">
@@ -3278,7 +3113,6 @@ stateDiagram-v2
                     </p>
                   </div>
 
-                  {/* Anchor 1: POST /api/sources/upload */}
                   <div id="post-upload" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E5E7EB] dark:border-[#262626] pb-3">
                       <div className="flex items-center space-x-2.5">
@@ -3309,7 +3143,6 @@ stateDiagram-v2
                     </div>
                   </div>
 
-                  {/* Anchor 2: POST /api/razorpay/sync */}
                   <div id="post-sync" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E5E7EB] dark:border-[#262626] pb-3">
                       <div className="flex items-center space-x-2.5">
@@ -3355,9 +3188,6 @@ stateDiagram-v2
                 </article>
               )}
 
-              {/* ------------------------------------------------------------- */}
-              {/* ARTICLE: REPORTS & DAILY BRIEF API */}
-              {/* ------------------------------------------------------------- */}
               {activeDocId === "api-reports" && (
                 <article className="space-y-8">
                   <div className="border-b border-[#E5E7EB] dark:border-[#262626] pb-5">
@@ -3373,7 +3203,6 @@ stateDiagram-v2
                     </p>
                   </div>
 
-                  {/* Anchor 1: GET /api/reports/daily-brief */}
                   <div id="get-daily-brief" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E5E7EB] dark:border-[#262626] pb-3">
                       <div className="flex items-center space-x-2.5">
@@ -3411,7 +3240,6 @@ stateDiagram-v2
                     </div>
                   </div>
 
-                  {/* Anchor 2: GET /api/reports/download-pdf */}
                   <div id="get-download-pdf" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E5E7EB] dark:border-[#262626] pb-3">
                       <div className="flex items-center space-x-2.5">
@@ -3469,9 +3297,6 @@ stateDiagram-v2
                 </article>
               )}
 
-              {/* ------------------------------------------------------------- */}
-              {/* ARTICLE 1: MAKER-CHECKER DUAL CONTROL */}
-              {/* ------------------------------------------------------------- */}
               {activeDocId === "collaboration" && (
                 <article className="space-y-8">
                   <div className="border-b border-[#E5E7EB] dark:border-[#262626] pb-5">
@@ -3487,7 +3312,6 @@ stateDiagram-v2
                     </p>
                   </div>
 
-                  {/* Anchor 1: The Four-Eyes Principle */}
                   <div id="four-eyes" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                     <div className="flex items-center space-x-2.5">
                       <span className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950 text-[#0B72E7] dark:text-[#3395FF]">
@@ -3530,7 +3354,6 @@ graph TD
                     />
                   </div>
 
-                  {/* Anchor 2: Maker Action & Packaging */}
                   <div id="maker-flow" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                     <div className="flex items-center space-x-2.5">
                       <span className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950 text-[#0B72E7] dark:text-[#3395FF]">
@@ -3580,7 +3403,6 @@ graph TD
                     </div>
                   </div>
 
-                  {/* Anchor 3: Supervisor Review & Sign-off */}
                   <div id="checker-review" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                     <div className="flex items-center space-x-2.5">
                       <span className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400">
@@ -3612,9 +3434,6 @@ graph TD
                 </article>
               )}
 
-              {/* ------------------------------------------------------------- */}
-              {/* ARTICLE 2: CRYPTOGRAPHIC AUDIT LEDGER */}
-              {/* ------------------------------------------------------------- */}
               {activeDocId === "audit-trail" && (
                 <article className="space-y-8">
                   <div className="border-b border-[#E5E7EB] dark:border-[#262626] pb-5">
@@ -3630,7 +3449,6 @@ graph TD
                     </p>
                   </div>
 
-                  {/* Anchor 1: Append-Only Hash Chain */}
                   <div id="append-only" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                     <div className="flex items-center space-x-2.5">
                       <span className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950 text-[#0B72E7] dark:text-[#3395FF]">
@@ -3670,7 +3488,6 @@ graph TD
                     </div>
                   </div>
 
-                  {/* Anchor 2: Auditor Assurance */}
                   <div id="statutory-compliance" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                     <div className="flex items-center space-x-2.5">
                       <span className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400">
@@ -3701,7 +3518,6 @@ graph TD
                     </div>
                   </div>
 
-                  {/* Anchor 3: Tamper Verification */}
                   <div id="tamper-evident" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                     <div className="flex items-center space-x-2.5">
                       <span className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950 text-[#0B72E7] dark:text-[#3395FF]">
@@ -3725,9 +3541,6 @@ graph TD
                 </article>
               )}
 
-              {/* ------------------------------------------------------------- */}
-              {/* ARTICLE 3: ROLE-BASED ACCESS CONTROL */}
-              {/* ------------------------------------------------------------- */}
               {activeDocId === "access-roles" && (
                 <article className="space-y-8">
                   <div className="border-b border-[#E5E7EB] dark:border-[#262626] pb-5">
@@ -3743,7 +3556,6 @@ graph TD
                     </p>
                   </div>
 
-                  {/* Anchor 1: Four-Tier Role Matrix */}
                   <div id="roles-matrix" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                     <div className="flex items-center space-x-2.5">
                       <span className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950 text-[#0B72E7] dark:text-[#3395FF]">
@@ -3799,7 +3611,6 @@ graph TD
                     </div>
                   </div>
 
-                  {/* Anchor 2: Least-Privilege Policy */}
                   <div id="least-privilege" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                     <div className="flex items-center space-x-2.5">
                       <span className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950 text-[#0B72E7] dark:text-[#3395FF]">
@@ -3837,7 +3648,6 @@ async def approve_resolution(
                     </div>
                   </div>
 
-                  {/* Anchor 3: JWT Session Security */}
                   <div id="session-security" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                     <div className="flex items-center space-x-2.5">
                       <span className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950 text-[#0B72E7] dark:text-[#3395FF]">
@@ -3855,9 +3665,6 @@ async def approve_resolution(
                 </article>
               )}
 
-              {/* ------------------------------------------------------------- */}
-              {/* ARTICLE 4: THRESHOLDS & WRITE-OFF POLICIES */}
-              {/* ------------------------------------------------------------- */}
               {activeDocId === "policy-limits" && (
                 <article className="space-y-8">
                   <div className="border-b border-[#E5E7EB] dark:border-[#262626] pb-5">
@@ -3873,7 +3680,6 @@ async def approve_resolution(
                     </p>
                   </div>
 
-                  {/* Anchor 1: Materiality Bands */}
                   <div id="materiality-thresholds" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                     <div className="flex items-center space-x-2.5">
                       <span className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950 text-[#0B72E7] dark:text-[#3395FF]">
@@ -3909,7 +3715,6 @@ async def approve_resolution(
                     </div>
                   </div>
 
-                  {/* Anchor 2: Supervisor Override Rules */}
                   <div id="override-rules" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                     <div className="flex items-center space-x-2.5">
                       <span className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950 text-[#0B72E7] dark:text-[#3395FF]">
@@ -3925,7 +3730,6 @@ async def approve_resolution(
                     </p>
                   </div>
 
-                  {/* Anchor 3: Automated Payout Freeze */}
                   <div id="payout-freeze" className="space-y-4 p-6 rounded-2xl bg-[#FAFAFA] dark:bg-[#161616] border border-[#E5E7EB] dark:border-[#262626]">
                     <div className="flex items-center space-x-2.5">
                       <span className="p-1.5 rounded-lg bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400">
@@ -3953,7 +3757,6 @@ async def approve_resolution(
 
             </main>
 
-            {/* COLUMN 3: RIGHT SIDEBAR */}
             <aside className="lg:col-span-3 bg-white dark:bg-[#111111] border border-[#E5E7EB] dark:border-[#262626] rounded-2xl p-5 shadow-xs space-y-4 sticky top-28">
               <span className="text-xs font-bold uppercase tracking-wider text-[#6B7280] dark:text-[#A1A1AA] block">
                 On this page
@@ -3996,7 +3799,6 @@ async def approve_resolution(
 
       </div>
 
-      {/* Floating Bottom-Right Drawer Button for Mobile / Pop-out */}
       {!isCopilotOpen && (
         <button
           onClick={() => setIsCopilotOpen(true)}
@@ -4007,7 +3809,6 @@ async def approve_resolution(
         </button>
       )}
 
-      {/* Floating Modal Drawer for Mobile */}
       {isCopilotOpen && (
         <div className="lg:hidden fixed bottom-6 right-6 z-50 w-96 max-w-[92vw] h-[520px] bg-white dark:bg-[#111111] border border-[#E5E7EB] dark:border-[#262626] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-5">
           <div className="h-12 bg-[#0A0A0A] text-white px-4 flex items-center justify-between flex-shrink-0">

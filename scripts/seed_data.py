@@ -12,7 +12,6 @@ import os
 import sys
 from datetime import datetime, timezone
 
-# Ensure project root is in sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from packages.domain.database import init_db_sync, reset_db_sync, get_sync_db
@@ -39,7 +38,6 @@ def seed_database_from_dataset(dataset, batch_name: str = "Batch #SETTLEMENT_202
     """
     reset_db_sync()
     with get_sync_db() as db:
-        # 1. Insert Customers
         for c in dataset.customers:
             db.add(CustomerDB(
                 id=c.id,
@@ -49,7 +47,6 @@ def seed_database_from_dataset(dataset, batch_name: str = "Batch #SETTLEMENT_202
                 created_at=c.created_at,
             ))
 
-        # 2. Insert Orders
         for o in dataset.orders:
             db.add(OrderDB(
                 id=o.id,
@@ -62,7 +59,6 @@ def seed_database_from_dataset(dataset, batch_name: str = "Batch #SETTLEMENT_202
                 created_at=o.created_at,
             ))
 
-        # 3. Insert Settlements
         for s in dataset.settlements:
             db.add(SettlementDB(
                 id=s.id,
@@ -80,7 +76,6 @@ def seed_database_from_dataset(dataset, batch_name: str = "Batch #SETTLEMENT_202
                 created_at=s.created_at,
             ))
 
-        # 4. Insert Payments
         for p in dataset.payments:
             db.add(PaymentDB(
                 id=p.id,
@@ -99,7 +94,6 @@ def seed_database_from_dataset(dataset, batch_name: str = "Batch #SETTLEMENT_202
                 created_at=p.created_at,
             ))
 
-        # 5. Insert Settlement Lines
         for sl in dataset.settlement_lines:
             db.add(SettlementLineDB(
                 id=sl.id,
@@ -113,7 +107,6 @@ def seed_database_from_dataset(dataset, batch_name: str = "Batch #SETTLEMENT_202
                 created_at=sl.created_at,
             ))
 
-        # 6. Insert Refunds
         for r in dataset.refunds:
             db.add(RefundDB(
                 id=r.id,
@@ -129,7 +122,6 @@ def seed_database_from_dataset(dataset, batch_name: str = "Batch #SETTLEMENT_202
                 created_at=r.created_at,
             ))
 
-        # 7. Insert Disputes
         for d in dataset.disputes:
             db.add(DisputeDB(
                 id=d.id,
@@ -145,7 +137,6 @@ def seed_database_from_dataset(dataset, batch_name: str = "Batch #SETTLEMENT_202
                 created_at=d.created_at,
             ))
 
-        # 8. Insert Bank Transactions
         for b in dataset.bank_transactions:
             db.add(BankTransactionDB(
                 id=b.id,
@@ -159,7 +150,6 @@ def seed_database_from_dataset(dataset, batch_name: str = "Batch #SETTLEMENT_202
                 matched_settlement_id=b.matched_settlement_id,
             ))
 
-        # 9. Insert Tax Records
         for t in dataset.tax_records:
             db.add(TaxRecordDB(
                 id=t.id,
@@ -175,7 +165,6 @@ def seed_database_from_dataset(dataset, batch_name: str = "Batch #SETTLEMENT_202
                 challan_reference=t.challan_reference,
             ))
 
-        # 10. Register Primary Batch
         total_val = sum(p.amount_paise for p in dataset.payments)
         batch = BatchDB(
             id="batch_settlement_2026_08_28",

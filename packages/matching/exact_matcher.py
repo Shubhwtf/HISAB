@@ -135,7 +135,6 @@ def match_settlements_to_bank_by_utr(
     """
     Matches settlements to bank statement credits via exact UTR reference.
     """
-    # Create UTR index for bank credits
     bank_utr_map: Dict[str, BankTransaction] = {}
     for b in bank_transactions:
         if b.direction == "credit" and b.reference:

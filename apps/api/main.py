@@ -48,7 +48,6 @@ async def lifespan(app: FastAPI):
     logger.info("Initializing HISAB database tables...")
     init_db_sync()
     
-    # Auto-seed database if empty
     from packages.domain.db_models import PaymentDB
     from packages.domain.database import get_sync_db
     from sqlalchemy import select, func
@@ -83,7 +82,6 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS Middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -102,7 +100,6 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 
-# Register All Domain Routers
 app.include_router(reconciliation_router)
 app.include_router(controls_router)
 app.include_router(evidence_router)

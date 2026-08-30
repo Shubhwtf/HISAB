@@ -53,7 +53,6 @@ def detect_and_map_uploaded_file(req: DetectAndMapRequest, user: UserSession = D
     """
     detection = detect_source_type(req.filename, req.columns, req.sample_rows)
     
-    # Mock set of known payment IDs for cross-source validation
     cross_payment_ids = {"pay_90000", "pay_90001", "pay_90002", "pay_90006"}
     
     mappings = map_columns_dynamically(
@@ -67,7 +66,6 @@ def detect_and_map_uploaded_file(req: DetectAndMapRequest, user: UserSession = D
     if req.saved_profile_headers:
         drift_report = detect_schema_drift(req.saved_profile_headers, req.columns)
 
-    # Check for blocking ambiguities (confidence < 0.80)
     blocking = [m.source_column for m in mappings if m.tier == "MANUAL_REVIEW" and m.canonical_field is None]
 
     return DynamicMappingResponse(

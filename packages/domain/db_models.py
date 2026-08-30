@@ -35,10 +35,6 @@ class Base(DeclarativeBase):
     pass
 
 
-# ------------------------------------------------------------------------------
-# 1. Core Auth, Organization & Multi-Tenancy Tables
-# ------------------------------------------------------------------------------
-
 class UserDB(Base):
     __tablename__ = "users"
 
@@ -73,8 +69,8 @@ class OrganizationMemberDB(Base):
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
     org_id: Mapped[str] = mapped_column(String(64), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True)
     user_id: Mapped[str] = mapped_column(String(64), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
-    role: Mapped[str] = mapped_column(String(32), default="ANALYST", index=True)  # ADMIN | FINANCE_MANAGER | ANALYST | AUDITOR
-    status: Mapped[str] = mapped_column(String(32), default="ACTIVE")  # ACTIVE | SUSPENDED
+    role: Mapped[str] = mapped_column(String(32), default="ANALYST", index=True)
+    status: Mapped[str] = mapped_column(String(32), default="ACTIVE")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
 
     __table_args__ = (
@@ -92,7 +88,7 @@ class InvitationDB(Base):
     invited_by_user_id: Mapped[str] = mapped_column(String(64), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     token: Mapped[str] = mapped_column(String(128), unique=True, nullable=False, index=True)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    status: Mapped[str] = mapped_column(String(32), default="PENDING", index=True)  # PENDING | ACCEPTED | REVOKED | EXPIRED
+    status: Mapped[str] = mapped_column(String(32), default="PENDING", index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
 
 
@@ -114,10 +110,6 @@ class OrgRazorpayConnectionDB(Base):
     last_sync_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
 
-
-# ------------------------------------------------------------------------------
-# 2. Core Merchant Commercial Tables (Organization-Scoped)
-# ------------------------------------------------------------------------------
 
 class CustomerDB(Base):
     __tablename__ = "customers"
@@ -244,10 +236,6 @@ class DisputeDB(Base):
     )
 
 
-# ------------------------------------------------------------------------------
-# 3. Settlement & Settlement Line Tables
-# ------------------------------------------------------------------------------
-
 class SettlementDB(Base):
     __tablename__ = "settlements"
 
@@ -293,10 +281,6 @@ class SettlementLineDB(Base):
     settlement: Mapped["SettlementDB"] = relationship("SettlementDB", back_populates="lines")
 
 
-# ------------------------------------------------------------------------------
-# 4. External Bank & Tax Tables
-# ------------------------------------------------------------------------------
-
 class BankTransactionDB(Base):
     __tablename__ = "bank_transactions"
 
@@ -337,10 +321,6 @@ class TaxRecordDB(Base):
         Index("idx_tax_org_quarter", "org_id", "financial_year", "quarter"),
     )
 
-
-# ------------------------------------------------------------------------------
-# 5. Batch, Exceptions, Controls & Cryptographic Audit Ledger Tables
-# ------------------------------------------------------------------------------
 
 class BatchDB(Base):
     __tablename__ = "batches"
@@ -484,7 +464,7 @@ class ConversationDB(Base):
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
     org_id: Mapped[str] = mapped_column(String(64), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True)
     user_id: Mapped[str] = mapped_column(String(64), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
-    mode: Mapped[str] = mapped_column(String(32), default="financial")  # financial | docs
+    mode: Mapped[str] = mapped_column(String(32), default="financial")
     title: Mapped[str] = mapped_column(String(255), default="Financial Inquiry")
     messages: Mapped[List[Dict[str, Any]]] = mapped_column(JSONType, default=list)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)

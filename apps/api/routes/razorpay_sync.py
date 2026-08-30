@@ -26,8 +26,8 @@ router = APIRouter(prefix="/api/razorpay", tags=["Razorpay Sync"])
 class ConnectRazorpayRequest(BaseModel):
     key_id: str = "rzp_test_K291884210"
     key_secret: Optional[str] = "••••••••••••••••"
-    environment: str = "TEST"  # TEST | LIVE
-    auth_type: str = "OAUTH"  # OAUTH | API_KEY
+    environment: str = "TEST"
+    auth_type: str = "OAUTH"
 
 
 class WebhookReplayRequest(BaseModel):
@@ -49,7 +49,6 @@ def get_razorpay_connection_status(
     is_conn = (conn.status == RazorpayConnectionStatus.CONNECTED) if conn else False
     mid = conn.merchant_id if (conn and is_conn) else None
 
-    # Only show populated ledger counts if connected or demo org
     payments_count = db.scalar(select(func.count(PaymentDB.id))) if (is_conn or current_user.is_demo_session) else 0
     settlements_count = db.scalar(select(func.count(SettlementDB.id))) if (is_conn or current_user.is_demo_session) else 0
     refunds_count = db.scalar(select(func.count(RefundDB.id))) if (is_conn or current_user.is_demo_session) else 0

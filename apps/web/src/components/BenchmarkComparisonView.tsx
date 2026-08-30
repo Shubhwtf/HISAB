@@ -38,7 +38,6 @@ export const BenchmarkComparisonView: React.FC = () => {
 
   return (
     <div className="bg-white dark:bg-[#111111] border border-[#E2E8F0] dark:border-[#262626] rounded-xl p-6 shadow-sm">
-      {/* Header & Trigger */}
       <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-[#E2E8F0] dark:border-[#262626] mb-6">
         <div>
           <div className="flex items-center space-x-2">
@@ -76,7 +75,6 @@ export const BenchmarkComparisonView: React.FC = () => {
       {report && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Baseline A */}
             <div className="bg-[#F8FAFC] dark:bg-[#0E0E0E] p-5 rounded-xl border border-[#E2E8F0] dark:border-[#262626]">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xs font-bold uppercase tracking-wider text-[#F59E0B]">
@@ -109,7 +107,6 @@ export const BenchmarkComparisonView: React.FC = () => {
               </div>
             </div>
 
-            {/* Baseline B */}
             <div className="bg-[#F8FAFC] dark:bg-[#0E0E0E] p-5 rounded-xl border border-[#E2E8F0] dark:border-[#262626]">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xs font-bold uppercase tracking-wider text-[#DC2626]">
@@ -142,7 +139,6 @@ export const BenchmarkComparisonView: React.FC = () => {
               </div>
             </div>
 
-            {/* Baseline C: HISAB */}
             <div className="bg-[#F8FAFC] dark:bg-[#0E0E0E] p-5 rounded-xl border border-green-300 dark:border-green-800">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xs font-bold uppercase tracking-wider text-[#16A34A] flex items-center space-x-1">

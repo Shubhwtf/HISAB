@@ -58,7 +58,6 @@ export const DynamicDataMapper: React.FC<DynamicDataMapperProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Auto-Detection Header */}
       <div className="p-4 rounded-xl bg-blue-50/60 dark:bg-[#0B254A]/40 border border-blue-200 dark:border-blue-800 flex items-center justify-between text-xs">
         <div className="flex items-center space-x-2.5">
           <div className="p-2 rounded-lg bg-[#0B72E7] text-white">
@@ -79,7 +78,6 @@ export const DynamicDataMapper: React.FC<DynamicDataMapperProps> = ({
         </span>
       </div>
 
-      {/* Dynamic Field Mapping Table */}
       <div className="border border-[#E2E8F0] dark:border-[#262626] rounded-xl overflow-hidden">
         <table className="w-full text-left text-xs">
           <thead className="bg-[#F8FAFC] dark:bg-[#0E0E0E] text-[#64748B] text-[10px] uppercase">
@@ -132,7 +130,6 @@ export const DynamicDataMapper: React.FC<DynamicDataMapperProps> = ({
         </table>
       </div>
 
-      {/* Prove It Explainability Modal */}
       {proveItModalCol && (
         <div className="p-3.5 rounded-xl bg-[#F8FAFC] dark:bg-[#0E0E0E] border border-[#E2E8F0] dark:border-[#262626] text-xs space-y-1.5 font-mono">
           <div className="flex items-center justify-between font-bold text-[#0F172A] dark:text-[#EDEDED]">
@@ -147,7 +144,6 @@ export const DynamicDataMapper: React.FC<DynamicDataMapperProps> = ({
         </div>
       )}
 
-      {/* Navigation Buttons */}
       <div className="flex justify-between pt-3">
         <button onClick={onBack} className="px-4 py-2 rounded-lg text-xs font-semibold text-[#64748B]">
           Back

@@ -71,7 +71,6 @@ export const RevenueVelocityChart: React.FC = () => {
   const paddingX = 40;
   const paddingY = 32;
 
-  // Build SVG path coordinates with headroom
   const getCoordinates = (val: number, idx: number) => {
     const x = paddingX + (idx / Math.max(1, points.length - 1)) * (svgWidth - paddingX * 2);
     const y = svgHeight - paddingY - (val / (maxVal * 1.2)) * (svgHeight - paddingY * 2);
@@ -104,7 +103,6 @@ export const RevenueVelocityChart: React.FC = () => {
 
   return (
     <div className="bg-white dark:bg-[#0A0A0A] border border-[#E5E7EB] dark:border-[#262626] rounded-2xl p-6 shadow-sm mb-6 font-sans space-y-4">
-      {/* 1. Header with Title & Timeframe Filters */}
       <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-[#E5E7EB] dark:border-[#262626]">
         <div className="flex items-center space-x-3">
           <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950 text-[#0B72E7] dark:text-[#3395FF]">
@@ -125,7 +123,6 @@ export const RevenueVelocityChart: React.FC = () => {
           </div>
         </div>
 
-        {/* Legend & Timeframe Selector */}
         <div className="flex items-center space-x-4">
           <div className="hidden sm:flex items-center space-x-3 text-xs">
             <div className="flex items-center space-x-1.5">
@@ -156,7 +153,6 @@ export const RevenueVelocityChart: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. Interactive SVG Chart Canvas */}
       <div className="relative w-full overflow-hidden" ref={containerRef}>
         {loading && (
           <div className="absolute inset-0 bg-white/60 dark:bg-[#0A0A0A]/60 flex items-center justify-center z-10">
@@ -179,7 +175,6 @@ export const RevenueVelocityChart: React.FC = () => {
             </linearGradient>
           </defs>
 
-          {/* Grid Lines */}
           {[0.25, 0.5, 0.75, 1.0].map((ratio, i) => {
             const y = svgHeight - paddingY - ratio * (svgHeight - paddingY * 2);
             return (
@@ -197,11 +192,9 @@ export const RevenueVelocityChart: React.FC = () => {
             );
           })}
 
-          {/* Area Fills */}
           {grossAreaD && <path d={grossAreaD} fill="url(#grossGradientClean)" />}
           {settledAreaD && <path d={settledAreaD} fill="url(#settledGradientClean)" />}
 
-          {/* Vertical Crosshair Line on Active Day */}
           {activeGrossPt && (
             <line
               x1={activeGrossPt.x}
@@ -215,7 +208,6 @@ export const RevenueVelocityChart: React.FC = () => {
             />
           )}
 
-          {/* Trend Lines */}
           {grossPathD && (
             <path
               d={grossPathD}
@@ -238,7 +230,6 @@ export const RevenueVelocityChart: React.FC = () => {
             />
           )}
 
-          {/* Data Points & Hitboxes */}
           {points.map((d, i) => {
             const pt = grossPoints[i];
             const sPt = settledPoints[i];
@@ -294,7 +285,6 @@ export const RevenueVelocityChart: React.FC = () => {
           })}
         </svg>
 
-        {/* Floating Pop-up Card on Hover */}
         {activePoint && activeGrossPt && (
           <div
             style={{
@@ -338,7 +328,6 @@ export const RevenueVelocityChart: React.FC = () => {
         )}
       </div>
 
-      {/* 3. Micro-Metric Highlights */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
         <div className="p-3.5 rounded-xl bg-[#F9FAFB] dark:bg-[#141414] border border-[#E5E7EB] dark:border-[#262626]">
           <span className="text-[10px] font-bold text-[#6B7280] dark:text-[#9CA3AF] uppercase">Peak Ingestion Velocity</span>

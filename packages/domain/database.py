@@ -66,26 +66,20 @@ def get_engine_args(url: str) -> dict:
     return kwargs
 
 
-# Read environment variables
 RAW_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///data/generated/hisab.db")
 RAW_SYNC_DATABASE_URL = os.getenv("SYNC_DATABASE_URL", RAW_DATABASE_URL)
 
 DATABASE_URL = normalize_async_db_url(RAW_DATABASE_URL)
 SYNC_DATABASE_URL = normalize_sync_db_url(RAW_SYNC_DATABASE_URL)
 
-# Configure Pool & Dialect options
 IS_POSTGRES = "postgres" in DATABASE_URL or "postgresql" in DATABASE_URL
 IS_MEMORY_SQLITE = ":memory:" in DATABASE_URL
 
-# Ensure parent directory exists for file-based SQLite
 if "sqlite" in DATABASE_URL and "///" in DATABASE_URL and not IS_MEMORY_SQLITE:
     db_path = DATABASE_URL.split("///")[-1]
     if db_path:
         os.makedirs(os.path.dirname(os.path.abspath(db_path)), exist_ok=True)
 
-# ------------------------------------------------------------------------------
-# 1. Async Engine (FastAPI & Async Pipelines)
-# ------------------------------------------------------------------------------
 async_engine_kwargs = {
     "echo": os.getenv("SQL_ECHO", "false").lower() == "true",
     "future": True,
@@ -112,9 +106,6 @@ AsyncSessionLocal = async_sessionmaker(
     autoflush=False,
 )
 
-# ------------------------------------------------------------------------------
-# 2. Synchronous Engine (CLI, Scripts & Alembic Migrations)
-# ------------------------------------------------------------------------------
 sync_engine_kwargs = {
     "echo": os.getenv("SQL_ECHO", "false").lower() == "true",
     "future": True,
@@ -141,10 +132,6 @@ SyncSessionLocal = sessionmaker(
     autoflush=False,
 )
 
-
-# ------------------------------------------------------------------------------
-# 3. Database Initialization & Helpers
-# ------------------------------------------------------------------------------
 
 async def init_db() -> None:
     """Initialize all database tables asynchronously."""

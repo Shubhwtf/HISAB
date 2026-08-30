@@ -51,12 +51,8 @@ def resolve_with_deterministic_fallback(
             recommended_action="HUMAN_REVIEW",
         )
 
-    # Pick top candidate
     top = candidates[0]
 
-    # Deterministic criteria:
-    # 1. High candidate score (>= 0.90)
-    # 2. Exposure within limit
     if top.confidence_score >= 0.90 and top.amount_paise <= max_auto_exposure_paise:
         return FallbackResolutionResult(
             selected_candidate=top.candidate_id,

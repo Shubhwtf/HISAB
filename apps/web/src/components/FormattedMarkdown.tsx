@@ -10,7 +10,6 @@ interface FormattedMarkdownProps {
 export const FormattedMarkdown: React.FC<FormattedMarkdownProps> = ({ content }) => {
   if (!content) return null;
 
-  // Split content by lines
   const lines = content.split("\n");
 
   const elements: React.ReactNode[] = [];
@@ -22,10 +21,8 @@ export const FormattedMarkdown: React.FC<FormattedMarkdownProps> = ({ content })
       elements.push(
         <div key={`bullets-${keyIndex++}`} className="space-y-1.5 my-2">
           {currentBullets.map((b, bIdx) => {
-            // Check for format: "- **Key**: **Value** text" or "- **Key**: Value"
             const cleanText = b.replace(/^[-*•]\s*/, "");
             
-            // Format bold tags: **text**
             const parts = cleanText.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
 
             return (
@@ -67,7 +64,6 @@ export const FormattedMarkdown: React.FC<FormattedMarkdownProps> = ({ content })
       continue;
     }
 
-    // Heading 3: ### Title
     if (line.startsWith("###")) {
       flushBullets();
       const headingText = line.replace(/^###\s*/, "").replace(/\*\*/g, "");
@@ -80,7 +76,6 @@ export const FormattedMarkdown: React.FC<FormattedMarkdownProps> = ({ content })
       continue;
     }
 
-    // Heading 2: ## Title
     if (line.startsWith("##")) {
       flushBullets();
       const headingText = line.replace(/^##\s*/, "").replace(/\*\*/g, "");
@@ -92,13 +87,11 @@ export const FormattedMarkdown: React.FC<FormattedMarkdownProps> = ({ content })
       continue;
     }
 
-    // Bullet List Item
     if (line.startsWith("- ") || line.startsWith("* ") || line.startsWith("• ")) {
       currentBullets.push(line);
       continue;
     }
 
-    // Regular Paragraph
     flushBullets();
     const parts = line.split(/(\*\*[^*]+\*\*|`[^`]+`|\*[^*]+\*)/g);
     elements.push(

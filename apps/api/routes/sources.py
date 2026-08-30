@@ -13,7 +13,7 @@ class DataSourceItem(BaseModel):
     id: str
     name: str
     category: str
-    badge: str  # LIVE | TEST_MODE | FILE_IMPORT | SIMULATED
+    badge: str
     records_count: int
     status: str
     last_sync: str

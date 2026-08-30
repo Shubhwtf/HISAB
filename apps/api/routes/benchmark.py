@@ -36,7 +36,6 @@ def get_latest_benchmark():
         except Exception:
             pass
 
-    # Generate on the fly
     clean_ds = generate_synthetic_dataset(record_count=500, seed=42)
     corrupted_ds = inject_corruptions(clean_ds, seed=101)
     report = run_comprehensive_benchmark(corrupted_ds)

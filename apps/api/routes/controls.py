@@ -63,7 +63,6 @@ def get_controls_summary(
         {"id": "CTL_07_DISPUTE", "name": "Dispute Exposure & Deadline Tracking", "category": "DISPUTE_EXPOSURE", "assertion": "Cut-off & Exposure (Signature #2)"},
     ]
 
-    # For a fresh organization with no connected Razorpay or imported data, return all PASS with 0 exposure
     if not current_user.is_demo_session and not current_user.is_razorpay_connected and current_user.org_id != "org_nova_2026":
         return {
             "controls": [
@@ -82,7 +81,6 @@ def get_controls_summary(
 
     results = []
     for ctl in controls_meta:
-        # Check active exceptions for this control category scoped to organization
         exc_count = db.scalar(
             select(func.count(ExceptionDB.id)).where(
                 ExceptionDB.org_id == current_user.org_id,
@@ -122,7 +120,6 @@ def get_double_loss_alerts(
     """
     Returns active double-loss alerts with timeline forensic reconstruction.
     """
-    # For a fresh organization with no connected Razorpay or imported data, return empty alerts
     if not current_user.is_demo_session and not current_user.is_razorpay_connected and current_user.org_id != "org_nova_2026":
         return {"alerts": []}
     orders = db.scalars(select(OrderDB).where(OrderDB.org_id == current_user.org_id)).all()

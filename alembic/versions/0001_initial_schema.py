@@ -16,7 +16,6 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # 1. Identity & Access: Users
     op.create_table(
         'users',
         sa.Column('id', sa.String(length=64), primary_key=True),
@@ -29,7 +28,6 @@ def upgrade() -> None:
         sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
     )
 
-    # 2. Multi-Tenant Organizations
     op.create_table(
         'organizations',
         sa.Column('id', sa.String(length=64), primary_key=True),
@@ -41,7 +39,6 @@ def upgrade() -> None:
         sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
     )
 
-    # 3. Organization Memberships
     op.create_table(
         'organization_members',
         sa.Column('id', sa.String(length=64), primary_key=True),
@@ -53,7 +50,6 @@ def upgrade() -> None:
         sa.UniqueConstraint('org_id', 'user_id', name='uq_org_member'),
     )
 
-    # 4. Invitations
     op.create_table(
         'invitations',
         sa.Column('id', sa.String(length=64), primary_key=True),
@@ -67,7 +63,6 @@ def upgrade() -> None:
         sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
     )
 
-    # 5. Razorpay Connections
     op.create_table(
         'org_razorpay_connections',
         sa.Column('id', sa.String(length=64), primary_key=True),
@@ -82,7 +77,6 @@ def upgrade() -> None:
         sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
     )
 
-    # 6. Customers
     op.create_table(
         'customers',
         sa.Column('id', sa.String(length=64), primary_key=True),
@@ -94,7 +88,6 @@ def upgrade() -> None:
     )
     op.create_index('idx_customers_org_email', 'customers', ['org_id', 'email'])
 
-    # 7. Orders
     op.create_table(
         'orders',
         sa.Column('id', sa.String(length=64), primary_key=True),
@@ -110,7 +103,6 @@ def upgrade() -> None:
     op.create_index('idx_orders_org_receipt', 'orders', ['org_id', 'receipt'])
     op.create_index('idx_orders_org_status', 'orders', ['org_id', 'status'])
 
-    # 8. Settlements
     op.create_table(
         'settlements',
         sa.Column('id', sa.String(length=64), primary_key=True),
@@ -129,7 +121,6 @@ def upgrade() -> None:
     op.create_index('idx_settlements_org_status', 'settlements', ['org_id', 'status'])
     op.create_index('idx_settlements_org_created', 'settlements', ['org_id', 'created_at'])
 
-    # 9. Settlement Lines
     op.create_table(
         'settlement_lines',
         sa.Column('id', sa.String(length=64), primary_key=True),
@@ -143,7 +134,6 @@ def upgrade() -> None:
         sa.Column('net_paise', sa.BigInteger(), nullable=False, server_default='0'),
     )
 
-    # 10. Payments
     op.create_table(
         'payments',
         sa.Column('id', sa.String(length=64), primary_key=True),
@@ -166,7 +156,6 @@ def upgrade() -> None:
     op.create_index('idx_payments_org_settlement', 'payments', ['org_id', 'settlement_id'])
     op.create_index('idx_payments_org_created', 'payments', ['org_id', 'created_at'])
 
-    # 11. Refunds
     op.create_table(
         'refunds',
         sa.Column('id', sa.String(length=64), primary_key=True),
@@ -184,7 +173,6 @@ def upgrade() -> None:
     op.create_index('idx_refunds_org_payment', 'refunds', ['org_id', 'payment_id'])
     op.create_index('idx_refunds_org_status', 'refunds', ['org_id', 'status'])
 
-    # 12. Disputes
     op.create_table(
         'disputes',
         sa.Column('id', sa.String(length=64), primary_key=True),
@@ -202,7 +190,6 @@ def upgrade() -> None:
     op.create_index('idx_disputes_org_status', 'disputes', ['org_id', 'status'])
     op.create_index('idx_disputes_org_payment', 'disputes', ['org_id', 'payment_id'])
 
-    # 13. Bank Transactions
     op.create_table(
         'bank_transactions',
         sa.Column('id', sa.String(length=64), primary_key=True),
@@ -218,7 +205,6 @@ def upgrade() -> None:
     op.create_index('idx_bank_tx_org_ref', 'bank_transactions', ['org_id', 'reference'])
     op.create_index('idx_bank_tx_org_date', 'bank_transactions', ['org_id', 'date'])
 
-    # 14. Tax Records
     op.create_table(
         'tax_records',
         sa.Column('id', sa.String(length=64), primary_key=True),
@@ -235,7 +221,6 @@ def upgrade() -> None:
     )
     op.create_index('idx_tax_org_quarter', 'tax_records', ['org_id', 'financial_year', 'quarter'])
 
-    # 15. Batches
     op.create_table(
         'batches',
         sa.Column('id', sa.String(length=64), primary_key=True),
@@ -253,7 +238,6 @@ def upgrade() -> None:
     op.create_index('idx_batches_org_status', 'batches', ['org_id', 'status'])
     op.create_index('idx_batches_org_created', 'batches', ['org_id', 'created_at'])
 
-    # 16. Exceptions
     op.create_table(
         'exceptions',
         sa.Column('id', sa.String(length=64), primary_key=True),
@@ -276,7 +260,6 @@ def upgrade() -> None:
     op.create_index('idx_exceptions_org_batch', 'exceptions', ['org_id', 'batch_id'])
     op.create_index('idx_exceptions_org_severity', 'exceptions', ['org_id', 'severity'])
 
-    # 17. Cryptographic Audit Entries
     op.create_table(
         'audit_entries',
         sa.Column('id', sa.Integer(), primary_key=True, autoincrement=True),
@@ -299,7 +282,6 @@ def upgrade() -> None:
     op.create_index('idx_audit_org_case', 'audit_entries', ['org_id', 'case_id'])
     op.create_index('idx_audit_org_created', 'audit_entries', ['org_id', 'created_at'])
 
-    # 18. Agent Runs
     op.create_table(
         'agent_runs',
         sa.Column('id', sa.String(length=64), primary_key=True),
@@ -315,7 +297,6 @@ def upgrade() -> None:
     )
     op.create_index('idx_agent_runs_org_batch', 'agent_runs', ['org_id', 'batch_id'])
 
-    # 19. Snapshots
     op.create_table(
         'snapshots',
         sa.Column('id', sa.String(length=64), primary_key=True),
@@ -334,7 +315,6 @@ def upgrade() -> None:
     )
     op.create_index('idx_snapshots_org_created', 'snapshots', ['org_id', 'created_at'])
 
-    # 20. Conversations
     op.create_table(
         'conversations',
         sa.Column('id', sa.String(length=64), primary_key=True),

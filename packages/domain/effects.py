@@ -99,10 +99,6 @@ class SettlementBatchEffect(BaseModel):
         return format_inr(self.variance_paise)
 
 
-# ------------------------------------------------------------------------------
-# 1. Payment Financial Effect
-# ------------------------------------------------------------------------------
-
 def calculate_payment_effect(
     payment: Payment,
     fee_schedule: Optional[FeeSchedule] = None,
@@ -115,11 +111,9 @@ def calculate_payment_effect(
     expected_breakdown = calculate_fee_and_tax(payment.amount_paise, schedule)
     
     observed_net = observed_net_paise if observed_net_paise is not None else payment.net_paise
-    # If payment record has 0 net_paise, assume it was recorded with expected
     if observed_net == 0 and payment.fee_paise == 0:
         observed_net = payment.amount_paise - payment.fee_paise - payment.tax_paise
         if observed_net == payment.amount_paise and schedule.mdr_bps > 0:
-            # Payment record has not subtracted fees yet
             observed_net = expected_breakdown.net_paise
 
     variance_paise = observed_net - expected_breakdown.net_paise
@@ -164,10 +158,6 @@ def calculate_payment_effect(
     )
 
 
-# ------------------------------------------------------------------------------
-# 2. Refund Financial Effect & Variance Classifier
-# ------------------------------------------------------------------------------
-
 def calculate_refund_effect(
     refund: Refund,
     payment: Optional[Payment] = None,
@@ -184,7 +174,6 @@ def calculate_refund_effect(
     - REFUND_WITHOUT_PAYMENT
     - DUPLICATE_REFUND
     """
-    # 1. Check Orphan Refund (Refund without parent payment)
     if payment is None:
         return FinancialEffect(
             entity_id=refund.id,
@@ -202,7 +191,6 @@ def calculate_refund_effect(
             evidence={"refund_id": refund.id, "payment_id": refund.payment_id}
         )
 
-    # 2. Check Source Instrument Mismatch
     if refund.source_instrument_ref and payment.instrument_ref:
         if refund.source_instrument_ref.strip() != payment.instrument_ref.strip():
             return FinancialEffect(
@@ -227,7 +215,6 @@ def calculate_refund_effect(
                 }
             )
 
-    # 3. Check Duplicate or Over-Refund
     prior_refund_total = sum(r.amount_paise for r in (prior_refunds_on_payment or []) if r.id != refund.id)
     cumulative_refund_paise = prior_refund_total + refund.amount_paise
 
@@ -263,12 +250,9 @@ def calculate_refund_effect(
             }
         )
 
-    # 4. Standard Expected Refund Variance (RULE_REFUND_02)
-    # The refund debits the full customer amount, while original fee + GST are retained.
     schedule = fee_schedule or DEFAULT_FEE_SCHEDULES.get(payment.method, DEFAULT_FEE_SCHEDULES["card"])
     fee_breakdown = calculate_fee_and_tax(payment.amount_paise, schedule)
     
-    # In a full refund, overall merchant loss on transaction = fee + tax
     retained_fee_and_tax_paise = fee_breakdown.total_deductions_paise
     
     observed_debit = observed_debit_paise if observed_debit_paise is not None else -refund.amount_paise
@@ -327,10 +311,6 @@ def calculate_refund_effect(
             }
         )
 
-
-# ------------------------------------------------------------------------------
-# 3. Settlement Batch Aggregation Effect
-# ------------------------------------------------------------------------------
 
 def calculate_settlement_batch_effect(
     settlement: Settlement,

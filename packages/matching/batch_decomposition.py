@@ -47,7 +47,6 @@ def find_subset_sum_exact(
     if not candidates or target_paise < 0:
         return None
 
-    # Sort descending for effective pruning
     sorted_candidates = sorted(candidates, key=lambda p: p.amount_paise, reverse=True)
 
     def backtrack(idx: int, current_sum: int, current_list: List[Payment]) -> Optional[List[Payment]]:
@@ -56,13 +55,11 @@ def find_subset_sum_exact(
         if current_sum > target_paise or len(current_list) >= max_items or idx >= len(sorted_candidates):
             return None
 
-        # Try including candidate
         p = sorted_candidates[idx]
         included = backtrack(idx + 1, current_sum + p.amount_paise, current_list + [p])
         if included is not None:
             return included
 
-        # Try skipping candidate
         return backtrack(idx + 1, current_sum, current_list)
 
     return backtrack(0, 0, [])
@@ -82,7 +79,6 @@ def decompose_and_reconstruct_batches(
     """
     results: List[BatchDecompositionResult] = []
     
-    # Partition by settlement_id
     payment_by_setl: Dict[str, List[Payment]] = {}
     unmapped_payments: List[Payment] = []
     
@@ -99,8 +95,6 @@ def decompose_and_reconstruct_batches(
 
     dispute_by_setl: Dict[str, List[Dispute]] = {}
     for d in disputes:
-        # Match dispute to settlement if parent payment is in settlement
-        # or if dispute line is present
         pass
 
     allocated_unmapped_ids: Set[str] = set()
@@ -115,9 +109,7 @@ def decompose_and_reconstruct_batches(
         
         reconstructed: List[ReconstructedMapping] = []
 
-        # If batch has a deficit and there are unmapped payments, attempt reconstruction
         if gross_deficit > 0 and unmapped_payments:
-            # Filter candidate payments within time window
             window_candidates = []
             for p in unmapped_payments:
                 if p.id in allocated_unmapped_ids or not s.settled_at or not p.captured_at:
@@ -144,7 +136,6 @@ def decompose_and_reconstruct_batches(
                         ]
                     ))
 
-        # Calculate final batch effect
         batch_effect = calculate_settlement_batch_effect(
             settlement=s,
             payments=assigned_payments,

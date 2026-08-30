@@ -86,7 +86,7 @@ class TestCanonicalModels:
             order_id="order_10482",
             amount_paise=7200000,
             deduction_amount_paise=7200000,
-            fee_paise=50000,  # ₹500 dispute fee
+            fee_paise=50000,
             status="open"
         )
         assert disp.amount_formatted == "₹72,000.00"
@@ -97,13 +97,13 @@ class TestCanonicalModels:
         settlement = Settlement(
             id="setl_8842",
             utr="UTR778210992",
-            gross_amount_paise=10000000,  # ₹1,00,000
-            fee_amount_paise=200000,     # ₹2,000
-            tax_amount_paise=36000,      # ₹360
-            refund_amount_paise=1000000, # ₹10,000
+            gross_amount_paise=10000000,
+            fee_amount_paise=200000,
+            tax_amount_paise=36000,
+            refund_amount_paise=1000000,
             adjustment_amount_paise=0,
             dispute_amount_paise=0,
-            amount_paise=8764000,        # ₹87,640 net
+            amount_paise=8764000,
             status="settled"
         )
         assert settlement.calculate_computed_net_paise() == 8764000
@@ -124,7 +124,7 @@ class TestCanonicalModels:
         tax_rec = TaxRecord(
             id="tax_2024_01",
             gross_amount_credited_paise=10000000,
-            tds_deducted_paise=10000, # 0.1% of ₹1,00,000 = ₹100
+            tds_deducted_paise=10000,
             tds_rate_bps=10
         )
         assert tax_rec.tds_formatted == "₹100.00"

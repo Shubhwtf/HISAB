@@ -60,7 +60,7 @@ const ROLE_ALLOWED_TABS: Record<string, Set<string>> = {
 };
 
 export default function ControlRoomPage() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // Strict auth gate: requires login to view dashboard
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const [userRole, setUserRole] = useState("");
   const [userName, setUserName] = useState("");
@@ -78,7 +78,6 @@ export default function ControlRoomPage() {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isGateOpen, setIsGateOpen] = useState(false);
 
-  // Strict Session Verification on Mount & Theme Switcher
   useEffect(() => {
     const savedTheme = localStorage.getItem("hisab-theme");
     if (savedTheme === "dark") {
@@ -106,7 +105,6 @@ export default function ControlRoomPage() {
           return;
         }
 
-        // Verify session against backend /api/auth/me
         const verified = await fetchApi<any>("/api/auth/me");
         if (verified && verified.role) {
           setUserRole(verified.role);
@@ -242,7 +240,6 @@ export default function ControlRoomPage() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#0A0A0A] text-[#0F172A] dark:text-[#EDEDED] font-sans transition-colors">
-      {/* Fixed Top Navbar (Full Width) */}
       <TopNav
         activeTabTitle={tabTitles[activeTab] || "Dashboard"}
         onRunRecon={handleRunReconciliation}
@@ -263,7 +260,6 @@ export default function ControlRoomPage() {
         }}
       />
 
-      {/* Fixed Left Sidebar (Frozen in place below Navbar) */}
       <Sidebar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -277,15 +273,12 @@ export default function ControlRoomPage() {
         onLogout={handleLogout}
       />
 
-      {/* Scrollable Page Body (Offset by Sidebar width 270px and Navbar height 4rem/64px) */}
       <div className="pl-[270px] pt-16 min-h-screen">
         <main className="w-full max-w-[1600px] mx-auto px-6 lg:px-24 py-6 pb-20">
-          {/* Top Executive Metrics Ribbon (Shown only on Overview and Batch Control Room) */}
           {(activeTab === "overview" || activeTab === "batch-control") && (
             <MetricsRibbon summary={summary} />
           )}
 
-          {/* Active View Router */}
           <div className="space-y-6">
             {!(ROLE_ALLOWED_TABS[userRole] || ROLE_ALLOWED_TABS.ADMIN).has(activeTab) ? (
               <div className="bg-white dark:bg-[#111111] border border-amber-200 dark:border-amber-900/60 rounded-2xl p-10 text-center space-y-4 shadow-sm font-sans">
@@ -309,7 +302,6 @@ export default function ControlRoomPage() {
               <>
             {activeTab === "overview" && (
               <>
-                {/* Razorpay Gateway Live Status / Onboarding Callout */}
                 {isRazorpayConnected ? (
                   <div className="p-4 rounded-2xl bg-white dark:bg-[#111111] border border-[#E2E8F0] dark:border-[#262626] flex items-center justify-between text-xs shadow-xs">
                     <div className="flex items-center space-x-3">
@@ -522,26 +514,22 @@ export default function ControlRoomPage() {
         </main>
       </div>
 
-      {/* Floating Bottom-Right AI Assistant Chat Drawer */}
       <FloatingAiChat
         onOpenEvidence={handleInspectEvidence}
         onOpenException={() => setActiveTab("exceptions")}
       />
 
-      {/* New Reconciliation Interactive Wizard Modal */}
       <NewReconciliationWizard
         isOpen={isWizardOpen}
         onClose={() => setIsWizardOpen(false)}
         onSuccess={loadDashboardData}
       />
 
-      {/* Downloadable Executive Report Modal */}
       <ExecutiveReportModal
         isOpen={isReportModalOpen}
         onClose={() => setIsReportModalOpen(false)}
       />
 
-      {/* First Login Razorpay OAuth Connection Gate */}
       <RazorpayGateModal
         isOpen={isGateOpen}
         onConnected={() => setIsGateOpen(false)}

@@ -56,7 +56,6 @@ from packages.domain.auth_rbac import (
 from packages.domain.audit_ledger import append_audit_entry, verify_audit_chain
 
 
-# Setup in-memory test database for multi-tenant isolation testing
 TEST_DB_URL = "sqlite:///:memory:"
 engine = create_engine(TEST_DB_URL, connect_args={"check_same_thread": False}, poolclass=StaticPool)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -91,12 +90,10 @@ def seed_two_tenants():
     hash_a, salt_a = hash_password("Pass123!")
     hash_b, salt_b = hash_password("Pass123!")
 
-    # Setup Org A (Tenant 1)
     user_a = UserDB(id="usr_tenant_a", email="owner@tenanta.com", name="Alice", pw_hash=hash_a, pw_salt=salt_a, created_at=now, updated_at=now)
     org_a = OrganizationDB(id="org_tenant_a", name="Tenant A Org", owner_user_id="usr_tenant_a", created_at=now, updated_at=now)
     mem_a = OrganizationMemberDB(id="mem_a", org_id="org_tenant_a", user_id="usr_tenant_a", role="ADMIN", status="ACTIVE", created_at=now)
 
-    # Setup Org B (Tenant 2)
     user_b = UserDB(id="usr_tenant_b", email="owner@tenantb.com", name="Bob", pw_hash=hash_b, pw_salt=salt_b, created_at=now, updated_at=now)
     org_b = OrganizationDB(id="org_tenant_b", name="Tenant B Org", owner_user_id="usr_tenant_b", created_at=now, updated_at=now)
     mem_b = OrganizationMemberDB(id="mem_b", org_id="org_tenant_b", user_id="usr_tenant_b", role="ADMIN", status="ACTIVE", created_at=now)
@@ -104,18 +101,15 @@ def seed_two_tenants():
     db.add_all([user_a, org_a, mem_a, user_b, org_b, mem_b])
     db.flush()
 
-    # Seed data for Org A
     settle_a = SettlementDB(id="setl_tenant_a_001", org_id="org_tenant_a", amount_paise=1000000, gross_amount_paise=1020000, fee_amount_paise=20000, tax_amount_paise=3600, currency="INR", status="settled", utr="UTR_TENANT_A_001", created_at=now)
     exc_a = ExceptionDB(id="exc_tenant_a_001", org_id="org_tenant_a", category="DOUBLE_LOSS", severity="CRITICAL", financial_impact_paise=500000, confidence=0.99, root_cause="Test cause A", recommendation="Test rec A", affected_records=[], evidence={}, status="OPEN", created_at=now)
 
-    # Seed data for Org B
     settle_b = SettlementDB(id="setl_tenant_b_001", org_id="org_tenant_b", amount_paise=2000000, gross_amount_paise=2040000, fee_amount_paise=40000, tax_amount_paise=7200, currency="INR", status="settled", utr="UTR_TENANT_B_001", created_at=now)
     exc_b = ExceptionDB(id="exc_tenant_b_001", org_id="org_tenant_b", category="FEE_MISMATCH", severity="LOW", financial_impact_paise=10000, confidence=0.95, root_cause="Test cause B", recommendation="Test rec B", affected_records=[], evidence={}, status="OPEN", created_at=now)
 
     db.add_all([settle_a, exc_a, settle_b, exc_b])
     db.commit()
 
-    # Register in in-memory auth structures
     ORGANIZATIONS["org_tenant_a"] = Organization(id="org_tenant_a", name="Tenant A Org", slug="tenant-a", owner_user_id="usr_tenant_a", plan="ENTERPRISE", created_at=now.isoformat())
     ORGANIZATIONS["org_tenant_b"] = Organization(id="org_tenant_b", name="Tenant B Org", slug="tenant-b", owner_user_id="usr_tenant_b", plan="ENTERPRISE", created_at=now.isoformat())
     USERS["usr_tenant_a"] = User(id="usr_tenant_a", email="owner@tenanta.com", name="Alice", pw_hash=hash_a, pw_salt=salt_a, created_at=now.isoformat())
@@ -135,10 +129,6 @@ def seed_two_tenants():
     ACTIVE_SESSIONS["sess_tenant_b"] = sess_b
     return {"db": db, "org_a": org_a, "org_b": org_b}
 
-
-# ==============================================================================
-# 1. POSTGRESQL DRIVER & CONNECTION POOLING CONFIGURATION TESTS
-# ==============================================================================
 
 def test_postgresql_url_normalization():
     """Verify that database URLs are properly normalized to asyncpg and psycopg dialects."""
@@ -162,10 +152,6 @@ def test_postgresql_pool_configuration():
     assert pg_args["max_overflow"] == 20
     assert pg_args["pool_recycle"] == 1800
 
-
-# ==============================================================================
-# 2. MODEL AUDIT: ALL BUSINESS TABLES MUST HAVE ORG_ID AND INDEXES
-# ==============================================================================
 
 def test_all_business_tables_have_org_id():
     """Verify that every business entity model table contains an org_id column with foreign key."""
@@ -200,34 +186,26 @@ def test_all_business_tables_have_org_id():
         assert "organizations.id" in fk_targets, f"Table '{table_name}.org_id' must have Foreign Key to 'organizations.id'"
 
 
-# ==============================================================================
-# 3. MULTI-TENANT ISOLATION: CROSS-TENANT DATA ACCESS DENIAL
-# ==============================================================================
-
 def test_multi_tenant_read_isolation(seed_two_tenants):
     """Verify that Tenant A cannot read Tenant B's settlements, exceptions, or audit entries."""
-    # Tenant A querying settlements
     res_a_settle = client.get("/api/settlements/tower", headers={"X-Session-Token": "sess_tenant_a"})
     assert res_a_settle.status_code == 200
     timeline_a = res_a_settle.json()["timeline"]
     assert len(timeline_a) == 1
     assert timeline_a[0]["settlement_id"] == "setl_tenant_a_001"
 
-    # Tenant B querying settlements
     res_b_settle = client.get("/api/settlements/tower", headers={"X-Session-Token": "sess_tenant_b"})
     assert res_b_settle.status_code == 200
     timeline_b = res_b_settle.json()["timeline"]
     assert len(timeline_b) == 1
     assert timeline_b[0]["settlement_id"] == "setl_tenant_b_001"
 
-    # Tenant A querying exceptions
     res_a_exc = client.get("/api/controls/exceptions", headers={"X-Session-Token": "sess_tenant_a"})
     assert res_a_exc.status_code == 200
     items_a = res_a_exc.json()["items"]
     assert len(items_a) == 1
     assert items_a[0]["id"] == "exc_tenant_a_001"
 
-    # Tenant B querying exceptions
     res_b_exc = client.get("/api/controls/exceptions", headers={"X-Session-Token": "sess_tenant_b"})
     assert res_b_exc.status_code == 200
     items_b = res_b_exc.json()["items"]
@@ -235,23 +213,16 @@ def test_multi_tenant_read_isolation(seed_two_tenants):
     assert items_b[0]["id"] == "exc_tenant_b_001"
 
 
-# ==============================================================================
-# 4. RESOURCE-LEVEL DIRECT ID ISOLATION (NO INFORMATION LEAKAGE)
-# ==============================================================================
-
 def test_cross_tenant_resource_id_isolation_returns_404(seed_two_tenants):
     """Verify that direct access to foreign tenant resources returns 404 without leaking existence."""
-    # Tenant A attempting to access Tenant B's specific settlement by ID
     res_settle = client.get("/api/settlements/setl_tenant_b_001", headers={"X-Session-Token": "sess_tenant_a"})
     assert res_settle.status_code == 404
     assert "Settlement not found" in res_settle.json()["detail"]
 
-    # Tenant A attempting to access Tenant B's exception by ID
     res_exc = client.get("/api/controls/exceptions/exc_tenant_b_001", headers={"X-Session-Token": "sess_tenant_a"})
     assert res_exc.status_code == 404
     assert "Exception record not found" in res_exc.json()["detail"]
 
-    # Tenant A attempting to resolve Tenant B's exception (Write isolation)
     res_resolve = client.post(
         "/api/controls/exceptions/exc_tenant_b_001/resolve",
         headers={"X-Session-Token": "sess_tenant_a"},
@@ -259,7 +230,6 @@ def test_cross_tenant_resource_id_isolation_returns_404(seed_two_tenants):
     )
     assert res_resolve.status_code == 404
 
-    # Tenant A attempting to escalate Tenant B's exception (Write isolation)
     res_escalate = client.post(
         "/api/controls/exceptions/exc_tenant_b_001/escalate",
         headers={"X-Session-Token": "sess_tenant_a"},
@@ -268,13 +238,8 @@ def test_cross_tenant_resource_id_isolation_returns_404(seed_two_tenants):
     assert res_escalate.status_code == 404
 
 
-# ==============================================================================
-# 5. TENANT SPOOFING PREVENTION: X-Org-Id HEADER VERIFICATION
-# ==============================================================================
-
 def test_tenant_header_spoofing_rejected(seed_two_tenants):
     """Verify that passing an X-Org-Id header for an organization the user is not a member of returns 403."""
-    # Alice (sess_tenant_a) attempting to spoof X-Org-Id to org_tenant_b
     res = client.get(
         "/api/settlements/tower",
         headers={
@@ -286,42 +251,30 @@ def test_tenant_header_spoofing_rejected(seed_two_tenants):
     assert "User is not an active member" in res.json()["detail"]
 
 
-# ==============================================================================
-# 6. DATABASE TRANSACTIONS & ROLLBACK INTEGRITY
-# ==============================================================================
-
 def test_atomic_transactional_session_rollback():
     """Verify that transactional_session context manager rolls back modifications on exception."""
     db = TestingSessionLocal()
     now = datetime.now(timezone.utc)
 
-    # Insert initial customer
     cust = CustomerDB(id="cust_tx_test", org_id="org_nova_2026", name="Initial Customer", email="tx@test.com", contact="+919800011122", created_at=now)
     db.add(cust)
     db.commit()
 
-    # Attempt a transaction that raises an error midway
     with pytest.raises(RuntimeError):
         with transactional_session(db):
             c = db.get(CustomerDB, "cust_tx_test")
             c.name = "Modified Name Within Failing TX"
             raise RuntimeError("Forced simulation error during transaction")
 
-    # Verify rollback: customer name must still be 'Initial Customer'
     db.expire_all()
     c_check = db.get(CustomerDB, "cust_tx_test")
     assert c_check.name == "Initial Customer"
 
 
-# ==============================================================================
-# 7. MULTI-TENANT CRYPTOGRAPHIC AUDIT CHAIN ISOLATION
-# ==============================================================================
-
 def test_independent_audit_chains_per_organization():
     """Verify that audit ledgers maintain independent, valid cryptographic hash chains per org."""
     db = TestingSessionLocal()
 
-    # Create entries for Org A
     e1_a = append_audit_entry(
         db=db,
         case_id="case_a_001",
@@ -343,7 +296,6 @@ def test_independent_audit_chains_per_organization():
         org_id="org_tenant_a",
     )
 
-    # Create entries for Org B
     e1_b = append_audit_entry(
         db=db,
         case_id="case_b_001",
@@ -355,7 +307,6 @@ def test_independent_audit_chains_per_organization():
         org_id="org_tenant_b",
     )
 
-    # Org A should have sequence 1 and 2
     entries_a = db.scalars(select(AuditEntryDB).where(AuditEntryDB.org_id == "org_tenant_a").order_by(AuditEntryDB.sequence.asc())).all()
     assert len(entries_a) == 2
     assert entries_a[0].sequence == 1
@@ -364,7 +315,6 @@ def test_independent_audit_chains_per_organization():
     assert is_valid_a is True
     assert err_a is None
 
-    # Org B should have its own sequence starting from 1
     entries_b = db.scalars(select(AuditEntryDB).where(AuditEntryDB.org_id == "org_tenant_b").order_by(AuditEntryDB.sequence.asc())).all()
     assert len(entries_b) == 1
     assert entries_b[0].sequence == 1

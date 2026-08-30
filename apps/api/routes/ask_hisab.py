@@ -45,15 +45,15 @@ router = APIRouter(prefix="/api/ask-hisab", tags=["Ask HISAB"])
 class AskHisabRequest(BaseModel):
     query: str = Field(description="Natural language question about HISAB financial state or documentation")
     batch_id: Optional[str] = "BATCH_AUG_2026"
-    mode: Optional[str] = "docs"  # "docs" | "financial"
+    mode: Optional[str] = "docs"
 
 
 class EvidenceLink(BaseModel):
     id: str
-    type: str  # EXCEPTION | PAYMENT | SETTLEMENT | DISPUTE | AUDIT | SNAPSHOT
+    type: str
     label: str
     amount_formatted: Optional[str] = None
-    action_type: str = "PROVE_IT"  # OPEN_EXCEPTION | PROVE_IT
+    action_type: str = "PROVE_IT"
     target_id: str
 
 
@@ -84,7 +84,6 @@ def query_external_llm(user_query: str, facts_context: Dict[str, Any], is_docs_m
     groq_key = os.getenv("GROQ_API_KEY")
     gemini_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
 
-    # Clean out placeholder strings
     if groq_key and ("your_" in groq_key or "here" in groq_key or len(groq_key) < 10):
         groq_key = None
     if gemini_key and ("your_" in gemini_key or "here" in gemini_key or len(gemini_key) < 10):
@@ -119,11 +118,9 @@ def query_external_llm(user_query: str, facts_context: Dict[str, Any], is_docs_m
         )
         user_prompt = f"VERIFIED CONTEXT & DATABASE FACTS:\n{sanitized_facts}\n\nUSER QUERY:\n{user_query}"
 
-    # 1. Try Groq API with candidate model fallback
     if groq_key:
         preferred_model = os.getenv("LLM_MODEL", "qwen/qwen3.8-27b")
         candidate_models = [preferred_model, "openai/gpt-oss-120b", "openai/gpt-oss-20b", "groq/compound"]
-        # Deduplicate while preserving order
         candidate_models = list(dict.fromkeys(candidate_models))
 
         url = "https://api.groq.com/openai/v1/chat/completions"
@@ -153,7 +150,6 @@ def query_external_llm(user_query: str, facts_context: Dict[str, Any], is_docs_m
             except Exception as e:
                 logger.warning(f"Groq API call for model {model} failed: {e}")
 
-    # 2. Try Gemini API as second fallback
     if gemini_key:
         try:
             model = "gemini-2.0-flash"
@@ -193,9 +189,6 @@ def ask_hisab_query(req: AskHisabRequest, db: Session = Depends(get_db)):
     q_lower = q.lower()
     is_docs_mode = (req.mode == "docs")
 
-    # ==========================================================================
-    # A. DOCS COPILOT MODE (Pure technical specs, formulas, algorithms, no balances)
-    # ==========================================================================
     if is_docs_mode:
         if q_lower in ["hi", "hello", "hey", "hola", "greetings", "hi hisab", "hello hisab", "hi!", "hello!"]:
             return AskHisabResponse(
@@ -283,11 +276,9 @@ def ask_hisab_query(req: AskHisabRequest, db: Session = Depends(get_db)):
             }
         }
 
-        # Try Groq / Gemini in docs mode
         llm_text = query_external_llm(q, docs_specs, is_docs_mode=True)
 
         if not llm_text:
-            # Deterministic Technical Documentation Fallbacks (Zero financial amounts)
             if any(k in q_lower for k in ["tier", "algorithm", "subset", "knapsack", "match"]):
                 llm_text = (
                     "### HISAB 3-Tier Reconciliation Algorithm\n\n"
@@ -380,11 +371,7 @@ def ask_hisab_query(req: AskHisabRequest, db: Session = Depends(get_db)):
             llm_provider_used="Deterministic System Knowledge",
         )
 
-    # ==========================================================================
-    # B. FINANCIAL DASHBOARD MODE (Queries live database records & transactions)
-    # ==========================================================================
 
-    # Aggregate tenant ledger stats scoped strictly to current_user.org_id
     total_payments = db.scalar(select(func.count(PaymentDB.id)).where(PaymentDB.org_id == current_user.org_id)) or 0
     gross_turnover_paise = db.scalar(select(func.sum(PaymentDB.amount_paise)).where(PaymentDB.org_id == current_user.org_id)) or 0
     total_fee_paise = db.scalar(select(func.sum(PaymentDB.fee_paise)).where(PaymentDB.org_id == current_user.org_id)) or 0
@@ -415,7 +402,6 @@ def ask_hisab_query(req: AskHisabRequest, db: Session = Depends(get_db)):
         "total_disputes": format_inr(total_disputes_paise),
     }
 
-    # 1. SPECIFIC PAYMENT LOOKUP
     pay_match = re.search(r'(pay_[a-zA-Z0-9_]+)', q, re.IGNORECASE)
     if pay_match:
         pid = pay_match.group(1)
@@ -481,9 +467,6 @@ def ask_hisab_query(req: AskHisabRequest, db: Session = Depends(get_db)):
                 llm_provider_used="Groq (qwen/qwen3.8-27b)",
             )
 
-    # --------------------------------------------------------------------------
-    # 2. SPECIFIC EXCEPTION LOOKUP (e.g., EX-10006, exp_01)
-    # --------------------------------------------------------------------------
     exc_match = re.search(r'(EX-[a-zA-Z0-9_]+|exp_[a-zA-Z0-9_]+)', q, re.IGNORECASE)
     if exc_match:
         eid = exc_match.group(1)
@@ -530,9 +513,6 @@ def ask_hisab_query(req: AskHisabRequest, db: Session = Depends(get_db)):
                 llm_provider_used="Groq (qwen/qwen3.8-27b)",
             )
 
-    # --------------------------------------------------------------------------
-    # 3. 3-TIER RECONCILIATION ALGORITHM & SUBSET-SUM DECOMPOSITION
-    # --------------------------------------------------------------------------
     if any(k in q_lower for k in ["tier", "algorithm", "subset", "knapsack", "reconcile", "matcher"]):
         tool_traces = [
             AgentToolTrace(step_number=1, tool_name="explain_reconciliation_engine", args={"dataset": "4_way_ledgers"}, result_summary="3-Tier Matcher: Tier 1 Exact ID, Tier 2 Heuristic Window, Tier 3 Subset-Sum", verified_records_count=total_payments),
@@ -578,9 +558,6 @@ def ask_hisab_query(req: AskHisabRequest, db: Session = Depends(get_db)):
             llm_provider_used="Groq (qwen/qwen3.8-27b)",
         )
 
-    # --------------------------------------------------------------------------
-    # 4. THE SEVEN FINANCIAL CONTROLS (CTL_01 TO CTL_07)
-    # --------------------------------------------------------------------------
     if any(k in q_lower for k in ["ctl", "control", "assertion", "seven"]):
         tool_traces = [
             AgentToolTrace(step_number=1, tool_name="get_control_status_matrix", args={}, result_summary=f"Evaluated CTL_01 to CTL_07 across {total_payments} records", verified_records_count=7),
@@ -629,9 +606,6 @@ def ask_hisab_query(req: AskHisabRequest, db: Session = Depends(get_db)):
             llm_provider_used="Groq (qwen/qwen3.8-27b)",
         )
 
-    # --------------------------------------------------------------------------
-    # 5. DOUBLE-LOSS FORENSICS & CHARGEBACK COLLISION
-    # --------------------------------------------------------------------------
     if any(k in q_lower for k in ["double", "loss", "chargeback", "dispute", "evidence pack"]):
         tool_traces = [
             AgentToolTrace(step_number=1, tool_name="find_potential_double_losses", args={}, result_summary="Identified 2 double-loss anomaly vectors on pay_77201 & pay_77205", verified_records_count=2),
@@ -675,9 +649,6 @@ def ask_hisab_query(req: AskHisabRequest, db: Session = Depends(get_db)):
             llm_provider_used="Groq (qwen/qwen3.8-27b)",
         )
 
-    # --------------------------------------------------------------------------
-    # 6. FEES, TAXES, MDR & SECTION 194-O TDS
-    # --------------------------------------------------------------------------
     if any(k in q_lower for k in ["fee", "mdr", "tax", "gst", "tds", "194-o", "section 194"]):
         tax_records_count = db.scalar(select(func.count(TaxRecordDB.id))) or 2
         total_tds_paise = db.scalar(select(func.sum(TaxRecordDB.tds_deducted_paise))) or int(gross_turnover_paise * 0.001)
@@ -721,9 +692,6 @@ def ask_hisab_query(req: AskHisabRequest, db: Session = Depends(get_db)):
             llm_provider_used="Groq (qwen/qwen3.8-27b)",
         )
 
-    # --------------------------------------------------------------------------
-    # 7. WEBHOOK INGESTION & HMAC SECURITY
-    # --------------------------------------------------------------------------
     if any(k in q_lower for k in ["webhook", "hmac", "signature", "ingest", "razorpay"]):
         tool_traces = [
             AgentToolTrace(step_number=1, tool_name="get_webhook_configuration", args={}, result_summary="Webhook Ingestion: HMAC SHA-256 verified, idempotency:24h gate active", verified_records_count=4),
@@ -761,9 +729,6 @@ def ask_hisab_query(req: AskHisabRequest, db: Session = Depends(get_db)):
             llm_provider_used="Groq (qwen/qwen3.8-27b)",
         )
 
-    # --------------------------------------------------------------------------
-    # 8. GENERAL FINANCIAL STATE & SUMMARY
-    # --------------------------------------------------------------------------
     tool_traces = [
         AgentToolTrace(step_number=1, tool_name="get_ledger_summary", args={"batch_id": req.batch_id}, result_summary=f"Evaluated {total_payments} transactions, turnover {format_inr(gross_turnover_paise)}", verified_records_count=total_payments),
         AgentToolTrace(step_number=2, tool_name="get_control_status", args={}, result_summary=f"{len(open_exceptions)} anomalies remaining across 7 financial controls", verified_records_count=len(open_exceptions)),

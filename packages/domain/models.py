@@ -16,10 +16,6 @@ def utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-# ------------------------------------------------------------------------------
-# 1. Customer & Order Entities
-# ------------------------------------------------------------------------------
-
 class Customer(BaseModel):
     id: str = Field(description="Razorpay customer ID (cust_xxxx)")
     name: str = Field(description="Customer full name")
@@ -42,10 +38,6 @@ class Order(BaseModel):
     def amount_formatted(self) -> str:
         return format_inr(self.amount_paise)
 
-
-# ------------------------------------------------------------------------------
-# 2. Payment Instrument & Payment Entities
-# ------------------------------------------------------------------------------
 
 class PaymentInstrument(BaseModel):
     """
@@ -86,10 +78,6 @@ class Payment(BaseModel):
     def net_formatted(self) -> str:
         return format_inr(self.net_paise)
 
-
-# ------------------------------------------------------------------------------
-# 3. Refund & Dispute Entities
-# ------------------------------------------------------------------------------
 
 class Refund(BaseModel):
     id: str = Field(description="Razorpay refund ID (rfnd_xxxx)")
@@ -138,10 +126,6 @@ class Dispute(BaseModel):
     def exposure_formatted(self) -> str:
         return format_inr(self.total_exposure_paise)
 
-
-# ------------------------------------------------------------------------------
-# 4. Settlement & Settlement Line Entities
-# ------------------------------------------------------------------------------
 
 class SettlementLine(BaseModel):
     id: str = Field(description="Unique line item ID")
@@ -194,10 +178,6 @@ class Settlement(BaseModel):
         )
 
 
-# ------------------------------------------------------------------------------
-# 5. External Bank Statement & Tax Record Entities
-# ------------------------------------------------------------------------------
-
 class BankTransaction(BaseModel):
     id: str = Field(description="Bank transaction line ID (bnk_xxxx)")
     bank_account_number_masked: str = Field(default="•••• 9876", description="Masked merchant bank account")
@@ -231,10 +211,6 @@ class TaxRecord(BaseModel):
     def tds_formatted(self) -> str:
         return format_inr(self.tds_deducted_paise)
 
-
-# ------------------------------------------------------------------------------
-# 6. Exception, Evidence & Control Models
-# ------------------------------------------------------------------------------
 
 class ExceptionRecord(BaseModel):
     id: str = Field(description="Exception ID (exc_xxxx)")

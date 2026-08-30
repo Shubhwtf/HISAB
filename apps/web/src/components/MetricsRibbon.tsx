@@ -17,7 +17,6 @@ export const MetricsRibbon: React.FC<MetricsRibbonProps> = ({ summary }) => {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 font-sans">
-      {/* Gross Turnover */}
       <div className="bg-white dark:bg-[#111111] border border-[#E2E8F0] dark:border-[#262626] p-4 rounded-xl shadow-sm">
         <div className="flex items-center justify-between mb-2">
           <span className="text-[10px] font-semibold text-[#64748B] dark:text-[#A1A1AA] uppercase tracking-wider">Gross Turnover</span>
@@ -33,7 +32,6 @@ export const MetricsRibbon: React.FC<MetricsRibbonProps> = ({ summary }) => {
         </p>
       </div>
 
-      {/* Settled Amount */}
       <div className="bg-white dark:bg-[#111111] border border-[#E2E8F0] dark:border-[#262626] p-4 rounded-xl shadow-sm">
         <div className="flex items-center justify-between mb-2">
           <span className="text-[10px] font-semibold text-[#64748B] dark:text-[#A1A1AA] uppercase tracking-wider">Reconciled Settlement</span>
@@ -49,7 +47,6 @@ export const MetricsRibbon: React.FC<MetricsRibbonProps> = ({ summary }) => {
         </p>
       </div>
 
-      {/* Open Exceptions */}
       <div className="bg-white dark:bg-[#111111] border border-[#E2E8F0] dark:border-[#262626] p-4 rounded-xl shadow-sm">
         <div className="flex items-center justify-between mb-2">
           <span className="text-[10px] font-semibold text-[#64748B] dark:text-[#A1A1AA] uppercase tracking-wider">Open Exceptions</span>
@@ -65,7 +62,6 @@ export const MetricsRibbon: React.FC<MetricsRibbonProps> = ({ summary }) => {
         </p>
       </div>
 
-      {/* Unresolved Exposure */}
       <div className="bg-white dark:bg-[#111111] border border-red-200 dark:border-red-900/60 p-4 rounded-xl shadow-sm">
         <div className="flex items-center justify-between mb-2">
           <span className="text-[10px] font-semibold text-[#DC2626] uppercase tracking-wider">Unresolved Exposure</span>

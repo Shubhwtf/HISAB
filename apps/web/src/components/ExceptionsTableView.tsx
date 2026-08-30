@@ -26,7 +26,6 @@ export const ExceptionsTableView: React.FC<ExceptionsTableViewProps> = ({ onSele
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [resolvingId, setResolvingId] = useState<string | null>(null);
 
-  // Pagination State
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(10);
 
@@ -86,7 +85,6 @@ export const ExceptionsTableView: React.FC<ExceptionsTableViewProps> = ({ onSele
     setCurrentPage(1);
   }, [statusFilter]);
 
-  // Filtered and Paginated Items
   const filteredItems = exceptions.filter((exc) => {
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase();
@@ -104,7 +102,6 @@ export const ExceptionsTableView: React.FC<ExceptionsTableViewProps> = ({ onSele
 
   return (
     <div className="bg-white dark:bg-[#111111] border border-[#E2E8F0] dark:border-[#262626] rounded-2xl p-6 shadow-sm space-y-4 font-sans">
-      {/* Header & Filter Controls */}
       <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-[#E2E8F0] dark:border-[#262626]">
         <div>
           <div className="flex items-center space-x-2">
@@ -120,7 +117,6 @@ export const ExceptionsTableView: React.FC<ExceptionsTableViewProps> = ({ onSele
           </p>
         </div>
 
-        {/* Search & Filter Bar */}
         <div className="flex items-center space-x-3">
           <div className="relative">
             <Search className="w-3.5 h-3.5 absolute left-3 top-2 text-[#64748B]" />
@@ -136,7 +132,6 @@ export const ExceptionsTableView: React.FC<ExceptionsTableViewProps> = ({ onSele
             />
           </div>
 
-          {/* Status Filter */}
           <div className="flex items-center space-x-1 bg-[#F8FAFC] dark:bg-[#0E0E0E] p-1 rounded-lg border border-[#E2E8F0] dark:border-[#262626] text-xs">
             {["ALL", "OPEN", "ESCALATED", "RESOLVED"].map((st) => (
               <button
@@ -255,7 +250,6 @@ export const ExceptionsTableView: React.FC<ExceptionsTableViewProps> = ({ onSele
             </table>
           </div>
 
-          {/* Clean Pagination Controls */}
           <div className="flex flex-wrap items-center justify-between gap-4 pt-2 text-xs text-[#64748B] dark:text-[#A1A1AA]">
             <div className="flex items-center space-x-2">
               <span>Showing</span>
@@ -282,7 +276,6 @@ export const ExceptionsTableView: React.FC<ExceptionsTableViewProps> = ({ onSele
               </select>
             </div>
 
-            {/* Page Navigation Buttons */}
             <div className="flex items-center space-x-1.5">
               <button
                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}

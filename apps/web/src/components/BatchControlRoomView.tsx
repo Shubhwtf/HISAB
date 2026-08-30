@@ -69,7 +69,6 @@ export const BatchControlRoomView: React.FC<BatchControlRoomProps> = ({
 
   return (
     <div className="space-y-6 font-sans">
-      {/* Batch Header Bar */}
       <div className="bg-white dark:bg-[#111111] border border-[#E2E8F0] dark:border-[#262626] rounded-xl p-6 shadow-sm flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="flex items-center space-x-2">
@@ -106,7 +105,6 @@ export const BatchControlRoomView: React.FC<BatchControlRoomProps> = ({
         </div>
       </div>
 
-      {/* Primary KPI Grid */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <div className="bg-white dark:bg-[#111111] p-4 rounded-xl border border-[#E2E8F0] dark:border-[#262626]">
           <span className="text-[10px] text-[#64748B] dark:text-[#A1A1AA] uppercase font-bold">Total Ingested</span>
@@ -139,7 +137,6 @@ export const BatchControlRoomView: React.FC<BatchControlRoomProps> = ({
         </div>
       </div>
 
-      {/* Live Processing Pipeline Event Stream */}
       <div className="bg-white dark:bg-[#111111] border border-[#E2E8F0] dark:border-[#262626] rounded-2xl p-6 shadow-sm">
         <div className="flex items-center justify-between pb-3 border-b border-[#E2E8F0] dark:border-[#262626] mb-4">
           <div className="flex items-center space-x-2.5">
@@ -206,7 +203,6 @@ export const BatchControlRoomView: React.FC<BatchControlRoomProps> = ({
         </div>
       </div>
 
-      {/* CLOSE BATCH DETERMINISTIC POLICY MODAL */}
       {isCloseModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-white dark:bg-[#111111] border border-[#E2E8F0] dark:border-[#262626] rounded-2xl max-w-lg w-full p-6 shadow-2xl relative">

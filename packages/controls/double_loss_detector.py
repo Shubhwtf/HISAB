@@ -33,7 +33,7 @@ class DoubleLossClassification(str, Enum):
 
 class TimelineEvent(BaseModel):
     timestamp: str
-    event_type: str  # PAYMENT_CAPTURED | REFUND_PROCESSED | DISPUTE_RAISED | SETTLEMENT_IMPACT
+    event_type: str
     description: str
     amount_paise: int
 
@@ -100,11 +100,9 @@ def detect_double_loss_for_order(
     total_captured = sum(p.amount_paise for p in order_payments if p.status in ("captured", "refunded", "partially_refunded"))
     total_refunded = sum(r.amount_paise for r in order_refunds if r.status == "processed")
     
-    # Active dispute exposure
     active_disputes = [d for d in order_disputes if d.status in ("open", "under_review", "evidence_submitted")]
     dispute_exposure = sum(d.total_exposure_paise for d in active_disputes)
 
-    # 1. Check Signature Case: Refund EXISTS AND Active Dispute EXISTS
     if total_refunded > 0 and len(active_disputes) > 0:
         total_outflow_exposure = total_refunded + dispute_exposure
         net_position = total_captured - total_outflow_exposure

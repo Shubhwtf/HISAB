@@ -12,7 +12,6 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 from pydantic import BaseModel, Field
 
 
-# Strict Canonical Financial Model Fields (Zero Hallucination Allowlist)
 CANONICAL_FIELDS: Dict[str, Dict[str, str]] = {
     "payment_id": {"type": "string", "description": "Unique transaction/payment identifier (e.g. pay_xxx, TXN_xxx)"},
     "order_id": {"type": "string", "description": "Merchant order reference (e.g. order_xxx, ORD-xxx)"},
@@ -59,7 +58,7 @@ class FieldMappingItem(BaseModel):
     source_column: str
     canonical_field: Optional[str] = None
     confidence: float
-    tier: str  # HIGH_CONFIDENCE (>=0.95), REVIEW_RECOMMENDED (0.80-0.94), MANUAL_REVIEW (<0.80)
+    tier: str
     reason: str
     alternatives: List[Dict[str, Any]] = Field(default_factory=list)
     sample_values: List[str] = Field(default_factory=list)
@@ -82,7 +81,6 @@ class DynamicMappingResponse(BaseModel):
     blocking_ambiguities: List[str] = Field(default_factory=list)
 
 
-# Synonyms dictionary for heuristic candidate matching
 SYNONYM_MAP: Dict[str, List[str]] = {
     "payment_id": ["payment_id", "pay_id", "transaction_id", "txn_id", "txn ref", "payment reference", "razorpay_payment_id", "txn_ref", "reference_id"],
     "order_id": ["order_id", "order id", "merchant_order_id", "ord_id", "receipt", "order_ref", "invoice_no", "order_number"],
@@ -111,7 +109,6 @@ def detect_source_type(filename: str, columns: List[str], sample_rows: List[Dict
     cols_lower = [c.lower().strip() for c in columns]
     cols_set = set(cols_lower)
 
-    # 1. Settlements / Settlement Recon
     if "settlement" in f_lower or "recon" in f_lower or ("utr" in cols_set and "settlement_id" in cols_set):
         if "payment" in f_lower or "pay" in cols_set:
             source = "SETTLEMENT_RECONCILIATION"
@@ -122,31 +119,26 @@ def detect_source_type(filename: str, columns: List[str], sample_rows: List[Dict
             conf = 0.98
             reason = "Headers contain settlement batch references and net bank payout columns"
 
-    # 2. Bank Statement
     elif "bank" in f_lower or "statement" in f_lower or "hdfc" in f_lower or "icici" in f_lower or ("narration" in cols_set or "particulars" in cols_set):
         source = "BANK_STATEMENT"
         conf = 0.97
         reason = "Headers contain banking credit/debit narrations and clearing reference columns"
 
-    # 3. Refunds
     elif "refund" in f_lower or ("refund_id" in cols_set or "rfnd" in cols_set):
         source = "REFUNDS"
         conf = 0.99
         reason = "Filename and headers identify customer refund reversals"
 
-    # 4. Disputes
     elif "dispute" in f_lower or "chargeback" in f_lower or ("dispute_id" in cols_set or "respond_by" in cols_set):
         source = "DISPUTES"
         conf = 0.99
         reason = "Headers identify acquiring bank chargeback dispute records"
 
-    # 5. Orders
     elif "order" in f_lower or ("receipt" in cols_set and "order_id" in cols_set):
         source = "ORDERS"
         conf = 0.96
         reason = "Headers contain customer checkout and order metadata"
 
-    # 6. Default to Payments
     else:
         source = "PAYMENTS"
         conf = 0.95
@@ -183,7 +175,6 @@ def map_columns_dynamically(
         reason = ""
         alternatives: List[Dict[str, Any]] = []
 
-        # 1. Exact / Synonym Match
         for canonical, synonyms in SYNONYM_MAP.items():
             if col_clean in synonyms:
                 matched_field = canonical
@@ -198,11 +189,10 @@ def map_columns_dynamically(
                         matched_field = canonical
                         reason = f"Column '{col}' shares semantic substring with '{syn}'"
 
-        # 2. Ambiguity Handling for generic columns (e.g. "Reference", "ID", "Code")
         if col_clean in ("reference", "ref", "id", "code", "no"):
             if source_type == "PAYMENTS":
                 matched_field = "payment_id"
-                best_conf = 0.78  # Needs review
+                best_conf = 0.78
                 reason = "Generic reference column in Payments source. Recommended: payment_id"
                 alternatives = [
                     {"field": "order_id", "confidence": 0.65},
@@ -224,7 +214,6 @@ def map_columns_dynamically(
                     {"field": "settlement_id", "confidence": 0.45},
                 ]
 
-        # 3. Cross-source validation proof
         is_cross_verified = False
         cross_proof = None
         if matched_field == "payment_id" and cross_source_payment_ids and sample_rows:
@@ -235,7 +224,6 @@ def map_columns_dynamically(
                 best_conf = min(0.998, best_conf + 0.08)
                 cross_proof = f"✓ {overlap} of {len(sample_vals)} sampled values cross-verified in payments ledger"
 
-        # Confidence Tier Determination
         if best_conf >= 0.95:
             tier = "HIGH_CONFIDENCE"
         elif best_conf >= 0.80:
@@ -243,7 +231,6 @@ def map_columns_dynamically(
         else:
             tier = "MANUAL_REVIEW"
 
-        # Zero-Hallucination Guard: Ensure matched_field exists in CANONICAL_FIELDS
         if matched_field and matched_field not in CANONICAL_FIELDS:
             matched_field = None
             best_conf = 0.0
@@ -276,7 +263,6 @@ def detect_schema_drift(saved_headers: List[str], current_headers: List[str]) ->
     removed = list(saved_set - curr_set)
     renamed = []
 
-    # Detect renames using token overlap
     for rem in removed:
         rem_words = set(re.findall(r'\w+', rem.lower()))
         for add in added:

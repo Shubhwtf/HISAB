@@ -90,7 +90,6 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
 
   if (!isOpen) return null;
 
-  // Group results by category
   const categories = Array.from(new Set(results.map((r) => r.category)));
 
   const getCategoryIcon = (cat: string) => {
@@ -112,7 +111,6 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
         className="w-full max-w-2xl bg-white dark:bg-[#111111] border border-[#E2E8F0] dark:border-[#262626] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[560px]"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Search Input Bar */}
         <div className="p-4 border-b border-[#E2E8F0] dark:border-[#262626] flex items-center space-x-3 bg-white dark:bg-[#111111]">
           <Search className="w-5 h-5 text-[#64748B]" />
           <input
@@ -137,7 +135,6 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
           </kbd>
         </div>
 
-        {/* Results List */}
         <div className="flex-1 overflow-y-auto p-3 space-y-4 text-xs">
           {loading && (
             <div className="py-8 text-center text-[#64748B]">
@@ -236,7 +233,6 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
           )}
         </div>
 
-        {/* Modal Footer */}
         <div className="p-3 bg-[#F8FAFC] dark:bg-[#0E0E0E] border-t border-[#E2E8F0] dark:border-[#262626] flex items-center justify-between text-[11px] text-[#64748B] dark:text-[#A1A1AA]">
           <div className="flex items-center space-x-3">
             <span>Use <kbd className="font-mono bg-white dark:bg-slate-800 px-1.5 py-0.5 rounded border">↑</kbd> <kbd className="font-mono bg-white dark:bg-slate-800 px-1.5 py-0.5 rounded border">↓</kbd> to navigate</span>

@@ -47,7 +47,6 @@ export const PolicySimulatorView: React.FC = () => {
           </div>
         </div>
 
-        {/* Controls Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <div>
             <label className="text-xs font-bold text-[#0F172A] dark:text-[#EDEDED] block mb-2">
@@ -101,7 +100,6 @@ export const PolicySimulatorView: React.FC = () => {
           </div>
         </div>
 
-        {/* Results Card */}
         {result && (
           <div className="p-5 rounded-xl border border-[#E2E8F0] dark:border-[#262626] bg-[#F8FAFC] dark:bg-[#0E0E0E] space-y-4">
             <h4 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#EDEDED]">

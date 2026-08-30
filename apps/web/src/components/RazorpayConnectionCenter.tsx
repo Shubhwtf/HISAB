@@ -56,7 +56,6 @@ export const RazorpayConnectionCenter: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Direct Connection Card */}
       <div className="bg-white dark:bg-[#111111] border border-[#E2E8F0] dark:border-[#262626] rounded-xl p-6 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-[#E2E8F0] dark:border-[#262626] mb-6">
           <div className="flex items-center space-x-3">
@@ -105,7 +104,6 @@ export const RazorpayConnectionCenter: React.FC = () => {
           </div>
         )}
 
-        {/* Sync Numbers Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <div className="p-3.5 rounded-xl bg-[#F8FAFC] dark:bg-[#0E0E0E] border border-[#E2E8F0] dark:border-[#262626]">
             <span className="text-[10px] uppercase font-bold text-[#64748B]">Payments Synced</span>
@@ -136,7 +134,6 @@ export const RazorpayConnectionCenter: React.FC = () => {
           </div>
         </div>
 
-        {/* Webhooks Section */}
         <h4 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#EDEDED] mb-3">
           Razorpay Webhook Deliveries & HMAC Signature Verification
         </h4>

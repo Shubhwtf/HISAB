@@ -23,7 +23,6 @@ export const DailyFinanceBrief: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="bg-white dark:bg-[#111111] border border-[#E2E8F0] dark:border-[#262626] rounded-xl p-6 shadow-sm">
-        {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-[#E2E8F0] dark:border-[#262626] mb-6">
           <div className="flex items-center space-x-3">
             <div className="p-2 rounded-lg bg-blue-50 dark:bg-[#0B254A] text-[#0B72E7] dark:text-[#3395FF]">
@@ -54,7 +53,6 @@ export const DailyFinanceBrief: React.FC = () => {
           </a>
         </div>
 
-        {/* Executive Numbers */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <div className="p-4 rounded-xl bg-[#F8FAFC] dark:bg-[#0E0E0E] border border-[#E2E8F0] dark:border-[#262626]">
             <span className="text-[10px] uppercase font-bold text-[#64748B]">Gross Captured Revenue</span>
@@ -77,7 +75,6 @@ export const DailyFinanceBrief: React.FC = () => {
           </div>
         </div>
 
-        {/* Top Financial Risks List */}
         <h4 className="text-xs font-bold uppercase tracking-wider text-[#0F172A] dark:text-[#EDEDED] mb-3">
           Top Financial Risk Items & Actions
         </h4>

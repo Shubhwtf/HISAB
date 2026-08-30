@@ -25,14 +25,12 @@ class Role(str, Enum):
 
 
 class Permission(str, Enum):
-    # User & Org Management (ADMIN only)
     MANAGE_USERS = "manage_users"
     MANAGE_ORGANIZATION = "manage_organization"
     MANAGE_RAZORPAY_CONNECTION = "manage_razorpay_connection"
     MODIFY_SECURITY_SETTINGS = "modify_security_settings"
     MODIFY_CONTROL_POLICIES = "modify_control_policies"
 
-    # Operational Recon Actions
     UPLOAD_FINANCIAL_DATA = "upload_financial_data"
     CREATE_SNAPSHOTS = "create_snapshots"
     RUN_RECONCILIATION = "run_reconciliation"
@@ -41,12 +39,10 @@ class Permission(str, Enum):
     USE_ASK_HISAB = "use_ask_hisab"
     COMPARE_SNAPSHOTS = "compare_snapshots"
 
-    # Authorizations & Closures
-    PREPARE_RESOLUTIONS = "prepare_resolutions"  # Analyst (Maker)
-    APPROVE_RESOLUTIONS = "approve_resolutions"  # Manager (Checker)
-    CLOSE_BATCHES = "close_batches"              # Admin, Manager
+    PREPARE_RESOLUTIONS = "prepare_resolutions"
+    APPROVE_RESOLUTIONS = "approve_resolutions"
+    CLOSE_BATCHES = "close_batches"
 
-    # Read-only Access (All roles including AUDITOR)
     VIEW_FINANCIAL_DATA = "view_financial_data"
     VIEW_CONTROLS = "view_controls"
     VIEW_AUDIT_TRAIL = "view_audit_trail"
@@ -55,7 +51,7 @@ class Permission(str, Enum):
 
 
 ROLE_PERMISSIONS: Dict[Role, Set[Permission]] = {
-    Role.ADMIN: set(Permission),  # All permissions
+    Role.ADMIN: set(Permission),
     Role.FINANCE_MANAGER: {
         Permission.VIEW_FINANCIAL_DATA,
         Permission.UPLOAD_FINANCIAL_DATA,
@@ -115,10 +111,6 @@ def verify_password(password: str, pw_hash: str, salt: str) -> bool:
     return hmac.compare_digest(calc_hash, pw_hash)
 
 
-# ------------------------------------------------------------------------------
-# Domain Models
-# ------------------------------------------------------------------------------
-
 class User(BaseModel):
     id: str
     email: str
@@ -146,7 +138,7 @@ class OrganizationMembership(BaseModel):
     user_id: str
     org_id: str
     role: Role
-    status: str = "ACTIVE"  # ACTIVE | SUSPENDED
+    status: str = "ACTIVE"
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 
@@ -160,7 +152,7 @@ class Invitation(BaseModel):
     invited_by_name: str
     invited_by_email: str
     expires_at: str
-    status: str = "PENDING"  # PENDING | ACCEPTED | REVOKED | EXPIRED
+    status: str = "PENDING"
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 
@@ -176,11 +168,11 @@ class OrgRazorpayConnection(BaseModel):
     org_id: str
     merchant_id: Optional[str] = "rzp_live_99420"
     merchant_name: Optional[str] = "Nova Commerce Pvt Ltd"
-    environment: str = "TEST"  # TEST | LIVE
+    environment: str = "TEST"
     auth_type: str = "OAUTH"
     status: RazorpayConnectionStatus = RazorpayConnectionStatus.CONNECTED
     masked_client_id: Optional[str] = "rzp_test_K29188••••"
-    encrypted_token: Optional[str] = "enc_aes256_99420_secret_demo"  # Stored encrypted, never logged
+    encrypted_token: Optional[str] = "enc_aes256_99420_secret_demo"
     connected_by_user_id: Optional[str] = "usr_admin_01"
     connected_by_user_name: Optional[str] = "Shubham Verma"
     connected_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
@@ -205,10 +197,6 @@ class UserSession(BaseModel):
     expires_at: str
     is_demo_session: bool = False
 
-
-# ------------------------------------------------------------------------------
-# In-Memory Datastores & Seeded State
-# ------------------------------------------------------------------------------
 
 _SAMPLE_SALT = "a1b2c3d4e5f60718293a4b5c6d7e8f90"
 _SAMPLE_HASH, _ = hash_password("demo123", _SAMPLE_SALT)
@@ -248,7 +236,6 @@ USERS: Dict[str, User] = {
     ),
 }
 
-# Lookup by email
 USERS_BY_EMAIL: Dict[str, str] = {u.email.lower(): u.id for u in USERS.values()}
 
 ORGANIZATIONS: Dict[str, Organization] = {
@@ -328,14 +315,9 @@ ORGANIZATION_CONNECTIONS: Dict[str, OrgRazorpayConnection] = {
 
 ACTIVE_SESSIONS: Dict[str, UserSession] = {}
 
-# Backward-compatible mappings
 SEEDED_USERS = {u.email: u for u in USERS.values()}
 SEEDED_ORGANIZATIONS = ORGANIZATIONS
 
-
-# ------------------------------------------------------------------------------
-# Auth & RBAC Operations
-# ------------------------------------------------------------------------------
 
 def get_user_by_email(email: str) -> Optional[User]:
     user_id = USERS_BY_EMAIL.get(email.strip().lower())
@@ -367,7 +349,6 @@ def create_user_session(
     token = f"hisab_sess_{secrets.token_urlsafe(32)}"
     expires_at = (datetime.now(timezone.utc) + timedelta(hours=24)).isoformat()
     
-    # Determine role from membership if not explicitly supplied
     effective_role = role
     if effective_role is None:
         mem = get_user_membership(user.id, org.id)

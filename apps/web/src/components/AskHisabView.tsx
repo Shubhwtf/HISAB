@@ -45,7 +45,6 @@ export const AskHisabView: React.FC<AskHisabProps> = ({ onOpenEvidence, onOpenEx
 
   return (
     <div className="space-y-6 font-sans">
-      {/* Search Header */}
       <div className="bg-white dark:bg-[#111111] border border-[#E2E8F0] dark:border-[#262626] rounded-2xl p-6 shadow-sm space-y-4">
         <div className="flex items-center space-x-3">
           <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-[#0B254A] flex items-center justify-center text-[#0B72E7] dark:text-[#3395FF] font-bold text-xs">
@@ -61,7 +60,6 @@ export const AskHisabView: React.FC<AskHisabProps> = ({ onOpenEvidence, onOpenEx
           </div>
         </div>
 
-        {/* Input Bar */}
         <div className="flex items-center space-x-2 pt-2">
           <div className="relative flex-1">
             <Search className="w-4 h-4 absolute left-3.5 top-3.5 text-[#64748B]" />
@@ -84,7 +82,6 @@ export const AskHisabView: React.FC<AskHisabProps> = ({ onOpenEvidence, onOpenEx
           </button>
         </div>
 
-        {/* Question Chips */}
         <div className="flex flex-wrap gap-2 pt-1">
           {sampleQuestions.map((sq, i) => (
             <button
@@ -101,15 +98,12 @@ export const AskHisabView: React.FC<AskHisabProps> = ({ onOpenEvidence, onOpenEx
         </div>
       </div>
 
-      {/* Answer Container */}
       {response && (
         <div className="bg-white dark:bg-[#111111] border border-[#E2E8F0] dark:border-[#262626] rounded-2xl p-6 shadow-sm space-y-5">
-          {/* Answer Text Formatted */}
           <div className="p-4 rounded-xl bg-[#F8FAFC] dark:bg-[#0E0E0E] border border-[#E2E8F0] dark:border-[#262626]">
             <FormattedMarkdown content={response.answer} />
           </div>
 
-          {/* Evidence Action Links */}
           {response.evidence_links?.length > 0 && (
             <div className="space-y-3 pt-2">
               <div className="flex items-center space-x-2">
@@ -149,7 +143,6 @@ export const AskHisabView: React.FC<AskHisabProps> = ({ onOpenEvidence, onOpenEx
             </div>
           )}
 
-          {/* Agent Run Visibility Accordion */}
           <div className="border border-[#E2E8F0] dark:border-[#262626] rounded-xl overflow-hidden">
             <button
               onClick={() => setShowTrace(!showTrace)}

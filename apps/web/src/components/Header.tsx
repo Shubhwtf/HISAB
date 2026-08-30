@@ -22,7 +22,6 @@ export const Header: React.FC<HeaderProps> = ({
     <header className="border-b border-gray-200 dark:border-gray-800 bg-white/90 dark:bg-[#070D18]/90 backdrop-blur-md sticky top-0 z-50 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          {/* Razorpay-inspired blue gradient logo */}
           <div className="w-9 h-9 rounded-lg bg-gradient-to-tr from-[#0B72E7] to-[#0C2340] flex items-center justify-center shadow-md shadow-[#0B72E7]/20">
             <span className="font-extrabold text-white tracking-wider text-base">हि</span>
           </div>
@@ -47,7 +46,6 @@ export const Header: React.FC<HeaderProps> = ({
             <span>Sync: {lastUpdated}</span>
           </div>
 
-          {/* Theme Toggle Button */}
           <button
             onClick={onToggleDarkMode}
             className="p-2 rounded-lg bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-800 transition-colors"
@@ -56,7 +54,6 @@ export const Header: React.FC<HeaderProps> = ({
             {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-[#0B72E7]" />}
           </button>
 
-          {/* Run Reconcile Button */}
           <button
             onClick={onRunRecon}
             disabled={isRunning}

@@ -75,11 +75,9 @@ class TestAgentTools:
             exec_res = match_payment_to_settlement(db, "pay_test_10", "setl_test_10")
             assert exec_res.success is True
 
-            # Verify payment was updated
             updated_p = db.get(PaymentDB, "pay_test_10")
             assert updated_p.settlement_id == "setl_test_10"
 
-            # Verify audit entry was created
             audits = db.scalars(select(AuditEntryDB).where(AuditEntryDB.case_id == "pay_test_10")).all()
             assert len(audits) == 1
             assert audits[0].action == "MATCH_PAYMENT_TO_SETTLEMENT"
@@ -116,7 +114,6 @@ class TestAIControllerAndFallback:
             assert decision.recommended_action == "AUTO_RESOLVE"
             assert decision.execution_tier == "TIER_4_AI"
 
-            # Verify audit logging
             audits = db.scalars(select(AuditEntryDB).where(AuditEntryDB.case_id == "pay_ai_1")).all()
             assert len(audits) >= 1
             assert audits[0].event_type == "AI_RESOLUTION"
@@ -148,7 +145,6 @@ class TestAIControllerAndFallback:
             db.commit()
 
             controller = AIController()
-            # Monkey-patch _reason_over_candidates to simulate a hallucinated candidate ID
             controller._reason_over_candidates = lambda *args: AmbiguityResolutionResponse(
                 selected_candidate="setl_HALLUCINATED_ID",
                 confidence=0.99,
@@ -160,5 +156,5 @@ class TestAIControllerAndFallback:
 
             decision = controller.resolve_ambiguity(db, "pay_hallucinate")
             assert decision.is_fallback is True
-            assert decision.selected_candidate == "setl_real_1" # Correct real candidate selected by fallback!
+            assert decision.selected_candidate == "setl_real_1"
             assert "HALLUCINATION_REJECTED" in decision.reason_codes

@@ -82,7 +82,6 @@ pay_usr_104,order_usr_104,72000.00,1440.00,259.20,card,setl_usr_8802`;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
       <div className="bg-white dark:bg-[#111111] border border-[#E2E8F0] dark:border-[#262626] rounded-xl max-w-lg w-full p-6 shadow-xl relative">
-        {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-[#E2E8F0] dark:border-[#262626] mb-4">
           <div className="flex items-center space-x-2.5">
             <div className="p-2 rounded-lg bg-blue-50 dark:bg-[#0B254A] text-[#0B72E7] dark:text-[#3395FF]">
@@ -106,7 +105,6 @@ pay_usr_104,order_usr_104,72000.00,1440.00,259.20,card,setl_usr_8802`;
           </button>
         </div>
 
-        {/* Upload Drop Zone */}
         <div
           onClick={() => fileInputRef.current?.click()}
           className="border-2 border-dashed border-[#E2E8F0] dark:border-[#262626] hover:border-[#0B72E7] dark:hover:border-[#3395FF] rounded-xl p-6 text-center cursor-pointer bg-[#F8FAFC] dark:bg-[#0E0E0E] transition-colors mb-4"
@@ -140,7 +138,6 @@ pay_usr_104,order_usr_104,72000.00,1440.00,259.20,card,setl_usr_8802`;
           )}
         </div>
 
-        {/* Sample Template Download */}
         <div className="flex items-center justify-between text-xs pb-4 mb-4 border-b border-[#E2E8F0] dark:border-[#262626]">
           <span className="text-[#64748B] dark:text-[#A1A1AA]">Need a template?</span>
           <button
@@ -152,7 +149,6 @@ pay_usr_104,order_usr_104,72000.00,1440.00,259.20,card,setl_usr_8802`;
           </button>
         </div>
 
-        {/* Status / Results */}
         {error && (
           <div className="p-3 rounded-lg bg-red-50 dark:bg-[#3E0E0E] text-[#DC2626] text-xs mb-4 flex items-center space-x-2">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
@@ -169,7 +165,6 @@ pay_usr_104,order_usr_104,72000.00,1440.00,259.20,card,setl_usr_8802`;
           </div>
         )}
 
-        {/* Action Buttons */}
         <div className="flex items-center justify-end space-x-2">
           <button
             onClick={onClose}

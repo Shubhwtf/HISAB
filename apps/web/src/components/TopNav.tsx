@@ -67,7 +67,6 @@ export const TopNav: React.FC<TopNavProps> = ({
   const healthRef = useRef<HTMLDivElement>(null);
   const announceRef = useRef<HTMLDivElement>(null);
 
-  // Global Keyboard Shortcuts (⌘K, Ctrl+K, /)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
@@ -82,7 +81,6 @@ export const TopNav: React.FC<TopNavProps> = ({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
@@ -115,7 +113,6 @@ export const TopNav: React.FC<TopNavProps> = ({
   return (
     <>
       <header className="fixed top-0 left-0 right-0 h-16 bg-[#0A0A0A] border-b border-[#262626] px-6 flex items-center justify-between z-50 select-none text-[#F8FAFC]">
-        {/* 1. Left: Brand & Breadcrumb Navigation */}
         <div className="flex items-center space-x-3">
           <div 
             onClick={() => onSelectTab("overview")} 
@@ -136,7 +133,6 @@ export const TopNav: React.FC<TopNavProps> = ({
           </div>
         </div>
 
-        {/* 2. Middle: Interactive Global Omnibox Search Bar */}
         <div className="hidden md:flex items-center flex-1 max-w-md mx-8">
           <div 
             onClick={() => setShowSearchModal(true)}
@@ -152,9 +148,7 @@ export const TopNav: React.FC<TopNavProps> = ({
           </div>
         </div>
 
-        {/* 3. Right: Docs, API Health, Announcements & Profile Controls */}
         <div className="flex items-center space-x-3">
-          {/* Docs Knowledge Site Link (Beside API Health) */}
           <a
             href="/docs"
             className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg bg-[#171717] hover:bg-[#262626] border border-[#2E2E2E] hover:border-[#444444] text-xs text-[#CCCCCC] hover:text-white transition-all shadow-xs"
@@ -164,7 +158,6 @@ export const TopNav: React.FC<TopNavProps> = ({
             <span className="hidden sm:inline text-[11px] font-medium text-[#DDDDDD]">Docs</span>
           </a>
 
-          {/* API Health Status Badge */}
           <div className="relative" ref={healthRef}>
             <button
               onClick={() => setShowHealthMenu(!showHealthMenu)}
@@ -175,7 +168,6 @@ export const TopNav: React.FC<TopNavProps> = ({
               <span className="hidden lg:inline text-[11px] font-medium text-[#DDDDDD]">API Health</span>
             </button>
 
-            {/* Health Popover Dialog (Clean White Theme) */}
             {showHealthMenu && (
               <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-[#111111] border border-[#E2E8F0] dark:border-[#262626] rounded-2xl shadow-xl p-4 text-xs text-[#0F172A] dark:text-[#EDEDED] z-50 space-y-3">
                 <div className="flex items-center justify-between border-b border-[#E2E8F0] dark:border-[#262626] pb-2.5">
@@ -229,7 +221,6 @@ export const TopNav: React.FC<TopNavProps> = ({
             )}
           </div>
 
-          {/* View Announcements (Bell Icon) */}
           <div className="relative" ref={announceRef}>
             <button
               onClick={() => setShowAnnouncements(!showAnnouncements)}
@@ -240,7 +231,6 @@ export const TopNav: React.FC<TopNavProps> = ({
               <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#0B72E7]"></span>
             </button>
 
-            {/* Announcements Popover Dialog (Clean White Theme) */}
             {showAnnouncements && (
               <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-[#111111] border border-[#E2E8F0] dark:border-[#262626] rounded-2xl shadow-xl p-4 text-xs text-[#0F172A] dark:text-[#EDEDED] z-50 space-y-3">
                 <div className="flex items-center justify-between border-b border-[#E2E8F0] dark:border-[#262626] pb-2">
@@ -275,7 +265,6 @@ export const TopNav: React.FC<TopNavProps> = ({
             )}
           </div>
 
-          {/* Subtle Organization & Role Context Indicator */}
           <div className="hidden lg:flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-[#171717] border border-[#2E2E2E] text-xs">
             <Building2 className="w-3.5 h-3.5 text-[#0B72E7] dark:text-[#3395FF]" />
             <span className="font-semibold text-white text-xs truncate max-w-[150px]">{orgName}</span>
@@ -285,7 +274,6 @@ export const TopNav: React.FC<TopNavProps> = ({
             </span>
           </div>
 
-          {/* Small Profile Avatar Icon with Full Clean Dropdown Dialog */}
           <div className="relative" ref={profileRef}>
             <button
               onClick={() => setShowProfileMenu(!showProfileMenu)}
@@ -299,10 +287,8 @@ export const TopNav: React.FC<TopNavProps> = ({
               </span>
             </button>
 
-            {/* Profile & Org Menu Popover Dialog (Clean White Theme) */}
             {showProfileMenu && (
               <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-[#111111] border border-[#E2E8F0] dark:border-[#262626] rounded-2xl shadow-xl p-4 text-xs text-[#0F172A] dark:text-[#EDEDED] z-50 space-y-3">
-                {/* User Identity */}
                 <div className="flex items-center space-x-3 pb-3 border-b border-[#E2E8F0] dark:border-[#262626]">
                   <div className="w-10 h-10 rounded-xl bg-[#0B72E7] text-white font-bold text-sm flex items-center justify-center shadow-xs">
                     {initials}
@@ -316,7 +302,6 @@ export const TopNav: React.FC<TopNavProps> = ({
                   </div>
                 </div>
 
-                {/* Organization & MID ID */}
                 <div className="p-3 rounded-xl bg-[#F8FAFC] dark:bg-[#161616] border border-[#E2E8F0] dark:border-[#262626] space-y-2">
                   <div className="flex items-center justify-between text-[11px]">
                     <span className="text-[#64748B] dark:text-[#A1A1AA]">Merchant Entity:</span>
@@ -338,7 +323,6 @@ export const TopNav: React.FC<TopNavProps> = ({
                   </div>
                 </div>
 
-                {/* Action Links */}
                 <div className="space-y-1 pt-1">
                   <a
                     href="/docs"
@@ -371,7 +355,6 @@ export const TopNav: React.FC<TopNavProps> = ({
                   </button>
                 </div>
 
-                {/* Logout Button */}
                 <div className="pt-2 border-t border-[#E2E8F0] dark:border-[#262626]">
                   <button
                     onClick={() => {
@@ -390,7 +373,6 @@ export const TopNav: React.FC<TopNavProps> = ({
         </div>
       </header>
 
-      {/* Global Omnibox Search Modal Dialog */}
       <GlobalSearchModal
         isOpen={showSearchModal}
         onClose={() => setShowSearchModal(false)}

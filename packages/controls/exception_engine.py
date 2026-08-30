@@ -71,7 +71,6 @@ def run_all_controls_and_build_exceptions(
     exceptions: List[ExceptionRecord] = []
     exc_counter = 1
 
-    # 1. Run CTL_06 (Signature Double-Loss Detector)
     double_loss_results = run_ctl_06_double_loss(orders, payments, refunds, disputes)
     double_loss_payment_ids: Set[str] = set()
 
@@ -96,7 +95,6 @@ def run_all_controls_and_build_exceptions(
         ))
         exc_counter += 1
 
-    # 2. Run CTL_01 (Settlement-to-Bank Accuracy)
     bank_by_setl = {b.matched_settlement_id: b for b in bank_transactions if b.matched_settlement_id}
     bank_by_utr = {b.reference.strip().upper(): b for b in bank_transactions if b.reference}
 
@@ -107,7 +105,6 @@ def run_all_controls_and_build_exceptions(
 
         res = run_ctl_01_settlement_bank(s, matched_b)
         if res.status != ControlStatus.PASS:
-            # Determine category: UNMATCHED if no bank transaction or UTR mismatch, otherwise AMOUNT_MISMATCH
             if matched_b is None or (s.utr and matched_b.reference and s.utr.strip().upper() not in matched_b.reference.strip().upper()):
                 cat = "BANK_CREDIT_UNMATCHED"
             else:
@@ -129,7 +126,6 @@ def run_all_controls_and_build_exceptions(
             ))
             exc_counter += 1
 
-    # 3. Run CTL_02 (Missing Transactions)
     for p in payments:
         if p.id in double_loss_payment_ids:
             continue
@@ -151,7 +147,6 @@ def run_all_controls_and_build_exceptions(
             ))
             exc_counter += 1
 
-    # 4. Run CTL_03 (Duplicates)
     dup_results = run_ctl_03_duplicate(payments, refunds)
     for res in dup_results:
         cat = "DUPLICATE_PAYMENT" if "Payment" in res.control_name or "Transaction" in res.control_name else "DUPLICATE_REFUND"
@@ -171,7 +166,6 @@ def run_all_controls_and_build_exceptions(
         ))
         exc_counter += 1
 
-    # 5. Run CTL_04 (Fee/GST Inconsistency)
     for p in payments:
         if p.id in double_loss_payment_ids:
             continue
@@ -193,7 +187,6 @@ def run_all_controls_and_build_exceptions(
             ))
             exc_counter += 1
 
-    # 6. Run CTL_05 (Refund Correctness)
     payment_map = {p.id: p for p in payments}
     for r in refunds:
         p = payment_map.get(r.payment_id)
@@ -215,7 +208,6 @@ def run_all_controls_and_build_exceptions(
             ))
             exc_counter += 1
 
-    # 7. Run CTL_07 (Disputes)
     for d in disputes:
         p = payment_map.get(d.payment_id)
         res = run_ctl_07_dispute(d, p)
@@ -238,7 +230,6 @@ def run_all_controls_and_build_exceptions(
             ))
             exc_counter += 1
 
-    # 8. Check Section 194-O Tax Records
     if tax_records:
         for t in tax_records:
             if t.tds_rate_bps != 10:
