@@ -38,8 +38,12 @@ def get_settlement_control_tower(
             "timeline": []
         }
 
-    settlements = db.scalars(select(SettlementDB)).all()
-    bank_txs = db.scalars(select(BankTransactionDB)).all()
+    settlements = db.scalars(
+        select(SettlementDB).where(SettlementDB.org_id == current_user.org_id)
+    ).all()
+    bank_txs = db.scalars(
+        select(BankTransactionDB).where(BankTransactionDB.org_id == current_user.org_id)
+    ).all()
 
     total_gross = sum(s.gross_amount_paise for s in settlements)
     total_net_settled = sum(s.amount_paise for s in settlements)
@@ -79,3 +83,38 @@ def get_settlement_control_tower(
         "settlements_count": len(settlements),
         "timeline": timeline_items
     }
+
+
+@router.get("/{settlement_id}")
+def get_settlement_by_id(
+    settlement_id: str,
+    db: Session = Depends(get_db),
+    current_user: UserSession = Depends(get_current_user),
+):
+    """
+    Returns details of a specific settlement scoped to current organization.
+    Returns 404 if not found or if belonging to another organization.
+    """
+    from fastapi import HTTPException
+
+    settlement = db.scalar(
+        select(SettlementDB).where(
+            SettlementDB.id == settlement_id,
+            SettlementDB.org_id == current_user.org_id,
+        )
+    )
+    if not settlement:
+        raise HTTPException(status_code=404, detail="Settlement not found.")
+
+    return {
+        "id": settlement.id,
+        "org_id": settlement.org_id,
+        "utr": settlement.utr,
+        "gross_paise": settlement.gross_amount_paise,
+        "fee_paise": settlement.fee_amount_paise,
+        "tax_paise": settlement.tax_amount_paise,
+        "net_paise": settlement.amount_paise,
+        "status": settlement.status,
+        "settled_at": settlement.settled_at.isoformat() if settlement.settled_at else None,
+    }
+

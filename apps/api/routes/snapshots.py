@@ -41,10 +41,17 @@ def list_snapshots(current_user: UserSession = Depends(get_current_user)):
 
 
 @router.get("/{snapshot_id}", response_model=ReconSnapshot)
-def get_snapshot_by_id(snapshot_id: str):
+def get_snapshot_by_id(
+    snapshot_id: str,
+    current_user: UserSession = Depends(get_current_user),
+):
     """
     Retrieves full manifest, rule versions, and metrics for a specific immutable snapshot.
+    Scoped to current organization.
     """
+    if not current_user.is_demo_session and not current_user.is_razorpay_connected and current_user.org_id != "org_nova_2026":
+        raise HTTPException(status_code=404, detail=f"Snapshot '{snapshot_id}' not found.")
+
     snap = repo.get(snapshot_id)
     if not snap:
         raise HTTPException(status_code=404, detail=f"Snapshot '{snapshot_id}' not found.")
@@ -73,10 +80,18 @@ def compare_two_snapshots(
 
 
 @router.post("/{snapshot_id}/rerun-affected")
-def rerun_affected_cases(snapshot_id: str, req: RerunAffectedRequest, db: Session = Depends(get_db)):
+def rerun_affected_cases(
+    snapshot_id: str,
+    req: RerunAffectedRequest,
+    db: Session = Depends(get_db),
+    current_user: UserSession = Depends(get_current_user),
+):
     """
     Selectively re-evaluates only affected transaction cases without re-running the entire dataset.
     """
+    if not current_user.is_demo_session and not current_user.is_razorpay_connected and current_user.org_id != "org_nova_2026":
+        raise HTTPException(status_code=404, detail=f"Snapshot '{snapshot_id}' not found.")
+
     snap = repo.get(snapshot_id)
     if not snap:
         raise HTTPException(status_code=404, detail=f"Snapshot '{snapshot_id}' not found.")

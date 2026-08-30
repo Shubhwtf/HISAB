@@ -40,11 +40,16 @@ def get_daily_finance_brief(
             "compliance_status": "All Systems Reconciled · No Active Variances"
         }
 
-    gross_turnover = db.scalar(select(func.sum(PaymentDB.amount_paise))) or 0
-    total_settled = db.scalar(select(func.sum(SettlementDB.amount_paise))) or 0
-    total_refunds = db.scalar(select(func.sum(RefundDB.amount_paise))) or 0
-    total_disputes = db.scalar(select(func.sum(DisputeDB.amount_paise))) or 0
-    open_exceptions = db.scalars(select(ExceptionDB).where(ExceptionDB.status.in_(["OPEN", "ESCALATED"]))).all()
+    gross_turnover = db.scalar(select(func.sum(PaymentDB.amount_paise)).where(PaymentDB.org_id == current_user.org_id)) or 0
+    total_settled = db.scalar(select(func.sum(SettlementDB.amount_paise)).where(SettlementDB.org_id == current_user.org_id)) or 0
+    total_refunds = db.scalar(select(func.sum(RefundDB.amount_paise)).where(RefundDB.org_id == current_user.org_id)) or 0
+    total_disputes = db.scalar(select(func.sum(DisputeDB.amount_paise)).where(DisputeDB.org_id == current_user.org_id)) or 0
+    open_exceptions = db.scalars(
+        select(ExceptionDB).where(
+            ExceptionDB.org_id == current_user.org_id,
+            ExceptionDB.status.in_(["OPEN", "ESCALATED"]),
+        )
+    ).all()
     unresolved_exp = sum(e.financial_impact_paise for e in open_exceptions)
 
     return {

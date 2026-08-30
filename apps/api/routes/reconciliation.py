@@ -85,6 +85,7 @@ def get_reconciliation_summary(
 ):
     """
     Returns executive-level summary of financial turnover, settlement progress, and unresolved exposures.
+    Scoped strictly to the authenticated organization.
     """
     # For a fresh organization with no connected Razorpay or imported data, return all 0
     if not current_user.is_demo_session and not current_user.is_razorpay_connected and current_user.org_id != "org_nova_2026":
@@ -104,24 +105,24 @@ def get_reconciliation_summary(
             unresolved_exposure_formatted="₹0.00",
         )
 
-    total_orders = db.scalar(select(func.count(OrderDB.id))) or 0
-    total_payments = db.scalar(select(func.count(PaymentDB.id))) or 0
-    gross_turnover = db.scalar(select(func.sum(PaymentDB.amount_paise))) or 0
+    total_orders = db.scalar(select(func.count(OrderDB.id)).where(OrderDB.org_id == current_user.org_id)) or 0
+    total_payments = db.scalar(select(func.count(PaymentDB.id)).where(PaymentDB.org_id == current_user.org_id)) or 0
+    gross_turnover = db.scalar(select(func.sum(PaymentDB.amount_paise)).where(PaymentDB.org_id == current_user.org_id)) or 0
     
-    settled_payments = db.scalar(select(func.count(PaymentDB.id)).where(PaymentDB.settlement_id.isnot(None))) or 0
+    settled_payments = db.scalar(select(func.count(PaymentDB.id)).where(PaymentDB.org_id == current_user.org_id, PaymentDB.settlement_id.isnot(None))) or 0
     unmapped_payments = total_payments - settled_payments
 
-    total_settlements = db.scalar(select(func.count(SettlementDB.id))) or 0
-    total_refunds = db.scalar(select(func.count(RefundDB.id))) or 0
-    total_disputes = db.scalar(select(func.count(DisputeDB.id))) or 0
-    total_bank = db.scalar(select(func.count(BankTransactionDB.id))) or 0
+    total_settlements = db.scalar(select(func.count(SettlementDB.id)).where(SettlementDB.org_id == current_user.org_id)) or 0
+    total_refunds = db.scalar(select(func.count(RefundDB.id)).where(RefundDB.org_id == current_user.org_id)) or 0
+    total_disputes = db.scalar(select(func.count(DisputeDB.id)).where(DisputeDB.org_id == current_user.org_id)) or 0
+    total_bank = db.scalar(select(func.count(BankTransactionDB.id)).where(BankTransactionDB.org_id == current_user.org_id)) or 0
 
     open_exceptions = db.scalar(
-        select(func.count(ExceptionDB.id)).where(ExceptionDB.status.in_(["OPEN", "ESCALATED"]))
+        select(func.count(ExceptionDB.id)).where(ExceptionDB.org_id == current_user.org_id, ExceptionDB.status.in_(["OPEN", "ESCALATED"]))
     ) or 0
 
     unresolved_exposure = db.scalar(
-        select(func.sum(ExceptionDB.financial_impact_paise)).where(ExceptionDB.status.in_(["OPEN", "ESCALATED"]))
+        select(func.sum(ExceptionDB.financial_impact_paise)).where(ExceptionDB.org_id == current_user.org_id, ExceptionDB.status.in_(["OPEN", "ESCALATED"]))
     ) or 0
 
     return ReconciliationSummaryResponse(
@@ -149,7 +150,7 @@ def run_full_reconciliation(
 ):
     """
     Executes the end-to-end HISAB financial reconciliation engine:
-    1. Reads all current transactions, settlements, and bank statements.
+    1. Reads all current transactions, settlements, and bank statements for the tenant.
     2. Executes Tier 1-3 matching and subset-sum batch reconstruction.
     3. Runs the Seven Financial Controls and Signature Double-Loss Detector.
     4. Evaluates safe auto-resolution policy gates.
@@ -158,10 +159,11 @@ def run_full_reconciliation(
     import time
     start_time = time.perf_counter()
     run_batch_id = batch_id or f"batch_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}"
+    org_id = current_user.org_id if isinstance(current_user, UserSession) else (getattr(current_user, "org_id", None) or "org_nova_2026")
 
-    # Load all entities from database (seed demo dataset if database is empty)
-    p_rows = db.scalars(select(PaymentDB)).all()
-    if not p_rows:
+    # Load entities from database for this organization (seed demo dataset if database is completely empty and demo)
+    p_rows = db.scalars(select(PaymentDB).where(PaymentDB.org_id == org_id)).all()
+    if not p_rows and org_id == "org_nova_2026":
         from packages.evaluation.generator import generate_synthetic_dataset
         from packages.evaluation.corruptor import inject_corruptions
         from scripts.seed_data import seed_database_from_dataset
@@ -170,20 +172,20 @@ def run_full_reconciliation(
         dataset = inject_corruptions(dataset, seed=42)
         seed_database_from_dataset(dataset)
         
-        p_rows = db.scalars(select(PaymentDB)).all()
-        o_rows = db.scalars(select(OrderDB)).all()
-        r_rows = db.scalars(select(RefundDB)).all()
-        d_rows = db.scalars(select(DisputeDB)).all()
-        s_rows = db.scalars(select(SettlementDB)).all()
-        b_rows = db.scalars(select(BankTransactionDB)).all()
-        t_rows = db.scalars(select(TaxRecordDB)).all()
+        p_rows = db.scalars(select(PaymentDB).where(PaymentDB.org_id == org_id)).all()
+        o_rows = db.scalars(select(OrderDB).where(OrderDB.org_id == org_id)).all()
+        r_rows = db.scalars(select(RefundDB).where(RefundDB.org_id == org_id)).all()
+        d_rows = db.scalars(select(DisputeDB).where(DisputeDB.org_id == org_id)).all()
+        s_rows = db.scalars(select(SettlementDB).where(SettlementDB.org_id == org_id)).all()
+        b_rows = db.scalars(select(BankTransactionDB).where(BankTransactionDB.org_id == org_id)).all()
+        t_rows = db.scalars(select(TaxRecordDB).where(TaxRecordDB.org_id == org_id)).all()
     else:
-        o_rows = db.scalars(select(OrderDB)).all()
-        r_rows = db.scalars(select(RefundDB)).all()
-        d_rows = db.scalars(select(DisputeDB)).all()
-        s_rows = db.scalars(select(SettlementDB)).all()
-        b_rows = db.scalars(select(BankTransactionDB)).all()
-        t_rows = db.scalars(select(TaxRecordDB)).all()
+        o_rows = db.scalars(select(OrderDB).where(OrderDB.org_id == org_id)).all()
+        r_rows = db.scalars(select(RefundDB).where(RefundDB.org_id == org_id)).all()
+        d_rows = db.scalars(select(DisputeDB).where(DisputeDB.org_id == org_id)).all()
+        s_rows = db.scalars(select(SettlementDB).where(SettlementDB.org_id == org_id)).all()
+        b_rows = db.scalars(select(BankTransactionDB).where(BankTransactionDB.org_id == org_id)).all()
+        t_rows = db.scalars(select(TaxRecordDB).where(TaxRecordDB.org_id == org_id)).all()
 
     payments = [Payment.model_validate(p.__dict__) for p in p_rows]
     orders = [Order.model_validate(o.__dict__) for o in o_rows]
@@ -193,7 +195,7 @@ def run_full_reconciliation(
     bank_txs = [BankTransaction.model_validate(b.__dict__) for b in b_rows]
     tax_records = [TaxRecord.model_validate(t.__dict__) for t in t_rows]
 
-    # 1. Batch Decomposition & Reconstruction
+    # 1. Tier 1-3 Matching & Batch Reconstruction
     batch_results, unmapped = decompose_and_reconstruct_batches(
         settlements=settlements,
         payments=payments,
@@ -230,6 +232,7 @@ def run_full_reconciliation(
         if not existing:
             db_exc = ExceptionDB(
                 id=exc.id,
+                org_id=current_user.org_id,
                 batch_id=exc.batch_id,
                 category=exc.category,
                 severity=exc.severity,
@@ -268,6 +271,7 @@ def run_full_reconciliation(
         },
         batch_id=run_batch_id,
         actor_type="SYSTEM",
+        org_id=org_id,
     )
 
     elapsed_ms = (time.perf_counter() - start_time) * 1000.0
@@ -291,20 +295,35 @@ def list_settlements(
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
+    current_user: UserSession = Depends(get_current_user),
 ):
     """
     Returns settlement batches with constituent transaction counts and bank clearance details.
+    Scoped strictly to the authenticated organization.
     """
-    settlements = db.scalars(select(SettlementDB).offset(offset).limit(limit)).all()
+    settlements = db.scalars(
+        select(SettlementDB)
+        .where(SettlementDB.org_id == current_user.org_id)
+        .offset(offset)
+        .limit(limit)
+    ).all()
     results = []
 
     for s in settlements:
         # Count constituent payments
-        p_count = db.scalar(select(func.count(PaymentDB.id)).where(PaymentDB.settlement_id == s.id)) or 0
+        p_count = db.scalar(
+            select(func.count(PaymentDB.id)).where(
+                PaymentDB.org_id == current_user.org_id,
+                PaymentDB.settlement_id == s.id,
+            )
+        ) or 0
         bank_tx = None
         if s.utr:
             bank_tx = db.scalars(
-                select(BankTransactionDB).where(BankTransactionDB.reference == s.utr)
+                select(BankTransactionDB).where(
+                    BankTransactionDB.org_id == current_user.org_id,
+                    BankTransactionDB.reference == s.utr,
+                )
             ).first()
 
         results.append({
@@ -326,6 +345,7 @@ def list_settlements(
         })
 
     return {"total": len(results), "settlements": results}
+
 
 from fastapi import UploadFile, File
 import csv
@@ -601,7 +621,10 @@ def close_reconciliation_batch(
     If material unresolved exceptions remain, closure is STRICTLY BLOCKED.
     """
     open_exceptions = db.scalars(
-        select(ExceptionDB).where(ExceptionDB.status.in_(["OPEN", "ESCALATED"]))
+        select(ExceptionDB).where(
+            ExceptionDB.org_id == current_user.org_id,
+            ExceptionDB.status.in_(["OPEN", "ESCALATED"]),
+        )
     ).all()
 
     unresolved_exposure = sum(e.financial_impact_paise for e in open_exceptions)
@@ -637,6 +660,7 @@ def close_reconciliation_batch(
         payload={"batch_id": req.batch_id, "closed_at": closed_time},
         batch_id=req.batch_id,
         actor_type=req.actor_id,
+        org_id=current_user.org_id,
     )
 
     return {

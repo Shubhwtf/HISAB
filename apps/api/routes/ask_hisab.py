@@ -377,30 +377,30 @@ def ask_hisab_query(req: AskHisabRequest, db: Session = Depends(get_db)):
             ],
             confidence=1.0,
             verified_sources_count=1,
-            llm_provider_used="Groq (qwen/qwen3.8-27b)",
+            llm_provider_used="Deterministic System Knowledge",
         )
 
     # ==========================================================================
     # B. FINANCIAL DASHBOARD MODE (Queries live database records & transactions)
     # ==========================================================================
 
-    # Aggregate global ledger stats
-    total_payments = db.scalar(select(func.count(PaymentDB.id))) or 500
-    gross_turnover_paise = db.scalar(select(func.sum(PaymentDB.amount_paise))) or 524304120
-    total_fee_paise = db.scalar(select(func.sum(PaymentDB.fee_paise))) or 8493726
-    total_tax_paise = db.scalar(select(func.sum(PaymentDB.tax_paise))) or 1528870
+    # Aggregate tenant ledger stats scoped strictly to current_user.org_id
+    total_payments = db.scalar(select(func.count(PaymentDB.id)).where(PaymentDB.org_id == current_user.org_id)) or 0
+    gross_turnover_paise = db.scalar(select(func.sum(PaymentDB.amount_paise)).where(PaymentDB.org_id == current_user.org_id)) or 0
+    total_fee_paise = db.scalar(select(func.sum(PaymentDB.fee_paise)).where(PaymentDB.org_id == current_user.org_id)) or 0
+    total_tax_paise = db.scalar(select(func.sum(PaymentDB.tax_paise)).where(PaymentDB.org_id == current_user.org_id)) or 0
     open_exceptions = db.scalars(
-        select(ExceptionDB).where(ExceptionDB.status.in_(["OPEN", "ESCALATED"]))
+        select(ExceptionDB).where(
+            ExceptionDB.org_id == current_user.org_id,
+            ExceptionDB.status.in_(["OPEN", "ESCALATED"]),
+        )
     ).all()
-    unresolved_exposure_paise = sum(e.financial_impact_paise for e in open_exceptions) or 108746830
-    total_refunds_paise = db.scalar(select(func.sum(RefundDB.amount_paise))) or 4520000
-    refunds_count = db.scalar(select(func.count(RefundDB.id))) or 18
-    disputes_count = db.scalar(select(func.count(DisputeDB.id))) or 6
-    total_disputes_paise = db.scalar(select(func.sum(DisputeDB.amount_paise))) or 14450000
-    settled_payments = db.scalar(select(func.count(PaymentDB.id)).where(PaymentDB.settlement_id.isnot(None))) or 472
-    settlements_count = db.scalar(select(func.count(SettlementDB.id))) or 48
+    unresolved_exposure_paise = sum(e.financial_impact_paise for e in open_exceptions)
+    total_refunds_paise = db.scalar(select(func.sum(RefundDB.amount_paise)).where(RefundDB.org_id == current_user.org_id)) or 0
+    disputes_count = db.scalar(select(func.count(DisputeDB.id)).where(DisputeDB.org_id == current_user.org_id)) or 0
+    total_disputes_paise = db.scalar(select(func.sum(DisputeDB.amount_paise)).where(DisputeDB.org_id == current_user.org_id)) or 0
+    settled_payments = db.scalar(select(func.count(PaymentDB.id)).where(PaymentDB.org_id == current_user.org_id, PaymentDB.settlement_id.isnot(None))) or 0
 
-    # Base context dictionary passed to LLM
     base_facts = {
         "gross_turnover": format_inr(gross_turnover_paise),
         "total_payments": total_payments,
@@ -415,17 +415,15 @@ def ask_hisab_query(req: AskHisabRequest, db: Session = Depends(get_db)):
         "total_disputes": format_inr(total_disputes_paise),
     }
 
-    # --------------------------------------------------------------------------
-    # 1. SPECIFIC PAYMENT LOOKUP (e.g., pay_90006, pay_...)
-    # --------------------------------------------------------------------------
+    # 1. SPECIFIC PAYMENT LOOKUP
     pay_match = re.search(r'(pay_[a-zA-Z0-9_]+)', q, re.IGNORECASE)
     if pay_match:
         pid = pay_match.group(1)
-        p = db.get(PaymentDB, pid)
+        p = db.scalar(select(PaymentDB).where(PaymentDB.id == pid, PaymentDB.org_id == current_user.org_id))
         if p:
-            refunds = db.scalars(select(RefundDB).where(RefundDB.payment_id == p.id)).all()
-            disputes = db.scalars(select(DisputeDB).where(DisputeDB.payment_id == p.id)).all()
-            settlement = db.get(SettlementDB, p.settlement_id) if p.settlement_id else None
+            refunds = db.scalars(select(RefundDB).where(RefundDB.payment_id == p.id, RefundDB.org_id == current_user.org_id)).all()
+            disputes = db.scalars(select(DisputeDB).where(DisputeDB.payment_id == p.id, DisputeDB.org_id == current_user.org_id)).all()
+            settlement = db.scalar(select(SettlementDB).where(SettlementDB.id == p.settlement_id, SettlementDB.org_id == current_user.org_id)) if p.settlement_id else None
 
             tool_traces = [
                 AgentToolTrace(step_number=1, tool_name="get_payment", args={"payment_id": p.id}, result_summary=f"Found {p.id} with amount {format_inr(p.amount_paise)}, status '{p.status}'", verified_records_count=1),

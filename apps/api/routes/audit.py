@@ -54,7 +54,7 @@ def list_audit_entries(
             "items": [genesis_item]
         }
 
-    stmt = select(AuditEntryDB)
+    stmt = select(AuditEntryDB).where(AuditEntryDB.org_id == current_user.org_id)
     if case_id:
         stmt = stmt.where(AuditEntryDB.case_id == case_id)
     if batch_id:
@@ -103,7 +103,13 @@ def verify_ledger_integrity(
             "status": "VERIFIED_SECURE",
             "error_detail": None,
         }
-    entries = list(db.scalars(select(AuditEntryDB).order_by(AuditEntryDB.sequence.asc())).all())
+    entries = list(
+        db.scalars(
+            select(AuditEntryDB)
+            .where(AuditEntryDB.org_id == current_user.org_id)
+            .order_by(AuditEntryDB.sequence.asc())
+        ).all()
+    )
     is_valid, error_msg = verify_audit_chain(entries)
 
     return {

@@ -93,12 +93,16 @@ def append_audit_entry(
     batch_id: Optional[str] = None,
     actor_type: str = "SYSTEM",
     created_at: Optional[datetime] = None,
+    org_id: str = "org_nova_2026",
 ) -> AuditEntryDB:
     """
-    Appends a new immutable audit record, chaining from the latest record's current_hash.
+    Appends a new immutable audit record, chaining from the organization's latest record.
     """
     latest = db.scalars(
-        select(AuditEntryDB).order_by(AuditEntryDB.sequence.desc()).limit(1)
+        select(AuditEntryDB)
+        .where(AuditEntryDB.org_id == org_id)
+        .order_by(AuditEntryDB.sequence.desc())
+        .limit(1)
     ).first()
 
     if latest is None:
@@ -126,6 +130,7 @@ def append_audit_entry(
 
     entry = AuditEntryDB(
         sequence=sequence,
+        org_id=org_id,
         batch_id=batch_id,
         case_id=case_id,
         event_type=event_type,

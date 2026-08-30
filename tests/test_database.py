@@ -197,7 +197,7 @@ class TestDatabaseAsync:
 @pytest.mark.asyncio
 class TestDatabaseCoverage:
     async def test_async_reset_and_dependency(self):
-        from packages.domain.database import reset_db, get_async_db
+        from packages.domain.database import reset_db, get_async_db, init_db_sync
         await reset_db()
         gen = get_async_db()
         session = await anext(gen)
@@ -206,3 +206,4 @@ class TestDatabaseCoverage:
             await anext(gen)
         except StopAsyncIteration:
             pass
+        init_db_sync()

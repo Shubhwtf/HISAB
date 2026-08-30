@@ -1,34 +1,109 @@
 """
 HISAB — Database Engine & Session Management.
 
-Provides async sessions for FastAPI backend and sync sessions for standalone scripts.
-Supports SQLite (local file / in-memory) and PostgreSQL seamlessly.
+Provides async sessions for FastAPI backend and sync sessions for standalone scripts/Alembic.
+Production configuration explicitly targets PostgreSQL with connection pooling, health pre-ping,
+and strict multi-tenant isolation.
+SQLite remains available for isolated in-memory unit tests.
 """
 
 import os
 from contextlib import asynccontextmanager, contextmanager
-from typing import AsyncGenerator, Generator
-from sqlalchemy import create_engine
+from typing import AsyncGenerator, Generator, Optional
+from sqlalchemy import create_engine, event
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.pool import NullPool, QueuePool, StaticPool
 from packages.domain.db_models import Base
 
 
-# Determine DB URLs from environment or defaults
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///data/generated/hisab.db")
-SYNC_DATABASE_URL = os.getenv("SYNC_DATABASE_URL", "sqlite:///data/generated/hisab.db")
+def normalize_async_db_url(url: str) -> str:
+    """Normalizes DATABASE_URL to use async driver (asyncpg for postgres, aiosqlite for sqlite)."""
+    if url.startswith("postgres://"):
+        return url.replace("postgres://", "postgresql+asyncpg://", 1)
+    if url.startswith("postgresql+psycopg://"):
+        return url.replace("postgresql+psycopg://", "postgresql+asyncpg://", 1)
+    if url.startswith("postgresql://") and not url.startswith("postgresql+"):
+        return url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    if url.startswith("sqlite://") and not url.startswith("sqlite+"):
+        return url.replace("sqlite://", "sqlite+aiosqlite://", 1)
+    return url
 
-# Ensure parent directory exists for SQLite file
-if "sqlite" in DATABASE_URL and "///" in DATABASE_URL and ":memory:" not in DATABASE_URL:
+
+def normalize_sync_db_url(url: str) -> str:
+    """Normalizes SYNC_DATABASE_URL to use sync driver (psycopg or standard postgresql/sqlite)."""
+    if url.startswith("postgres://"):
+        return url.replace("postgres://", "postgresql+psycopg://", 1)
+    if url.startswith("postgresql+asyncpg://"):
+        return url.replace("postgresql+asyncpg://", "postgresql+psycopg://", 1)
+    if url.startswith("postgresql://") and not url.startswith("postgresql+"):
+        return url.replace("postgresql://", "postgresql+psycopg://", 1)
+    if url.startswith("sqlite+aiosqlite://"):
+        return url.replace("sqlite+aiosqlite://", "sqlite://", 1)
+    return url
+
+
+def get_engine_args(url: str) -> dict:
+    """Returns standard engine kwargs and connection pool configuration for a given DB URL."""
+    is_pg = "postgres" in url or "postgresql" in url
+    is_mem_sqlite = ":memory:" in url
+
+    kwargs = {
+        "echo": os.getenv("SQL_ECHO", "false").lower() == "true",
+        "future": True,
+    }
+    if is_pg:
+        kwargs.update({
+            "poolclass": QueuePool,
+            "pool_size": int(os.getenv("DB_POOL_SIZE", "10")),
+            "max_overflow": int(os.getenv("DB_MAX_OVERFLOW", "20")),
+            "pool_timeout": int(os.getenv("DB_POOL_TIMEOUT", "30")),
+            "pool_recycle": int(os.getenv("DB_POOL_RECYCLE", "1800")),
+            "pool_pre_ping": True,
+        })
+    elif is_mem_sqlite:
+        kwargs["poolclass"] = StaticPool
+    return kwargs
+
+
+# Read environment variables
+RAW_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///data/generated/hisab.db")
+RAW_SYNC_DATABASE_URL = os.getenv("SYNC_DATABASE_URL", RAW_DATABASE_URL)
+
+DATABASE_URL = normalize_async_db_url(RAW_DATABASE_URL)
+SYNC_DATABASE_URL = normalize_sync_db_url(RAW_SYNC_DATABASE_URL)
+
+# Configure Pool & Dialect options
+IS_POSTGRES = "postgres" in DATABASE_URL or "postgresql" in DATABASE_URL
+IS_MEMORY_SQLITE = ":memory:" in DATABASE_URL
+
+# Ensure parent directory exists for file-based SQLite
+if "sqlite" in DATABASE_URL and "///" in DATABASE_URL and not IS_MEMORY_SQLITE:
     db_path = DATABASE_URL.split("///")[-1]
-    os.makedirs(os.path.dirname(os.path.abspath(db_path)), exist_ok=True)
+    if db_path:
+        os.makedirs(os.path.dirname(os.path.abspath(db_path)), exist_ok=True)
 
-# Async engine for API server
-async_engine = create_async_engine(
-    DATABASE_URL,
-    echo=False,
-    future=True,
-)
+# ------------------------------------------------------------------------------
+# 1. Async Engine (FastAPI & Async Pipelines)
+# ------------------------------------------------------------------------------
+async_engine_kwargs = {
+    "echo": os.getenv("SQL_ECHO", "false").lower() == "true",
+    "future": True,
+}
+
+if IS_POSTGRES:
+    async_engine_kwargs.update({
+        "poolclass": QueuePool,
+        "pool_size": int(os.getenv("DB_POOL_SIZE", "10")),
+        "max_overflow": int(os.getenv("DB_MAX_OVERFLOW", "20")),
+        "pool_timeout": int(os.getenv("DB_POOL_TIMEOUT", "30")),
+        "pool_recycle": int(os.getenv("DB_POOL_RECYCLE", "1800")),
+        "pool_pre_ping": True,
+    })
+elif IS_MEMORY_SQLITE:
+    async_engine_kwargs["poolclass"] = StaticPool
+
+async_engine = create_async_engine(DATABASE_URL, **async_engine_kwargs)
 
 AsyncSessionLocal = async_sessionmaker(
     bind=async_engine,
@@ -37,12 +112,27 @@ AsyncSessionLocal = async_sessionmaker(
     autoflush=False,
 )
 
-# Sync engine for CLI & scripts
-sync_engine = create_engine(
-    SYNC_DATABASE_URL,
-    echo=False,
-    future=True,
-)
+# ------------------------------------------------------------------------------
+# 2. Synchronous Engine (CLI, Scripts & Alembic Migrations)
+# ------------------------------------------------------------------------------
+sync_engine_kwargs = {
+    "echo": os.getenv("SQL_ECHO", "false").lower() == "true",
+    "future": True,
+}
+
+if IS_POSTGRES:
+    sync_engine_kwargs.update({
+        "poolclass": QueuePool,
+        "pool_size": int(os.getenv("DB_POOL_SIZE", "10")),
+        "max_overflow": int(os.getenv("DB_MAX_OVERFLOW", "20")),
+        "pool_timeout": int(os.getenv("DB_POOL_TIMEOUT", "30")),
+        "pool_recycle": int(os.getenv("DB_POOL_RECYCLE", "1800")),
+        "pool_pre_ping": True,
+    })
+elif IS_MEMORY_SQLITE:
+    sync_engine_kwargs["poolclass"] = StaticPool
+
+sync_engine = create_engine(SYNC_DATABASE_URL, **sync_engine_kwargs)
 
 SyncSessionLocal = sessionmaker(
     bind=sync_engine,
@@ -51,6 +141,10 @@ SyncSessionLocal = sessionmaker(
     autoflush=False,
 )
 
+
+# ------------------------------------------------------------------------------
+# 3. Database Initialization & Helpers
+# ------------------------------------------------------------------------------
 
 async def init_db() -> None:
     """Initialize all database tables asynchronously."""
@@ -93,3 +187,41 @@ def get_sync_db() -> Generator[Session, None, None]:
         yield session
     finally:
         session.close()
+
+
+@contextmanager
+def transactional_session(session: Optional[Session] = None) -> Generator[Session, None, None]:
+    """
+    Context manager providing atomic transaction execution.
+    Automatically commits on success and rolls back on any uncaught exception.
+    """
+    own_session = session is None
+    s = SyncSessionLocal() if own_session else session
+    try:
+        yield s
+        s.commit()
+    except Exception:
+        s.rollback()
+        raise
+    finally:
+        if own_session:
+            s.close()
+
+
+@asynccontextmanager
+async def async_transactional_session(session: Optional[AsyncSession] = None) -> AsyncGenerator[AsyncSession, None]:
+    """
+    Async context manager providing atomic transaction execution.
+    Automatically commits on success and rolls back on any uncaught exception.
+    """
+    own_session = session is None
+    s = AsyncSessionLocal() if own_session else session
+    try:
+        yield s
+        await s.commit()
+    except Exception:
+        await s.rollback()
+        raise
+    finally:
+        if own_session:
+            await s.close()

@@ -33,44 +33,40 @@ def get_current_user(
     x_org_id: Optional[str] = Header(None, alias="X-Org-Id"),
 ) -> UserSession:
     """
-    Validates authenticated user session and returns organization context.
+    Validates authenticated user session and returns authoritative organization context.
     Raises 401 Unauthorized for unauthenticated requests.
-    Prevents silent fallback to demo organizations.
+    Enforces that tenant context (org_id) is derived strictly from validated membership.
+    Never trusts client-provided X-Org-Id without verifying user membership.
     """
-    if x_session_token and x_session_token in ACTIVE_SESSIONS:
-        return ACTIVE_SESSIONS[x_session_token]
-
     from packages.domain.auth_rbac import (
         USERS, 
         ORGANIZATIONS, 
         ORGANIZATION_CONNECTIONS, 
         MEMBERSHIPS, 
         OrgRazorpayConnection, 
-        get_user_membership
+        get_user_membership,
+        list_user_memberships,
     )
 
-    # 1. If organization ID is provided from a validated client token, resolve tenant
-    if x_org_id and x_org_id in ORGANIZATIONS:
-        org = ORGANIZATIONS[x_org_id]
-        user = None
-        if org.owner_user_id and org.owner_user_id in USERS:
-            user = USERS[org.owner_user_id]
-        else:
-            for mem in MEMBERSHIPS.values():
-                if mem.org_id == org.id and mem.user_id in USERS:
-                    user = USERS[mem.user_id]
-                    break
+    # 1. Active Authenticated Session
+    if x_session_token and x_session_token in ACTIVE_SESSIONS:
+        session = ACTIVE_SESSIONS[x_session_token]
+        # If client requested a specific org, verify the authenticated user actually belongs to it
+        if x_org_id and x_org_id != session.org_id:
+            membership = get_user_membership(session.user_id, x_org_id)
+            if not membership or membership.status != "ACTIVE":
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"Access denied: User is not an active member of organization '{x_org_id}'."
+                )
+            org = ORGANIZATIONS.get(x_org_id)
+            if not org:
+                raise HTTPException(status_code=404, detail="Organization not found.")
+            conn = ORGANIZATION_CONNECTIONS.get(x_org_id, OrgRazorpayConnection(org_id=x_org_id))
+            return create_user_session(USERS[session.user_id], org, conn, role=membership.role, is_demo=False)
+        return session
 
-        if user:
-            conn = ORGANIZATION_CONNECTIONS.get(org.id, OrgRazorpayConnection(org_id=org.id))
-            mem = get_user_membership(user.id, org.id)
-            target_role = mem.role if mem else (Role(x_user_role) if x_user_role in Role._value2member_map_ else Role.ADMIN)
-            sess = create_user_session(user, org, conn, role=target_role, is_demo=(org.id == "org_nova_2026"))
-            if x_session_token:
-                ACTIVE_SESSIONS[x_session_token] = sess
-            return sess
-
-    # 2. If a valid demo token is provided for Nova Commerce
+    # 2. Designated Hackathon Demo Evaluation Session for Nova Commerce
     if x_session_token and (x_session_token == "hisab_sess_demo_admin_2026" or x_session_token.startswith("hisab_sess_demo")):
         target_role = Role(x_user_role) if x_user_role and x_user_role in Role._value2member_map_ else Role.ADMIN
         user_map = {
@@ -87,7 +83,7 @@ def get_current_user(
         ACTIVE_SESSIONS[x_session_token] = sess
         return sess
 
-    # 3. STRICT AUTH GATE: Unauthenticated requests MUST be rejected with 401 Unauthorized
+    # 3. STRICT AUTH GATE: Reject all unauthenticated attempts with 401 Unauthorized
     raise HTTPException(
         status_code=401,
         detail="Authentication required. Please sign in or explore demo mode."

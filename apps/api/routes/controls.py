@@ -82,9 +82,10 @@ def get_controls_summary(
 
     results = []
     for ctl in controls_meta:
-        # Check active exceptions for this control category
+        # Check active exceptions for this control category scoped to organization
         exc_count = db.scalar(
             select(func.count(ExceptionDB.id)).where(
+                ExceptionDB.org_id == current_user.org_id,
                 ExceptionDB.category == ctl["category"],
                 ExceptionDB.status.in_(["OPEN", "ESCALATED"]),
             )
@@ -92,6 +93,7 @@ def get_controls_summary(
 
         exposure = db.scalar(
             select(func.sum(ExceptionDB.financial_impact_paise)).where(
+                ExceptionDB.org_id == current_user.org_id,
                 ExceptionDB.category == ctl["category"],
                 ExceptionDB.status.in_(["OPEN", "ESCALATED"]),
             )
@@ -123,10 +125,10 @@ def get_double_loss_alerts(
     # For a fresh organization with no connected Razorpay or imported data, return empty alerts
     if not current_user.is_demo_session and not current_user.is_razorpay_connected and current_user.org_id != "org_nova_2026":
         return {"alerts": []}
-    orders = db.scalars(select(OrderDB)).all()
-    payments = db.scalars(select(PaymentDB)).all()
-    refunds = db.scalars(select(RefundDB)).all()
-    disputes = db.scalars(select(DisputeDB)).all()
+    orders = db.scalars(select(OrderDB).where(OrderDB.org_id == current_user.org_id)).all()
+    payments = db.scalars(select(PaymentDB).where(PaymentDB.org_id == current_user.org_id)).all()
+    refunds = db.scalars(select(RefundDB).where(RefundDB.org_id == current_user.org_id)).all()
+    disputes = db.scalars(select(DisputeDB).where(DisputeDB.org_id == current_user.org_id)).all()
 
     o_models = [Order.model_validate(o.__dict__) for o in orders]
     p_models = [Payment.model_validate(p.__dict__) for p in payments]
@@ -166,7 +168,7 @@ def list_exceptions(
     current_user: UserSession = Depends(get_current_user),
 ):
     """
-    Returns paginated exceptions with filtering by status, severity, and category.
+    Returns paginated exceptions scoped to the authenticated organization.
     """
     if not current_user.is_demo_session and not current_user.is_razorpay_connected and current_user.org_id != "org_nova_2026":
         return {
@@ -176,7 +178,7 @@ def list_exceptions(
             "items": [],
         }
 
-    stmt = select(ExceptionDB)
+    stmt = select(ExceptionDB).where(ExceptionDB.org_id == current_user.org_id)
     if status:
         stmt = stmt.where(ExceptionDB.status == status.upper())
     if severity:
@@ -214,6 +216,44 @@ def list_exceptions(
     }
 
 
+@router.get("/exceptions/{exception_id}")
+def get_exception_by_id(
+    exception_id: str,
+    db: Session = Depends(get_db),
+    current_user: UserSession = Depends(get_current_user),
+):
+    """
+    Returns single exception scoped to current organization.
+    Returns 404 if not found or if belonging to another organization.
+    """
+    exc = db.scalar(
+        select(ExceptionDB).where(
+            ExceptionDB.id == exception_id,
+            ExceptionDB.org_id == current_user.org_id,
+        )
+    )
+    if not exc:
+        raise HTTPException(status_code=404, detail="Exception record not found.")
+
+    return {
+        "id": exc.id,
+        "batch_id": exc.batch_id,
+        "category": exc.category,
+        "severity": exc.severity,
+        "financial_impact_paise": exc.financial_impact_paise,
+        "financial_impact_formatted": format_inr(exc.financial_impact_paise),
+        "confidence": exc.confidence,
+        "root_cause": exc.root_cause,
+        "recommendation": exc.recommendation,
+        "status": exc.status,
+        "resolution_method": exc.resolution_method,
+        "affected_records": exc.affected_records,
+        "evidence": exc.evidence,
+        "created_at": exc.created_at.isoformat() if exc.created_at else None,
+        "resolved_at": exc.resolved_at.isoformat() if exc.resolved_at else None,
+    }
+
+
 @router.post("/exceptions/{exception_id}/resolve")
 def resolve_exception(
     exception_id: str,
@@ -223,8 +263,14 @@ def resolve_exception(
 ):
     """
     Resolves an exception with human operator justification and records to audit ledger.
+    Strictly prevents cross-organization modification.
     """
-    exc = db.get(ExceptionDB, exception_id)
+    exc = db.scalar(
+        select(ExceptionDB).where(
+            ExceptionDB.id == exception_id,
+            ExceptionDB.org_id == current_user.org_id,
+        )
+    )
     if not exc:
         raise HTTPException(status_code=404, detail="Exception record not found.")
 
@@ -247,6 +293,7 @@ def resolve_exception(
         },
         batch_id=exc.batch_id,
         actor_type=req.actor_id,
+        org_id=current_user.org_id,
     )
 
     return {"success": True, "exception_id": exception_id, "status": "RESOLVED"}
@@ -261,8 +308,14 @@ def escalate_exception(
 ):
     """
     Escalates an exception for senior management or legal review.
+    Strictly prevents cross-organization modification.
     """
-    exc = db.get(ExceptionDB, exception_id)
+    exc = db.scalar(
+        select(ExceptionDB).where(
+            ExceptionDB.id == exception_id,
+            ExceptionDB.org_id == current_user.org_id,
+        )
+    )
     if not exc:
         raise HTTPException(status_code=404, detail="Exception record not found.")
 
@@ -283,6 +336,7 @@ def escalate_exception(
         },
         batch_id=exc.batch_id,
         actor_type=req.actor_id,
+        org_id=current_user.org_id,
     )
 
     return {"success": True, "exception_id": exception_id, "status": "ESCALATED"}
