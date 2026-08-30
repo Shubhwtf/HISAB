@@ -1,0 +1,64 @@
+@import url('https://cdn.jsdelivr.net/npm/@fontsource/tasa-orbiter@5.0.12/index.css');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #F8FAFC;
+  --surface: #FFFFFF;
+  --border: #E2E8F0;
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --primary: #0B72E7;
+  --success: #16A34A;
+  --warning: #F59E0B;
+  --critical: #DC2626;
+
+  font-family: 'Inter', 'Inter Fallback Arial', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.dark {
+  --bg: #040914;
+  --surface: #0F172A;
+  --border: #1E293B;
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+  --primary: #3395FF;
+  --success: #16A34A;
+  --warning: #F59E0B;
+  --critical: #DC2626;
+}
+
+body {
+  font-family: 'Inter', 'Inter Fallback Arial', Arial, sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  letter-spacing: 0px;
+  overflow-x: hidden;
+}
+
+/* TASA Orbiter for Numbers & Large Metrics */
+.font-number {
+  font-family: 'TASA Orbiter', 'TASA Orbiter Fallback Arial', Arial, sans-serif;
+  font-feature-settings: 'tnum';
+}
+
+/* Custom sleek scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 3px;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+}

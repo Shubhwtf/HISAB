@@ -1,0 +1,15 @@
+{
+  "name": "hisab-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev:web": "cd apps/web && npm run dev",
+    "build:web": "cd apps/web && npm run build",
+    "dev:api": ".venv/bin/uvicorn apps.api.src.main:app --reload --port 8000",
+    "test": ".venv/bin/pytest tests/ -v",
+    "test:cov": ".venv/bin/pytest tests/ -v --cov=packages --cov=apps/api",
+    "seed": ".venv/bin/python scripts/seed_data.py",
+    "benchmark": ".venv/bin/python scripts/run_benchmark.py",
+    "demo": ".venv/bin/python scripts/run_demo.py"
+  }
+}

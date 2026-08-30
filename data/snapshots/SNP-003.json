@@ -1,0 +1,101 @@
+{
+  "id": "SNP-003",
+  "name": "August 2026 Final Settlement Recon",
+  "merchant_name": "Nova Commerce Pvt Ltd",
+  "merchant_id": "rzp_live_99420",
+  "date_range": "2026-08-01 to 2026-08-28",
+  "currency": "INR",
+  "matching_mode": "TIERED_1_TO_3",
+  "resolution_mode": "SAFE_POLICY_GATED",
+  "materiality_threshold_paise": 500000,
+  "file_manifest": [
+    {
+      "filename": "razorpay_settlement_recon_aug.csv",
+      "source_type": "settlements",
+      "size_bytes": 64200,
+      "sha256_hash": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",
+      "row_count": 251,
+      "detected_columns": [
+        "payment_id",
+        "order_id",
+        "amount",
+        "fee",
+        "tax",
+        "method",
+        "settlement_id"
+      ],
+      "confidence": 0.995,
+      "status": "VALIDATED"
+    },
+    {
+      "filename": "bank_statement_aug.csv",
+      "source_type": "bank_statement",
+      "size_bytes": 22100,
+      "sha256_hash": "4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a",
+      "row_count": 15,
+      "detected_columns": [
+        "date",
+        "reference",
+        "amount",
+        "direction"
+      ],
+      "confidence": 0.99,
+      "status": "VALIDATED"
+    },
+    {
+      "filename": "refunds_aug.csv",
+      "source_type": "refunds",
+      "size_bytes": 14200,
+      "sha256_hash": "ef2d127de37b942baad06145e54b0c619a1f22327b2ebbcfbec78f5564afe39d",
+      "row_count": 37,
+      "detected_columns": [
+        "id",
+        "payment_id",
+        "amount",
+        "status"
+      ],
+      "confidence": 0.99,
+      "status": "VALIDATED"
+    },
+    {
+      "filename": "disputes_aug.csv",
+      "source_type": "disputes",
+      "size_bytes": 8100,
+      "sha256_hash": "c7be1ed902fb8dd4e4d8214f6a22c2e0e3b0c44298fc1c149afbf4c8996fb924",
+      "row_count": 13,
+      "detected_columns": [
+        "id",
+        "payment_id",
+        "amount",
+        "fee",
+        "status"
+      ],
+      "confidence": 0.99,
+      "status": "VALIDATED"
+    }
+  ],
+  "column_mappings": {},
+  "rule_versions": {
+    "domain_rules_version": "v1.2",
+    "fee_schedule_version": "v2.0_2026",
+    "tax_rules_version": "v2024.10_SEC194O",
+    "control_version": "v1.0",
+    "application_version": "1.0.0",
+    "ai_model_version": "claude-3.5-sonnet"
+  },
+  "metrics": {
+    "total_records": 922,
+    "matched_records": 869,
+    "match_rate_pct": "94.2%",
+    "expected_variance_count": 42,
+    "exceptions_count": 8,
+    "critical_count": 1,
+    "gross_turnover_paise": 495377000,
+    "gross_turnover_formatted": "\u20b949,53,770.00",
+    "unresolved_exposure_paise": 14450000,
+    "unresolved_exposure_formatted": "\u20b91,44,500.00"
+  },
+  "fingerprint": "9e83b271a91cf8441092a4001bc92049e93bfa0923aa12d098124ef93109a91c",
+  "status": "IMMUTABLE",
+  "created_at": "2026-08-29T00:30:00Z"
+}

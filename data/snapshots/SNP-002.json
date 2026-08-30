@@ -1,0 +1,70 @@
+{
+  "id": "SNP-002",
+  "name": "August 2026 Batch Ingestion v2",
+  "merchant_name": "Nova Commerce Pvt Ltd",
+  "merchant_id": "rzp_live_99420",
+  "date_range": "2026-08-01 to 2026-08-25",
+  "currency": "INR",
+  "matching_mode": "TIERED_1_TO_3",
+  "resolution_mode": "SAFE_POLICY_GATED",
+  "materiality_threshold_paise": 500000,
+  "file_manifest": [
+    {
+      "filename": "rzp_payments_v2.csv",
+      "source_type": "payments",
+      "size_bytes": 51200,
+      "sha256_hash": "d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592",
+      "row_count": 235,
+      "detected_columns": [
+        "id",
+        "order_id",
+        "amount",
+        "fee",
+        "tax",
+        "method"
+      ],
+      "confidence": 0.99,
+      "status": "VALIDATED"
+    },
+    {
+      "filename": "hdfc_bank_statement_aug.csv",
+      "source_type": "bank_statement",
+      "size_bytes": 18400,
+      "sha256_hash": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+      "row_count": 14,
+      "detected_columns": [
+        "date",
+        "narration",
+        "ref_no",
+        "amount",
+        "type"
+      ],
+      "confidence": 0.97,
+      "status": "VALIDATED"
+    }
+  ],
+  "column_mappings": {},
+  "rule_versions": {
+    "domain_rules_version": "v1.2",
+    "fee_schedule_version": "v2.0_2026",
+    "tax_rules_version": "v2024.10_SEC194O",
+    "control_version": "v1.0",
+    "application_version": "1.0.0",
+    "ai_model_version": "claude-3.5-sonnet"
+  },
+  "metrics": {
+    "total_records": 870,
+    "matched_records": 798,
+    "match_rate_pct": "91.8%",
+    "expected_variance_count": 38,
+    "exceptions_count": 12,
+    "critical_count": 3,
+    "gross_turnover_paise": 448000000,
+    "gross_turnover_formatted": "\u20b944,80,000.00",
+    "unresolved_exposure_paise": 19800000,
+    "unresolved_exposure_formatted": "\u20b91,98,000.00"
+  },
+  "fingerprint": "4a82194c7b80a24559e81b271a91cf8441092a4001bc92049e93bfa0923aa12d",
+  "status": "IMMUTABLE",
+  "created_at": "2026-08-26T14:30:00Z"
+}

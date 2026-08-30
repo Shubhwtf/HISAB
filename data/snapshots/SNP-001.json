@@ -1,0 +1,70 @@
+{
+  "id": "SNP-001",
+  "name": "August 2026 Initial Run",
+  "merchant_name": "Nova Commerce Pvt Ltd",
+  "merchant_id": "rzp_live_99420",
+  "date_range": "2026-08-01 to 2026-08-20",
+  "currency": "INR",
+  "matching_mode": "TIERED_1_TO_3",
+  "resolution_mode": "SAFE_POLICY_GATED",
+  "materiality_threshold_paise": 500000,
+  "file_manifest": [
+    {
+      "filename": "rzp_payments_initial.csv",
+      "source_type": "payments",
+      "size_bytes": 42150,
+      "sha256_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "row_count": 200,
+      "detected_columns": [
+        "id",
+        "order_id",
+        "amount",
+        "fee",
+        "tax",
+        "method"
+      ],
+      "confidence": 0.98,
+      "status": "VALIDATED"
+    },
+    {
+      "filename": "rzp_settlements_initial.csv",
+      "source_type": "settlements",
+      "size_bytes": 12400,
+      "sha256_hash": "8f434346648f6b96df89dda901c5176b10a6d83961dd3c1ac88b59b2dc327aa4",
+      "row_count": 10,
+      "detected_columns": [
+        "id",
+        "utr",
+        "amount",
+        "fee",
+        "tax"
+      ],
+      "confidence": 0.99,
+      "status": "VALIDATED"
+    }
+  ],
+  "column_mappings": {},
+  "rule_versions": {
+    "domain_rules_version": "v1.2",
+    "fee_schedule_version": "v2.0_2026",
+    "tax_rules_version": "v2024.10_SEC194O",
+    "control_version": "v1.0",
+    "application_version": "1.0.0",
+    "ai_model_version": "claude-3.5-sonnet"
+  },
+  "metrics": {
+    "total_records": 750,
+    "matched_records": 655,
+    "match_rate_pct": "87.4%",
+    "expected_variance_count": 30,
+    "exceptions_count": 18,
+    "critical_count": 4,
+    "gross_turnover_paise": 385000000,
+    "gross_turnover_formatted": "\u20b938,50,000.00",
+    "unresolved_exposure_paise": 28500000,
+    "unresolved_exposure_formatted": "\u20b92,85,000.00"
+  },
+  "fingerprint": "9e83b271a91cf8441092a4001bc92049e93bfa0923aa12d098124ef93109a91c",
+  "status": "IMMUTABLE",
+  "created_at": "2026-08-22T10:15:00Z"
+}
