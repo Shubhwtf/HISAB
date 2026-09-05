@@ -1,8 +1,7 @@
-"use client";
-
 import React, { useState } from "react";
-import { AlertOctagon, Clock, ExternalLink, CheckCircle } from "lucide-react";
+import { AlertOctagon, Clock, ExternalLink, CheckCircle, Shield } from "lucide-react";
 import { DoubleLossAlertItem } from "@/lib/api";
+import { DefensePackModal } from "@/components/DefensePackModal";
 
 interface DoubleLossBannerProps {
   alerts: DoubleLossAlertItem[];
@@ -11,7 +10,7 @@ interface DoubleLossBannerProps {
 
 export const DoubleLossBanner: React.FC<DoubleLossBannerProps> = ({ alerts, onViewEvidence }) => {
   const [activeAlertIdx, setActiveAlertIdx] = useState(0);
-  const [contested, setContested] = useState(false);
+  const [showDefensePack, setShowDefensePack] = useState(false);
 
   if (!alerts || alerts.length === 0) {
     return (
@@ -58,11 +57,11 @@ export const DoubleLossBanner: React.FC<DoubleLossBannerProps> = ({ alerts, onVi
             <ExternalLink className="w-3.5 h-3.5" />
           </button>
           <button
-            onClick={() => setContested(true)}
-            disabled={contested}
-            className="px-4 py-1.5 rounded-lg bg-[#DC2626] hover:bg-[#b91c1c] text-white text-xs font-bold transition-all disabled:bg-[#16A34A]"
+            onClick={() => setShowDefensePack(true)}
+            className="px-4 py-1.5 rounded-lg bg-[#DC2626] hover:bg-[#b91c1c] text-white text-xs font-bold transition-all shadow-sm flex items-center space-x-1.5"
           >
-            {contested ? "✓ Representment Pack Prepared" : "Contest Chargeback"}
+            <Shield className="w-3.5 h-3.5" />
+            <span>Generate Bank Defense Pack</span>
           </button>
         </div>
       </div>
@@ -113,6 +112,12 @@ export const DoubleLossBanner: React.FC<DoubleLossBannerProps> = ({ alerts, onVi
           ))}
         </div>
       </div>
+
+      <DefensePackModal
+        paymentId={alert.payment_id}
+        isOpen={showDefensePack}
+        onClose={() => setShowDefensePack(false)}
+      />
     </div>
   );
 };

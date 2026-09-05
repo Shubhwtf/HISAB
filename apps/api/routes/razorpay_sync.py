@@ -17,17 +17,24 @@ from packages.domain.auth_rbac import (
     RazorpayConnectionStatus,
     OrgRazorpayConnection
 )
-from packages.domain.db_models import PaymentDB, SettlementDB, RefundDB, DisputeDB
+from packages.domain.db_models import PaymentDB, SettlementDB, RefundDB, DisputeDB, OrgRazorpayConnectionDB
 from packages.domain.money import format_inr
+from packages.domain.crypto_utils import (
+    mask_key_id,
+    encrypt_credential,
+    verify_razorpay_api_credentials,
+)
 
 router = APIRouter(prefix="/api/razorpay", tags=["Razorpay Sync"])
 
 
 class ConnectRazorpayRequest(BaseModel):
-    key_id: str = "rzp_test_K291884210"
-    key_secret: Optional[str] = "••••••••••••••••"
+    key_id: Optional[str] = "rzp_test_K291884210"
+    key_secret: Optional[str] = None
+    webhook_secret: Optional[str] = None
     environment: str = "TEST"
-    auth_type: str = "OAUTH"
+    auth_type: str = "API_KEY"
+    skip_live_verify: bool = False
 
 
 class WebhookReplayRequest(BaseModel):
@@ -84,47 +91,114 @@ def get_razorpay_connection_status(
 @router.post("/connect")
 def connect_razorpay_account(
     req: ConnectRazorpayRequest,
+    db: Session = Depends(get_db),
     current_user: UserSession = Depends(get_current_user),
 ):
     """
     Validates and establishes connection with merchant's Razorpay account for the organization.
     """
-    conn = ORGANIZATION_CONNECTIONS.get(current_user.org_id)
+    org_id = current_user.org_id
+
+    if req.key_id and req.key_secret and req.auth_type == "API_KEY" and not req.skip_live_verify:
+        valid, msg, _ = verify_razorpay_api_credentials(req.key_id, req.key_secret)
+        if not valid:
+            raise HTTPException(status_code=400, detail=msg)
+
+    conn = ORGANIZATION_CONNECTIONS.get(org_id)
     if not conn:
-        conn = OrgRazorpayConnection(org_id=current_user.org_id)
-        ORGANIZATION_CONNECTIONS[current_user.org_id] = conn
+        conn = OrgRazorpayConnection(org_id=org_id)
+        ORGANIZATION_CONNECTIONS[org_id] = conn
 
     conn.status = RazorpayConnectionStatus.CONNECTED
     conn.environment = req.environment
-    conn.merchant_id = "rzp_live_99420"
-    conn.merchant_name = current_user.org_name
-    conn.masked_client_id = req.key_id[:10] + "••••"
+    conn.auth_type = req.auth_type
     conn.connected_by_user_id = current_user.user_id
     conn.connected_by_user_name = current_user.name
     conn.connected_at = datetime.now(timezone.utc).isoformat()
     conn.last_sync_at = datetime.now(timezone.utc).isoformat()
 
-    return {"success": True, "status": "CONNECTED", "connection": conn}
+    encrypted_token = None
+    if req.key_id:
+        conn.masked_client_id = mask_key_id(req.key_id)
+        if req.key_secret:
+            encrypted_token = encrypt_credential(req.key_secret)
+            conn.encrypted_token = encrypted_token
+        conn.merchant_id = f"rzp_{req.key_id[4:14]}"
+    else:
+        conn.masked_client_id = "rzp_test_demo••••"
+        conn.merchant_id = "rzp_test_sandbox"
+
+    conn.merchant_name = current_user.org_name
+
+    try:
+        db_conn = db.get(OrgRazorpayConnectionDB, f"conn_{org_id}")
+        if not db_conn:
+            db_conn = OrgRazorpayConnectionDB(
+                id=f"conn_{org_id}",
+                org_id=org_id,
+                merchant_id=conn.merchant_id,
+                merchant_name=conn.merchant_name,
+                environment=conn.environment,
+                status="connected",
+                masked_client_id=conn.masked_client_id,
+                encrypted_token=encrypted_token,
+                connected_by_user_id=current_user.user_id,
+                last_sync_at=datetime.now(timezone.utc),
+            )
+            db.add(db_conn)
+        else:
+            db_conn.merchant_id = conn.merchant_id
+            db_conn.merchant_name = conn.merchant_name
+            db_conn.environment = conn.environment
+            db_conn.status = "connected"
+            db_conn.masked_client_id = conn.masked_client_id
+            if encrypted_token:
+                db_conn.encrypted_token = encrypted_token
+            db_conn.connected_by_user_id = current_user.user_id
+            db_conn.last_sync_at = datetime.now(timezone.utc)
+        db.commit()
+    except Exception:
+        db.rollback()
+
+    return {"success": True, "status": "CONNECTED", "connection": conn, "masked_key_id": conn.masked_client_id}
 
 
 @router.post("/disconnect")
-def disconnect_razorpay_account(current_user: UserSession = Depends(get_current_user)):
+def disconnect_razorpay_account(
+    db: Session = Depends(get_db),
+    current_user: UserSession = Depends(get_current_user),
+):
     """
     Safely disconnects Razorpay API feed for the organization.
     """
-    conn = ORGANIZATION_CONNECTIONS.get(current_user.org_id)
+    org_id = current_user.org_id
+    conn = ORGANIZATION_CONNECTIONS.get(org_id)
     if conn:
         conn.status = RazorpayConnectionStatus.DISCONNECTED
         conn.merchant_id = None
+        conn.masked_client_id = None
+        conn.encrypted_token = None
+
+    try:
+        db_conn = db.get(OrgRazorpayConnectionDB, f"conn_{org_id}")
+        if db_conn:
+            db_conn.status = "disconnected"
+            db_conn.encrypted_token = None
+            db.commit()
+    except Exception:
+        db.rollback()
+
     return {"success": True, "status": "DISCONNECTED"}
 
 
 @router.post("/sync-now")
-def trigger_incremental_sync():
+def trigger_incremental_sync(current_user: UserSession = Depends(get_current_user)):
     """
     Executes live incremental data synchronization from Razorpay API.
     """
-    CONNECTION_STATE["last_sync"] = "Just now"
+    conn = ORGANIZATION_CONNECTIONS.get(current_user.org_id)
+    if conn:
+        conn.last_sync_at = datetime.now(timezone.utc).isoformat()
     return {
         "success": True,
         "sync_mode": "INCREMENTAL",

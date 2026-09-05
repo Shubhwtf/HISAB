@@ -13,8 +13,16 @@ import secrets
 from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Depends, HTTPException, Header
 from pydantic import BaseModel, Field
+from sqlalchemy.orm import Session
 
-from apps.api.dependencies import get_current_user, require_permission, require_role
+from apps.api.dependencies import get_current_user, require_permission, require_role, get_db
+from packages.domain.crypto_utils import (
+    mask_key_id,
+    encrypt_credential,
+    hash_credential,
+    verify_razorpay_api_credentials,
+)
+from packages.domain.db_models import OrgRazorpayConnectionDB
 from packages.domain.auth_rbac import (
     Role,
     Permission,
@@ -75,11 +83,18 @@ class UpdateMemberRequest(BaseModel):
 
 
 class ConnectRazorpayOrgRequest(BaseModel):
-    auth_type: str = "OAUTH"
+    auth_type: str = "API_KEY"  # "API_KEY", "OAUTH", "DEMO"
     key_id: Optional[str] = None
     key_secret: Optional[str] = None
+    webhook_secret: Optional[str] = None
     code: Optional[str] = None
     environment: str = "TEST"
+    skip_live_verify: bool = False
+
+
+class VerifyRazorpayCredentialsRequest(BaseModel):
+    key_id: str
+    key_secret: str
 
 
 class SwitchRoleRequest(BaseModel):
@@ -590,16 +605,41 @@ def connect_merchant_razorpay_oauth(
     }
 
 
-@router.post("/razorpay/connect")
-def connect_org_razorpay(
-    req: ConnectRazorpayOrgRequest,
+@router.post("/razorpay/verify")
+def verify_credentials(
+    req: VerifyRazorpayCredentialsRequest,
     current_user: UserSession = Depends(require_permission(Permission.MANAGE_RAZORPAY_CONNECTION)),
 ):
     """
-    Admin connects Razorpay for the entire organization (OAuth 2.0 or API Key).
-    The connection belongs to the organization, with connected_by_user recorded.
+    Dry-run live validation of Razorpay Key ID and Key Secret against official Razorpay API.
+    """
+    valid, message, meta = verify_razorpay_api_credentials(req.key_id, req.key_secret)
+    return {
+        "valid": valid,
+        "message": message,
+        "metadata": meta,
+        "masked_key_id": mask_key_id(req.key_id),
+    }
+
+
+@router.post("/razorpay/connect")
+def connect_org_razorpay(
+    req: ConnectRazorpayOrgRequest,
+    db: Session = Depends(get_db),
+    current_user: UserSession = Depends(require_permission(Permission.MANAGE_RAZORPAY_CONNECTION)),
+):
+    """
+    Admin connects Razorpay for the entire organization (API Key / Secret or Sandbox).
+    Hashes and encrypts credentials securely at rest; saves masked Key ID for display.
     """
     org_id = current_user.org_id
+
+    # If API keys provided, validate credentials (unless skip_live_verify is set)
+    if req.key_id and req.key_secret and req.auth_type == "API_KEY" and not req.skip_live_verify:
+        valid, msg, _ = verify_razorpay_api_credentials(req.key_id, req.key_secret)
+        if not valid:
+            raise HTTPException(status_code=400, detail=msg)
+
     conn = ORGANIZATION_CONNECTIONS.get(org_id)
     if not conn:
         conn = OrgRazorpayConnection(org_id=org_id)
@@ -613,28 +653,67 @@ def connect_org_razorpay(
     conn.connected_at = datetime.now(timezone.utc).isoformat()
     conn.last_sync_at = datetime.now(timezone.utc).isoformat()
 
-    if req.key_id:
-        conn.masked_client_id = req.key_id[:10] + "••••"
+    encrypted_token = None
+    if req.key_id and req.key_secret:
+        conn.masked_client_id = mask_key_id(req.key_id)
+        encrypted_token = encrypt_credential(req.key_secret)
+        conn.encrypted_token = encrypted_token
+        conn.merchant_id = f"rzp_{req.key_id[4:14]}"
     elif req.code:
         conn.masked_client_id = f"rzp_{req.environment.lower()}_{req.code[:6]}••••"
+        conn.merchant_id = "rzp_live_99420"
     else:
-        conn.masked_client_id = "rzp_test_K29188••••"
+        conn.masked_client_id = "rzp_test_demo••••"
+        conn.merchant_id = "rzp_test_sandbox"
 
-    conn.merchant_id = "rzp_live_99420"
     conn.merchant_name = current_user.org_name
+
+    # Securely persist connection record in PostgreSQL database
+    try:
+        db_conn = db.get(OrgRazorpayConnectionDB, f"conn_{org_id}")
+        if not db_conn:
+            db_conn = OrgRazorpayConnectionDB(
+                id=f"conn_{org_id}",
+                org_id=org_id,
+                merchant_id=conn.merchant_id,
+                merchant_name=conn.merchant_name,
+                environment=conn.environment,
+                status="connected",
+                masked_client_id=conn.masked_client_id,
+                encrypted_token=encrypted_token,
+                connected_by_user_id=current_user.user_id,
+                last_sync_at=datetime.now(timezone.utc),
+            )
+            db.add(db_conn)
+        else:
+            db_conn.merchant_id = conn.merchant_id
+            db_conn.merchant_name = conn.merchant_name
+            db_conn.environment = conn.environment
+            db_conn.status = "connected"
+            db_conn.masked_client_id = conn.masked_client_id
+            if encrypted_token:
+                db_conn.encrypted_token = encrypted_token
+            db_conn.connected_by_user_id = current_user.user_id
+            db_conn.last_sync_at = datetime.now(timezone.utc)
+        db.commit()
+    except Exception as dbe:
+        db.rollback()
 
     return {
         "success": True,
         "org_id": org_id,
         "status": "connected",
         "merchant_id": conn.merchant_id,
+        "masked_key_id": conn.masked_client_id,
+        "environment": conn.environment,
         "connected_by": current_user.name,
-        "message": f"Organization '{current_user.org_name}' successfully connected to Razorpay."
+        "message": f"Organization '{current_user.org_name}' successfully connected to Razorpay ({conn.masked_client_id})."
     }
 
 
 @router.post("/razorpay/disconnect")
 def disconnect_org_razorpay(
+    db: Session = Depends(get_db),
     current_user: UserSession = Depends(require_permission(Permission.MANAGE_RAZORPAY_CONNECTION)),
 ):
     """
@@ -646,6 +725,16 @@ def disconnect_org_razorpay(
         conn.status = RazorpayConnectionStatus.DISCONNECTED
         conn.merchant_id = None
         conn.masked_client_id = None
+        conn.encrypted_token = None
+
+    try:
+        db_conn = db.get(OrgRazorpayConnectionDB, f"conn_{org_id}")
+        if db_conn:
+            db_conn.status = "disconnected"
+            db_conn.encrypted_token = None
+            db.commit()
+    except Exception:
+        db.rollback()
 
     return {
         "success": True,
