@@ -319,23 +319,153 @@ SEEDED_USERS = {u.email: u for u in USERS.values()}
 SEEDED_ORGANIZATIONS = ORGANIZATIONS
 
 
-def get_user_by_email(email: str) -> Optional[User]:
-    user_id = USERS_BY_EMAIL.get(email.strip().lower())
+def get_user_by_email(email: str, db: Optional[Any] = None) -> Optional[User]:
+    clean_email = email.strip().lower()
+    user_id = USERS_BY_EMAIL.get(clean_email)
     if user_id and user_id in USERS:
         return USERS[user_id]
+    try:
+        from packages.domain.database import SyncSessionLocal
+        from packages.domain.db_models import UserDB
+        def _check(s):
+            return s.query(UserDB).filter(UserDB.email == clean_email).first()
+        db_user = _check(db) if db is not None else None
+        if db_user is None and db is None:
+            with SyncSessionLocal() as s:
+                db_user = _check(s)
+        if db_user:
+            user = User(
+                id=db_user.id,
+                email=db_user.email,
+                name=db_user.name,
+                pw_hash=db_user.pw_hash,
+                pw_salt=db_user.pw_salt,
+                is_active=db_user.is_active,
+                avatar_initials=db_user.avatar_initials,
+            )
+            USERS[db_user.id] = user
+            USERS_BY_EMAIL[clean_email] = db_user.id
+            return user
+    except Exception:
+        pass
     return None
 
 
-def get_user_membership(user_id: str, org_id: Optional[str] = None) -> Optional[OrganizationMembership]:
+def get_organization(org_id: str, db: Optional[Any] = None) -> Optional[Organization]:
+    if org_id in ORGANIZATIONS:
+        return ORGANIZATIONS[org_id]
+    try:
+        from packages.domain.database import SyncSessionLocal
+        from packages.domain.db_models import OrganizationDB
+        def _check(s):
+            return s.get(OrganizationDB, org_id)
+        db_org = _check(db) if db is not None else None
+        if db_org is None and db is None:
+            with SyncSessionLocal() as s:
+                db_org = _check(s)
+        if db_org:
+            org = Organization(
+                id=db_org.id,
+                name=db_org.name,
+                org_type=db_org.org_type,
+                country=db_org.country,
+                currency=db_org.currency,
+                gstin=db_org.gstin,
+                owner_user_id=db_org.owner_user_id,
+            )
+            ORGANIZATIONS[org_id] = org
+            return org
+    except Exception:
+        pass
+    return None
+
+
+def get_user_membership(user_id: str, org_id: Optional[str] = None, db: Optional[Any] = None) -> Optional[OrganizationMembership]:
     for mem in MEMBERSHIPS.values():
         if mem.user_id == user_id and mem.status == "ACTIVE":
             if org_id is None or mem.org_id == org_id:
                 return mem
+    try:
+        from packages.domain.database import SyncSessionLocal
+        from packages.domain.db_models import OrganizationMemberDB
+        def _check(s):
+            q = s.query(OrganizationMemberDB).filter(OrganizationMemberDB.user_id == user_id, OrganizationMemberDB.status == "ACTIVE")
+            if org_id:
+                q = q.filter(OrganizationMemberDB.org_id == org_id)
+            return q.first()
+        db_mem = _check(db) if db is not None else None
+        if db_mem is None and db is None:
+            with SyncSessionLocal() as s:
+                db_mem = _check(s)
+        if db_mem:
+            role_enum = Role(db_mem.role) if db_mem.role in Role._value2member_map_ else Role.ADMIN
+            mem = OrganizationMembership(
+                id=db_mem.id,
+                user_id=db_mem.user_id,
+                org_id=db_mem.org_id,
+                role=role_enum,
+                status=db_mem.status,
+            )
+            MEMBERSHIPS[db_mem.id] = mem
+            return mem
+    except Exception:
+        pass
     return None
 
 
 def list_user_memberships(user_id: str) -> List[OrganizationMembership]:
     return [m for m in MEMBERSHIPS.values() if m.user_id == user_id and m.status == "ACTIVE"]
+
+
+def get_org_connection(org_id: str, db: Optional[Any] = None) -> OrgRazorpayConnection:
+    """
+    Returns organization Razorpay connection, prioritizing live DB state.
+    """
+    try:
+        from packages.domain.database import SyncSessionLocal
+        from packages.domain.db_models import OrgRazorpayConnectionDB
+
+        def _check(s):
+            return s.get(OrgRazorpayConnectionDB, f"conn_{org_id}") or s.query(OrgRazorpayConnectionDB).filter(OrgRazorpayConnectionDB.org_id == org_id).first()
+
+        db_conn = _check(db) if db is not None else None
+        if db_conn is None and db is None:
+            with SyncSessionLocal() as s:
+                db_conn = _check(s)
+
+        if db_conn:
+            is_conn = (db_conn.status == "connected")
+            conn = OrgRazorpayConnection(
+                org_id=org_id,
+                merchant_id=db_conn.merchant_id,
+                merchant_name=db_conn.merchant_name,
+                environment=db_conn.environment or "TEST",
+                status=RazorpayConnectionStatus.CONNECTED if is_conn else RazorpayConnectionStatus.DISCONNECTED,
+                masked_client_id=db_conn.masked_client_id,
+                encrypted_token=db_conn.encrypted_token,
+                connected_by_user_id=db_conn.connected_by_user_id,
+                last_sync_at=db_conn.last_sync_at.isoformat() if db_conn.last_sync_at else None,
+            )
+            ORGANIZATION_CONNECTIONS[org_id] = conn
+            return conn
+    except Exception:
+        pass
+
+    conn = ORGANIZATION_CONNECTIONS.get(org_id)
+    if conn is None:
+        conn = OrgRazorpayConnection(org_id=org_id, status=RazorpayConnectionStatus.DISCONNECTED)
+        ORGANIZATION_CONNECTIONS[org_id] = conn
+    return conn
+
+
+def sync_active_sessions_connection(org_id: str, is_connected: bool):
+    """
+    Synchronizes connection status across all active user sessions for the organization.
+    """
+    for sess in ACTIVE_SESSIONS.values():
+        if sess.org_id == org_id:
+            sess.is_razorpay_connected = is_connected
+            sess.connection_status = RazorpayConnectionStatus.CONNECTED if is_connected else RazorpayConnectionStatus.DISCONNECTED
 
 
 def create_user_session(
@@ -372,6 +502,14 @@ def create_user_session(
         is_demo_session=is_demo,
     )
     ACTIVE_SESSIONS[token] = session
+    if conn and org.id:
+        ORGANIZATION_CONNECTIONS[org.id] = conn
+    try:
+        from packages.domain.redis_client import get_redis_client
+        r = get_redis_client()
+        r.set(f"hisab:session:{token}", session.model_dump_json(), ex=86400)
+    except Exception:
+        pass
     return session
 
 

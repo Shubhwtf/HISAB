@@ -34,6 +34,7 @@ import { DocumentationPageView } from "@/components/DocumentationPageView";
 import { FloatingAiChat } from "@/components/FloatingAiChat";
 import { ExecutiveReportModal } from "@/components/ExecutiveReportModal";
 import { RazorpayGateModal } from "@/components/RazorpayGateModal";
+import { InitiatePaymentModal } from "@/components/InitiatePaymentModal";
 import { 
   ReconciliationSummary, 
   DoubleLossAlertItem, 
@@ -78,6 +79,7 @@ export default function ControlRoomPage() {
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isGateOpen, setIsGateOpen] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authInitialMode, setAuthInitialMode] = useState<"SIGN_IN" | "SIGN_UP_STEP_1">("SIGN_IN");
 
@@ -276,6 +278,7 @@ export default function ControlRoomPage() {
         onRunRecon={handleRunReconciliation}
         onOpenNewRecon={() => setIsWizardOpen(true)}
         onOpenReport={() => setIsReportModalOpen(true)}
+        onOpenInitiatePayment={() => setIsPaymentModalOpen(true)}
         isRunning={isRunningRecon}
         lastUpdated={lastUpdated}
         isDarkMode={isDarkMode}
@@ -407,6 +410,60 @@ export default function ControlRoomPage() {
                       <DoubleLossBanner alerts={doubleLossAlerts} onViewEvidence={handleInspectEvidence} />
                     )}
                   </>
+                ) : isRazorpayConnected ? (
+                  <div className="p-8 rounded-2xl bg-white dark:bg-[#111111] border border-emerald-500/30 dark:border-emerald-500/20 text-center space-y-4 shadow-sm">
+                    <div className="inline-flex p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                      <Zap className="w-8 h-8 animate-pulse" />
+                    </div>
+                    <div>
+                      <div className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 mb-2">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                        <span>Razorpay Gateway Active & Connected</span>
+                      </div>
+                      <h3 className="text-base font-bold text-[#0F172A] dark:text-white">Awaiting First Transaction</h3>
+                      <p className="text-xs text-[#64748B] dark:text-[#A1A1AA] max-w-md mx-auto mt-1">
+                        <strong className="text-[#0F172A] dark:text-white">{orgName}</strong> is securely linked. Initiate an instant test payment or trigger a webhook simulation to observe real-time 6-point invariant matching across Orders, Payments, Settlements, and Ledger.
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-center space-x-3 pt-2">
+                      <button
+                        onClick={async () => {
+                          try {
+                            const res = await fetchApi<any>("/api/webhooks/simulate", {
+                              method: "POST",
+                              body: JSON.stringify({
+                                event_type: "payment.captured",
+                                amount_inr: 1500.0,
+                              }),
+                            });
+                            if (res && res.payment_id) {
+                              await loadDashboardData();
+                              setInspectedPaymentId(res.payment_id);
+                              setActiveTab("trace-money");
+                            }
+                          } catch (e: any) {
+                            alert(e?.message || "Failed to trigger test payment");
+                          }
+                        }}
+                        className="px-4 py-2.5 rounded-xl bg-[#0B72E7] hover:bg-[#095BC0] dark:bg-[#3395FF] dark:hover:bg-[#1C84F6] text-white font-semibold text-xs flex items-center space-x-2 shadow-sm transition-colors cursor-pointer"
+                      >
+                        <Zap className="w-3.5 h-3.5" />
+                        <span>⚡ Initiate Test Payment (₹1,500)</span>
+                      </button>
+                      <button
+                        onClick={() => setIsPaymentModalOpen(true)}
+                        className="px-4 py-2.5 rounded-xl border border-[#CBD5E1] dark:border-[#333333] text-[#0F172A] dark:text-white font-semibold text-xs flex items-center space-x-2 hover:bg-[#F8FAFC] dark:hover:bg-[#1A1A1A] transition-colors cursor-pointer"
+                      >
+                        <span>Payment Studio</span>
+                      </button>
+                      <button
+                        onClick={() => setIsWizardOpen(true)}
+                        className="px-4 py-2.5 rounded-xl border border-[#CBD5E1] dark:border-[#333333] text-[#64748B] dark:text-[#A1A1AA] hover:text-[#0F172A] dark:hover:text-white font-semibold text-xs transition-colors"
+                      >
+                        <span>Upload CSV</span>
+                      </button>
+                    </div>
+                  </div>
                 ) : (
                   <div className="p-8 rounded-2xl bg-white dark:bg-[#111111] border border-[#E2E8F0] dark:border-[#262626] text-center space-y-4 shadow-sm">
                     <div className="inline-flex p-3.5 rounded-2xl bg-blue-50 dark:bg-blue-950/40 text-[#0B72E7] dark:text-[#3395FF]">
@@ -470,7 +527,9 @@ export default function ControlRoomPage() {
               <TraceMoneyView
                 summary={summary}
                 orgName={orgName}
+                isRazorpayConnected={isRazorpayConnected}
                 onNavigateTab={setActiveTab}
+                onRefreshData={loadDashboardData}
               />
             )}
 
@@ -565,6 +624,17 @@ export default function ControlRoomPage() {
         isOpen={isGateOpen}
         onConnected={() => setIsGateOpen(false)}
         onExploreDemo={() => setIsGateOpen(false)}
+      />
+
+      <InitiatePaymentModal
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
+        orgName={orgName}
+        onPaymentSuccess={async (pid) => {
+          await loadDashboardData();
+          setInspectedPaymentId(pid);
+          setActiveTab("trace-money");
+        }}
       />
     </div>
   );

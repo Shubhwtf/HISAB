@@ -46,6 +46,8 @@ from packages.domain.auth_rbac import (
     get_user_by_email,
     get_user_membership,
     list_user_memberships,
+    get_organization,
+    get_org_connection,
 )
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication & Tenancy"])
@@ -111,20 +113,19 @@ def get_current_session(current_user: UserSession = Depends(get_current_user)):
 
 
 @router.post("/signin", response_model=UserSession)
-def signin_user(req: SignInRequest):
+@router.post("/login", response_model=UserSession)
+def login_user(req: SignInRequest, db: Session = Depends(get_db)):
     """
-    Authenticates user via Email & Password.
-    Automatically resolves the user's Organization and assigned Role from membership.
-    (Users do NOT select their own role during login).
+    Standard Email/Password Sign-In with organization tenancy derivation.
     """
-    user = get_user_by_email(req.email)
+    user = get_user_by_email(req.email, db)
     if not user or not verify_password(req.password, user.pw_hash, user.pw_salt):
         raise HTTPException(status_code=401, detail="Invalid email or password.")
 
     if not user.is_active:
         raise HTTPException(status_code=403, detail="Your HISAB account has been deactivated.")
 
-    membership = get_user_membership(user.id, req.org_id)
+    membership = get_user_membership(user.id, req.org_id, db)
     if not membership:
         raise HTTPException(
             status_code=403,
@@ -134,21 +135,11 @@ def signin_user(req: SignInRequest):
     if membership.status == "SUSPENDED":
         raise HTTPException(status_code=403, detail="Your access to this organization has been suspended by an administrator.")
 
-    org = ORGANIZATIONS.get(membership.org_id)
+    org = get_organization(membership.org_id, db)
     if not org:
         raise HTTPException(status_code=404, detail="Organization not found.")
 
-    conn = ORGANIZATION_CONNECTIONS.get(org.id)
-    if not conn:
-        conn = OrgRazorpayConnection(
-            org_id=org.id,
-            merchant_id=None,
-            merchant_name=org.name,
-            status=RazorpayConnectionStatus.DISCONNECTED,
-            connected_by_user_id=None,
-            connected_by_user_name=None,
-        )
-        ORGANIZATION_CONNECTIONS[org.id] = conn
+    conn = get_org_connection(org.id, db)
 
     return create_user_session(user, org, conn, role=membership.role, is_demo=False)
 
@@ -175,14 +166,15 @@ def demo_signin_persona(req: DemoSignInRequest):
 
 
 @router.post("/signup", response_model=UserSession)
-def signup_user(req: SignUpRequest):
+def signup_user(req: SignUpRequest, db: Session = Depends(get_db)):
     """
     Onboarding Flow:
     1. If invite_token provided: Creates user account and joins organization with invited role.
     2. If creating new organization: Creates user account, creates new organization, and assigns user as OWNER / ADMIN.
     """
     email_clean = req.email.strip().lower()
-    if email_clean in USERS_BY_EMAIL:
+    existing_u = get_user_by_email(email_clean, db)
+    if existing_u or email_clean in USERS_BY_EMAIL:
         raise HTTPException(status_code=400, detail="An account with this email address already exists. Please sign in.")
 
     pw_hash, pw_salt = hash_password(req.password)
@@ -201,12 +193,28 @@ def signup_user(req: SignUpRequest):
     USERS[user_id] = new_user
     USERS_BY_EMAIL[email_clean] = user_id
 
+    # Persist User in DB
+    try:
+        user_db = UserDB(
+            id=user_id,
+            email=email_clean,
+            name=req.name.strip(),
+            pw_hash=pw_hash,
+            pw_salt=pw_salt,
+            is_active=True,
+            avatar_initials=initials,
+        )
+        db.add(user_db)
+        db.commit()
+    except Exception:
+        db.rollback()
+
     if req.invite_token and req.invite_token in INVITATIONS:
         invitation = INVITATIONS[req.invite_token]
         if invitation.status != "PENDING":
             raise HTTPException(status_code=400, detail="This invitation is no longer active.")
 
-        org = ORGANIZATIONS.get(invitation.org_id)
+        org = get_organization(invitation.org_id, db)
         if not org:
             raise HTTPException(status_code=404, detail="Organization associated with invitation not found.")
 
@@ -221,10 +229,20 @@ def signup_user(req: SignUpRequest):
         MEMBERSHIPS[mem_id] = membership
         invitation.status = "ACCEPTED"
 
-        conn = ORGANIZATION_CONNECTIONS.get(org.id, OrgRazorpayConnection(
-            org_id=org.id,
-            status=RazorpayConnectionStatus.DISCONNECTED
-        ))
+        try:
+            mem_db = OrganizationMemberDB(
+                id=mem_id,
+                org_id=org.id,
+                user_id=user_id,
+                role=invitation.role.value,
+                status="ACTIVE",
+            )
+            db.add(mem_db)
+            db.commit()
+        except Exception:
+            db.rollback()
+
+        conn = get_org_connection(org.id, db)
         return create_user_session(new_user, org, conn, role=membership.role, is_demo=False)
 
     org_name = (req.org_name or f"{req.name}'s Organization").strip()
@@ -260,6 +278,37 @@ def signup_user(req: SignUpRequest):
     )
     ORGANIZATION_CONNECTIONS[org_id] = conn
 
+    # Persist Organization & Membership & Initial Disconnected Conn in DB
+    try:
+        org_db = OrganizationDB(
+            id=org_id,
+            name=org_name,
+            org_type=new_org.org_type,
+            country=new_org.country,
+            currency=new_org.currency,
+            owner_user_id=user_id,
+        )
+        db.add(org_db)
+        mem_db = OrganizationMemberDB(
+            id=mem_id,
+            org_id=org_id,
+            user_id=user_id,
+            role="ADMIN",
+            status="ACTIVE",
+        )
+        db.add(mem_db)
+        conn_db = OrgRazorpayConnectionDB(
+            id=f"conn_{org_id}",
+            org_id=org_id,
+            merchant_name=org_name,
+            status="disconnected",
+            environment="TEST",
+        )
+        db.add(conn_db)
+        db.commit()
+    except Exception:
+        db.rollback()
+
     return create_user_session(new_user, new_org, conn, role=Role.ADMIN, is_demo=False)
 
 
@@ -268,8 +317,15 @@ def logout_user(x_session_token: Optional[str] = Header(None, alias="X-Session-T
     """
     Invalidates current session token.
     """
-    if x_session_token and x_session_token in ACTIVE_SESSIONS:
-        del ACTIVE_SESSIONS[x_session_token]
+    if x_session_token:
+        if x_session_token in ACTIVE_SESSIONS:
+            del ACTIVE_SESSIONS[x_session_token]
+        try:
+            from packages.domain.redis_client import get_redis_client
+            r = get_redis_client()
+            r.delete(f"hisab:session:{x_session_token}")
+        except Exception:
+            pass
     return {"success": True, "message": "Signed out successfully."}
 
 
@@ -548,11 +604,15 @@ def remove_member_from_org(
 
 
 @router.get("/razorpay/status")
-def get_org_razorpay_status(current_user: UserSession = Depends(get_current_user)):
+def get_org_razorpay_status(
+    db: Session = Depends(get_db),
+    current_user: UserSession = Depends(get_current_user),
+):
     """
-    Returns organization-level Razorpay connection state.
+    Returns organization-level Razorpay connection state, backed by DB.
     """
-    conn = ORGANIZATION_CONNECTIONS.get(current_user.org_id)
+    from packages.domain.auth_rbac import get_org_connection
+    conn = get_org_connection(current_user.org_id, db)
     if not conn:
         return {
             "org_id": current_user.org_id,
@@ -561,13 +621,14 @@ def get_org_razorpay_status(current_user: UserSession = Depends(get_current_user
             "message": "Razorpay account is not connected for this organization."
         }
 
+    is_conn = (conn.status == RazorpayConnectionStatus.CONNECTED)
     return {
         "org_id": conn.org_id,
         "merchant_id": conn.merchant_id,
-        "merchant_name": conn.merchant_name,
+        "merchant_name": conn.merchant_name or current_user.org_name,
         "environment": conn.environment,
         "status": conn.status.value,
-        "is_connected": (conn.status == RazorpayConnectionStatus.CONNECTED),
+        "is_connected": is_conn,
         "masked_client_id": conn.masked_client_id,
         "connected_by_user_name": conn.connected_by_user_name,
         "connected_at": conn.connected_at,
@@ -696,6 +757,8 @@ def connect_org_razorpay(
             db_conn.connected_by_user_id = current_user.user_id
             db_conn.last_sync_at = datetime.now(timezone.utc)
         db.commit()
+        from packages.domain.auth_rbac import sync_active_sessions_connection
+        sync_active_sessions_connection(org_id, is_connected=True)
     except Exception as dbe:
         db.rollback()
 
@@ -733,6 +796,8 @@ def disconnect_org_razorpay(
             db_conn.status = "disconnected"
             db_conn.encrypted_token = None
             db.commit()
+            from packages.domain.auth_rbac import sync_active_sessions_connection
+            sync_active_sessions_connection(org_id, is_connected=False)
     except Exception:
         db.rollback()
 

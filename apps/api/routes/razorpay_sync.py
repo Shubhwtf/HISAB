@@ -57,9 +57,11 @@ def get_razorpay_connection_status(
     """
     Returns organization connection health, sync metrics, and webhook status.
     """
-    conn = ORGANIZATION_CONNECTIONS.get(current_user.org_id)
-    org = ORGANIZATIONS.get(current_user.org_id)
-    org_name = org.name if org else current_user.org_name
+    import os
+    from packages.domain.auth_rbac import get_org_connection, get_organization
+    conn = get_org_connection(current_user.org_id, db)
+    org = get_organization(current_user.org_id, db)
+    org_name = org.name if org else (conn.merchant_name if conn else current_user.org_name)
 
     is_conn = (conn.status == RazorpayConnectionStatus.CONNECTED) if conn else False
     mid = conn.merchant_id if (conn and is_conn) else None
@@ -71,10 +73,15 @@ def get_razorpay_connection_status(
     disputes_count = db.scalar(select(func.count(DisputeDB.id)).where(DisputeDB.org_id == target_org)) or 0
     active_action_items = db.scalar(select(func.count(ExceptionDB.id)).where(ExceptionDB.org_id == target_org, ExceptionDB.status.in_(["OPEN", "ESCALATED"]))) or 0
 
+    webhook_url = os.getenv(
+        "RAZORPAY_WEBHOOK_URL",
+        os.getenv("PUBLIC_API_URL", "https://ordered-tub-composite-restructuring.trycloudflare.com") + "/api/webhooks/razorpay"
+    )
+
     return {
         "is_connected": is_conn,
         "environment": conn.environment if conn else "TEST",
-        "auth_type": "OAUTH",
+        "auth_type": conn.auth_type if conn else "API_KEY",
         "masked_key_id": conn.masked_client_id if (conn and is_conn) else None,
         "merchant_name": org_name,
         "mid": mid,
@@ -84,7 +91,7 @@ def get_razorpay_connection_status(
         "status": "HEALTHY" if is_conn else "DISCONNECTED",
         "sync_frequency": "Every 15 minutes",
         "webhook_status": "ACTIVE" if is_conn else "INACTIVE",
-        "webhook_url": "http://localhost:8000/api/webhooks/razorpay",
+        "webhook_url": webhook_url,
         "webhook_secret_status": "CONFIGURED" if is_conn else "NOT_CONFIGURED",
         "metrics": {
             "payments_synced": payments_count,
@@ -168,6 +175,8 @@ def connect_razorpay_account(
             db_conn.connected_by_user_id = current_user.user_id
             db_conn.last_sync_at = datetime.now(timezone.utc)
         db.commit()
+        from packages.domain.auth_rbac import sync_active_sessions_connection
+        sync_active_sessions_connection(org_id, is_connected=True)
     except Exception:
         db.rollback()
 
@@ -196,6 +205,8 @@ def disconnect_razorpay_account(
             db_conn.status = "disconnected"
             db_conn.encrypted_token = None
             db.commit()
+            from packages.domain.auth_rbac import sync_active_sessions_connection
+            sync_active_sessions_connection(org_id, is_connected=False)
     except Exception:
         db.rollback()
 

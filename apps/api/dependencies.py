@@ -44,12 +44,36 @@ def get_current_user(
         ORGANIZATION_CONNECTIONS, 
         MEMBERSHIPS, 
         OrgRazorpayConnection, 
+        RazorpayConnectionStatus,
         get_user_membership,
+        get_organization,
+        get_org_connection,
         list_user_memberships,
     )
 
-    if x_session_token and x_session_token in ACTIVE_SESSIONS:
-        session = ACTIVE_SESSIONS[x_session_token]
+    session = None
+    if x_session_token:
+        if x_session_token in ACTIVE_SESSIONS:
+            session = ACTIVE_SESSIONS[x_session_token]
+        else:
+            # Try Redis cache for session rehydration across server restarts
+            try:
+                from packages.domain.redis_client import get_redis_client
+                import json
+                r = get_redis_client()
+                cached = r.get(f"hisab:session:{x_session_token}")
+                if cached:
+                    data = json.loads(cached)
+                    session = UserSession.model_validate(data)
+                    ACTIVE_SESSIONS[x_session_token] = session
+            except Exception:
+                pass
+
+    if session:
+        conn = get_org_connection(session.org_id)
+        session.is_razorpay_connected = (conn.status == RazorpayConnectionStatus.CONNECTED)
+        session.connection_status = conn.status
+
         if x_org_id and x_org_id != session.org_id:
             membership = get_user_membership(session.user_id, x_org_id)
             if not membership or membership.status != "ACTIVE":
@@ -57,11 +81,17 @@ def get_current_user(
                     status_code=403,
                     detail=f"Access denied: User is not an active member of organization '{x_org_id}'."
                 )
-            org = ORGANIZATIONS.get(x_org_id)
+            org = get_organization(x_org_id)
             if not org:
                 raise HTTPException(status_code=404, detail="Organization not found.")
-            conn = ORGANIZATION_CONNECTIONS.get(x_org_id, OrgRazorpayConnection(org_id=x_org_id))
-            return create_user_session(USERS[session.user_id], org, conn, role=membership.role, is_demo=False)
+            conn = get_org_connection(x_org_id)
+            user = USERS.get(session.user_id)
+            if not user:
+                from packages.domain.auth_rbac import get_user_by_email
+                user = get_user_by_email(session.email)
+            if not user:
+                raise HTTPException(status_code=404, detail="User not found.")
+            return create_user_session(user, org, conn, role=membership.role, is_demo=False)
         return session
 
     if x_session_token and (x_session_token == "hisab_sess_demo_admin_2026" or x_session_token.startswith("hisab_sess_demo")):

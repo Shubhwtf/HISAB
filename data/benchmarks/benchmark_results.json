@@ -18,7 +18,7 @@
     "total_exposure_detected_paise": 14339164,
     "hallucination_count": 0,
     "math_error_count": 0,
-    "execution_time_ms": 0.06
+    "execution_time_ms": 0.05
   },
   "baseline_b_naive_llm": {
     "baseline_id": "BASELINE_B",
@@ -54,7 +54,7 @@
     "total_exposure_detected_paise": 61297810,
     "hallucination_count": 0,
     "math_error_count": 0,
-    "execution_time_ms": 7.54
+    "execution_time_ms": 6.45
   },
-  "generated_at_iso": "2026-09-05T10:53:56Z"
+  "generated_at_iso": "2026-09-05T12:05:57Z"
 }

@@ -89,7 +89,13 @@ def get_reconciliation_summary(
     Returns executive-level summary of financial turnover, settlement progress, and unresolved exposures.
     Scoped strictly to the authenticated organization.
     """
-    if not current_user.is_demo_session and not current_user.is_razorpay_connected and current_user.org_id != "org_nova_2026":
+    from packages.domain.auth_rbac import get_org_connection, RazorpayConnectionStatus
+    conn = get_org_connection(current_user.org_id, db)
+    is_conn = (conn.status == RazorpayConnectionStatus.CONNECTED)
+
+    total_payments = db.scalar(select(func.count(PaymentDB.id)).where(PaymentDB.org_id == current_user.org_id)) or 0
+
+    if not current_user.is_demo_session and not is_conn and total_payments == 0 and current_user.org_id != "org_nova_2026":
         return ReconciliationSummaryResponse(
             gross_turnover_paise=0,
             gross_turnover_formatted="₹0.00",
@@ -107,7 +113,6 @@ def get_reconciliation_summary(
         )
 
     total_orders = db.scalar(select(func.count(OrderDB.id)).where(OrderDB.org_id == current_user.org_id)) or 0
-    total_payments = db.scalar(select(func.count(PaymentDB.id)).where(PaymentDB.org_id == current_user.org_id)) or 0
     gross_turnover = db.scalar(select(func.sum(PaymentDB.amount_paise)).where(PaymentDB.org_id == current_user.org_id)) or 0
     
     settled_payments = db.scalar(select(func.count(PaymentDB.id)).where(PaymentDB.org_id == current_user.org_id, PaymentDB.settlement_id.isnot(None))) or 0
@@ -771,4 +776,54 @@ def get_reconciliation_timeline(
             "blended_mdr_efficiency": "1.62% Blended",
         }
     }
+
+
+@router.get("/payments")
+def list_organization_payments(
+    limit: int = 20,
+    db: Session = Depends(get_db),
+    current_user: UserSession = Depends(get_current_user),
+):
+    """
+    Returns recent payment transactions for the organization with trace lifecycle details.
+    """
+    p_rows = db.scalars(
+        select(PaymentDB)
+        .where(PaymentDB.org_id == current_user.org_id)
+        .order_by(PaymentDB.captured_at.desc())
+        .limit(limit)
+    ).all()
+
+    items = []
+    for p in p_rows:
+        has_settlement = bool(p.settlement_id)
+        has_refund = bool(db.scalar(select(RefundDB).where(RefundDB.payment_id == p.id, RefundDB.org_id == current_user.org_id)))
+        has_dispute = bool(db.scalar(select(DisputeDB).where(DisputeDB.payment_id == p.id, DisputeDB.org_id == current_user.org_id)))
+
+        if has_refund and has_dispute:
+            trace_type = "DOUBLE_LOSS_RISK"
+            status = "Critical Double-Loss"
+            narrative = f"Concurrent refund and dispute filed on payment {p.id}. Capital risk flagged."
+        elif has_settlement:
+            trace_type = "CLEAN_SETTLEMENT"
+            status = "Matched & Cleared"
+            narrative = f"Payment captured via {(p.method or 'card').upper()} → settled in {p.settlement_id} → bank credit matched."
+        else:
+            trace_type = "CAPTURED_PENDING_SETTLEMENT"
+            status = "Captured (In-Transit)"
+            narrative = f"Payment captured via {(p.method or 'card').upper()} for Order {p.order_id}. Awaiting settlement payout batch."
+
+        items.append({
+            "id": p.id,
+            "order": p.order_id,
+            "type": trace_type,
+            "gross": format_inr(p.amount_paise),
+            "fee": format_inr(p.fee_paise + p.tax_paise),
+            "net": format_inr(p.net_paise),
+            "status": status,
+            "narrative": narrative,
+            "captured_at": p.captured_at.isoformat() if p.captured_at else None,
+        })
+    return {"payments": items, "total_count": len(items)}
+
 

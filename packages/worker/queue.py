@@ -53,6 +53,8 @@ class JobQueue:
                 r.hset(ACTIVE_SET, job_id, f"{q_name}:{time.time()}")
                 return q_name, job_id
             return None
+        except (redis.exceptions.TimeoutError, TimeoutError):
+            return None
         except Exception as e:
             logger.error(f"Error during dequeue from {target_queues}: {e}")
             return None

@@ -30,6 +30,7 @@ interface TopNavProps {
   onRunRecon: () => void;
   onOpenNewRecon: () => void;
   onOpenReport: () => void;
+  onOpenInitiatePayment?: () => void;
   isRunning: boolean;
   lastUpdated: string;
   isDarkMode: boolean;
@@ -47,6 +48,7 @@ export const TopNav: React.FC<TopNavProps> = ({
   onRunRecon,
   onOpenNewRecon,
   onOpenReport,
+  onOpenInitiatePayment,
   isRunning,
   lastUpdated,
   userName = "Shubham Verma",
@@ -149,6 +151,17 @@ export const TopNav: React.FC<TopNavProps> = ({
         </div>
 
         <div className="flex items-center space-x-3">
+          {onOpenInitiatePayment && (
+            <button
+              onClick={onOpenInitiatePayment}
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-[#0B72E7] hover:bg-[#095BC0] dark:bg-[#3395FF] dark:hover:bg-[#1C84F6] text-white text-xs font-semibold shadow-xs transition-all cursor-pointer"
+              title="Initiate Gateway Test Payment"
+            >
+              <Zap className="w-3.5 h-3.5 text-white animate-pulse" />
+              <span className="hidden sm:inline text-[11px] font-semibold">Test Payment</span>
+            </button>
+          )}
+
           <a
             href="/docs"
             className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg bg-[#171717] hover:bg-[#262626] border border-[#2E2E2E] hover:border-[#444444] text-xs text-[#CCCCCC] hover:text-white transition-all shadow-xs"
