@@ -18,6 +18,7 @@ from packages.domain.db_models import (
     ExceptionDB,
     WebhookEventDB,
     OrgRazorpayConnectionDB,
+    CustomerDB,
 )
 from packages.domain.models import Payment, Order, Refund, Dispute, Settlement, BankTransaction, TaxRecord
 from packages.domain.money import format_inr
@@ -200,28 +201,293 @@ def handle_webhook_processing_job(
 
     update_progress(60, f"Updating ledger for {event_type}...")
 
-    # Safe state application
+    # Safe state application & durable ledger updating
     if event_type == "payment.captured":
         pay_id = entity_data.get("id")
         if pay_id:
+            amt_paise = entity_data.get("amount", 7200000)
+            fee_paise = entity_data.get("fee", int(amt_paise * 0.02))
+            tax_paise = entity_data.get("tax", int(fee_paise * 0.18))
+            net_paise = amt_paise - fee_paise - tax_paise
+            oid = entity_data.get("order_id") or f"order_{pay_id[4:]}"
+            cid = f"cust_{job.org_id[:8]}"
+
+            # Ensure customer exists
+            cust = db.get(CustomerDB, cid)
+            if not cust:
+                cust = CustomerDB(
+                    id=cid,
+                    org_id=job.org_id,
+                    name=entity_data.get("email", "Enterprise Merchant Customer").split("@")[0],
+                    email=entity_data.get("email", "customer@merchant.com"),
+                    contact=entity_data.get("contact", "+919876543210"),
+                )
+                db.add(cust)
+
+            # Ensure order exists
+            order = db.get(OrderDB, oid)
+            if not order:
+                order = OrderDB(
+                    id=oid,
+                    org_id=job.org_id,
+                    customer_id=cid,
+                    amount_paise=amt_paise,
+                    amount_paid_paise=amt_paise,
+                    status="paid",
+                )
+                db.add(order)
+
             p_db = db.get(PaymentDB, pay_id)
             if p_db and p_db.org_id == job.org_id:
                 p_db.status = "captured"
                 p_db.captured_at = now
+            elif not p_db:
+                p_db = PaymentDB(
+                    id=pay_id,
+                    org_id=job.org_id,
+                    order_id=oid,
+                    customer_id=cid,
+                    amount_paise=amt_paise,
+                    fee_paise=fee_paise,
+                    tax_paise=tax_paise,
+                    net_paise=net_paise,
+                    currency=entity_data.get("currency", "INR"),
+                    method=entity_data.get("method", "card"),
+                    status="captured",
+                    captured_at=now,
+                )
+                db.add(p_db)
+
+            append_audit_entry(
+                db=db,
+                case_id=pay_id,
+                event_type="WEBHOOK_PAYMENT_CAPTURED",
+                action="INGEST_PAYMENT",
+                policy_result="ACCEPTED",
+                reason_code="PAYMENT_CAPTURED_WEBHOOK",
+                payload={"payment_id": pay_id, "amount_paise": amt_paise, "fee_paise": fee_paise},
+                actor_type="RAZORPAY_WEBHOOK",
+                org_id=job.org_id,
+            )
 
     elif event_type == "refund.processed":
         rfnd_id = entity_data.get("id")
-        if rfnd_id:
+        pay_id = entity_data.get("payment_id")
+        amt_paise = entity_data.get("amount", 7200000)
+        arn = entity_data.get("acquirer_data", {}).get("arn") or f"ARN_{int(now.timestamp())}"
+
+        if rfnd_id and pay_id:
+            # Foreign key safety: ensure parent Payment exists
+            p_db = db.get(PaymentDB, pay_id)
+            if not p_db:
+                cid = f"cust_{job.org_id[:8]}"
+                cust = db.get(CustomerDB, cid)
+                if not cust:
+                    cust = CustomerDB(
+                        id=cid,
+                        org_id=job.org_id,
+                        name="Merchant Customer",
+                        email="customer@merchant.com",
+                        contact="+919876543210",
+                    )
+                    db.add(cust)
+                oid = f"order_{pay_id[4:]}"
+                order = db.get(OrderDB, oid)
+                if not order:
+                    order = OrderDB(
+                        id=oid,
+                        org_id=job.org_id,
+                        customer_id=cid,
+                        amount_paise=amt_paise,
+                        amount_paid_paise=amt_paise,
+                        status="paid",
+                    )
+                    db.add(order)
+                p_db = PaymentDB(
+                    id=pay_id,
+                    org_id=job.org_id,
+                    order_id=oid,
+                    customer_id=cid,
+                    amount_paise=amt_paise,
+                    fee_paise=int(amt_paise * 0.02),
+                    tax_paise=int(amt_paise * 0.02 * 0.18),
+                    net_paise=int(amt_paise * 0.9764),
+                    currency=entity_data.get("currency", "INR"),
+                    method="card",
+                    status="captured",
+                    captured_at=now,
+                )
+                db.add(p_db)
+
             r_db = db.get(RefundDB, rfnd_id)
             if r_db and r_db.org_id == job.org_id:
                 r_db.status = "processed"
+            elif not r_db:
+                r_db = RefundDB(
+                    id=rfnd_id,
+                    org_id=job.org_id,
+                    payment_id=pay_id,
+                    amount_paise=amt_paise,
+                    currency=entity_data.get("currency", "INR"),
+                    status="processed",
+                    acquirer_arn=arn,
+                )
+                db.add(r_db)
+
+            append_audit_entry(
+                db=db,
+                case_id=rfnd_id,
+                event_type="WEBHOOK_REFUND_PROCESSED",
+                action="INGEST_REFUND",
+                policy_result="ACCEPTED",
+                reason_code="REFUND_PROCESSED_WEBHOOK",
+                payload={"refund_id": rfnd_id, "payment_id": pay_id, "arn": arn, "amount_paise": amt_paise},
+                actor_type="RAZORPAY_WEBHOOK",
+                org_id=job.org_id,
+            )
 
     elif event_type == "dispute.created":
         disp_id = entity_data.get("id")
-        if disp_id:
+        pay_id = entity_data.get("payment_id")
+        amt_paise = entity_data.get("amount", 7200000)
+        reason = entity_data.get("reason_code", "fraudulent_unauthorized")
+
+        if disp_id and pay_id:
+            # Foreign key safety: ensure parent Payment exists
+            p_db = db.get(PaymentDB, pay_id)
+            if not p_db:
+                cid = f"cust_{job.org_id[:8]}"
+                cust = db.get(CustomerDB, cid)
+                if not cust:
+                    cust = CustomerDB(
+                        id=cid,
+                        org_id=job.org_id,
+                        name="Merchant Customer",
+                        email="customer@merchant.com",
+                        contact="+919876543210",
+                    )
+                    db.add(cust)
+                oid = f"order_{pay_id[4:]}"
+                order = db.get(OrderDB, oid)
+                if not order:
+                    order = OrderDB(
+                        id=oid,
+                        org_id=job.org_id,
+                        customer_id=cid,
+                        amount_paise=amt_paise,
+                        amount_paid_paise=amt_paise,
+                        status="paid",
+                    )
+                    db.add(order)
+                p_db = PaymentDB(
+                    id=pay_id,
+                    org_id=job.org_id,
+                    order_id=oid,
+                    customer_id=cid,
+                    amount_paise=amt_paise,
+                    fee_paise=int(amt_paise * 0.02),
+                    tax_paise=int(amt_paise * 0.02 * 0.18),
+                    net_paise=int(amt_paise * 0.9764),
+                    currency=entity_data.get("currency", "INR"),
+                    method="card",
+                    status="captured",
+                    captured_at=now,
+                )
+                db.add(p_db)
+
             d_db = db.get(DisputeDB, disp_id)
             if d_db and d_db.org_id == job.org_id:
                 d_db.status = "open"
+            elif not d_db:
+                d_db = DisputeDB(
+                    id=disp_id,
+                    org_id=job.org_id,
+                    payment_id=pay_id,
+                    amount_paise=amt_paise,
+                    currency=entity_data.get("currency", "INR"),
+                    status="open",
+                    reason_code=reason,
+                    deduction_amount_paise=amt_paise,
+                )
+                db.add(d_db)
+
+            # Forensic Double-Loss Check: If refund already exists on this payment, flag critical exception!
+            prior_refund = db.scalar(
+                select(RefundDB).where(
+                    RefundDB.payment_id == pay_id,
+                    RefundDB.org_id == job.org_id,
+                )
+            )
+            if prior_refund:
+                exc_id = f"exc_dbl_{pay_id}"
+                exc = db.get(ExceptionDB, exc_id)
+                if not exc:
+                    exc = ExceptionDB(
+                        id=exc_id,
+                        org_id=job.org_id,
+                        category="DOUBLE_LOSS_RISK",
+                        severity="CRITICAL",
+                        financial_impact_paise=amt_paise,
+                        confidence=1.0,
+                        root_cause="Concurrent merchant refund and issuing bank chargeback dispute detected on payment.",
+                        recommendation="Contest dispute with Bank Defense Pack. Prior refund ARN confirms merchant non-liability.",
+                        status="OPEN",
+                        affected_records=[pay_id, prior_refund.id, disp_id],
+                    )
+                    db.add(exc)
+
+            append_audit_entry(
+                db=db,
+                case_id=disp_id,
+                event_type="WEBHOOK_DISPUTE_CREATED",
+                action="INGEST_DISPUTE",
+                policy_result="FLAGGED_ALERT" if prior_refund else "ACCEPTED",
+                reason_code="DISPUTE_CREATED_WEBHOOK",
+                payload={"dispute_id": disp_id, "payment_id": pay_id, "double_loss_flagged": bool(prior_refund)},
+                actor_type="RAZORPAY_WEBHOOK",
+                org_id=job.org_id,
+            )
+
+    elif event_type == "settlement.processed":
+        setl_id = entity_data.get("id")
+        amt_paise = entity_data.get("amount", 7200000)
+        utr = entity_data.get("utr") or f"UTRN{int(now.timestamp())}"
+
+        if setl_id:
+            s_db = db.get(SettlementDB, setl_id)
+            if s_db and s_db.org_id == job.org_id:
+                s_db.status = "processed"
+                s_db.utr = utr
+            elif not s_db:
+                s_db = SettlementDB(
+                    id=setl_id,
+                    org_id=job.org_id,
+                    amount_paise=amt_paise,
+                    currency=entity_data.get("currency", "INR"),
+                    status="processed",
+                    utr=utr,
+                    cleared_at=now,
+                )
+                db.add(s_db)
+
+            append_audit_entry(
+                db=db,
+                case_id=setl_id,
+                event_type="WEBHOOK_SETTLEMENT_PROCESSED",
+                action="INGEST_SETTLEMENT",
+                policy_result="ACCEPTED",
+                reason_code="SETTLEMENT_PROCESSED_WEBHOOK",
+                payload={"settlement_id": setl_id, "amount_paise": amt_paise, "utr": utr},
+                actor_type="RAZORPAY_WEBHOOK",
+                org_id=job.org_id,
+            )
+
+    # Mark webhook event record as PROCESSED in PostgreSQL for strict idempotency
+    if event_id:
+        evt_rec = db.get(WebhookEventDB, event_id)
+        if evt_rec:
+            evt_rec.status = "PROCESSED"
+            evt_rec.processed_at = now
 
     db.commit()
     update_progress(100, "Webhook processed and state updated.")

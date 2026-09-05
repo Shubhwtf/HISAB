@@ -66,8 +66,20 @@ def get_engine_args(url: str) -> dict:
     return kwargs
 
 
-RAW_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///data/generated/hisab.db")
-RAW_SYNC_DATABASE_URL = os.getenv("SYNC_DATABASE_URL", RAW_DATABASE_URL)
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+
+
+def make_absolute_sqlite_url(url: str) -> str:
+    if "sqlite" in url and "///" in url and ":memory:" not in url:
+        prefix, path = url.split("///", 1)
+        if not os.path.isabs(path):
+            abs_path = os.path.abspath(os.path.join(PROJECT_ROOT, path))
+            return f"{prefix}///{abs_path}"
+    return url
+
+
+RAW_DATABASE_URL = make_absolute_sqlite_url(os.getenv("DATABASE_URL", "sqlite+aiosqlite:///data/generated/hisab.db"))
+RAW_SYNC_DATABASE_URL = make_absolute_sqlite_url(os.getenv("SYNC_DATABASE_URL", RAW_DATABASE_URL))
 
 DATABASE_URL = normalize_async_db_url(RAW_DATABASE_URL)
 SYNC_DATABASE_URL = normalize_sync_db_url(RAW_SYNC_DATABASE_URL)

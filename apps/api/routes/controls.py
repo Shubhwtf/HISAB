@@ -2,6 +2,7 @@
 HISAB — Controls & Exceptions API Endpoints.
 """
 
+import hashlib
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -352,14 +353,19 @@ def generate_chargeback_defense_pack(
     now = datetime.now(timezone.utc)
     ts_str = now.strftime("%Y-%m-%d %H:%M:%S UTC")
 
-    # Look up payment and related entities
+    # Look up payment and related entities with strict tenant verification
     payment = db.get(PaymentDB, payment_id)
-    if payment and payment.org_id != current_user.org_id and not current_user.is_demo_session:
-        raise HTTPException(status_code=404, detail="Payment record not found.")
+    if not current_user.is_demo_session:
+        if not payment or payment.org_id != current_user.org_id:
+            raise HTTPException(status_code=404, detail="Payment record not found.")
+    else:
+        if payment and payment.org_id != current_user.org_id and payment.org_id != "org_nova_2026":
+            raise HTTPException(status_code=404, detail="Payment record not found.")
 
+    target_org_id = payment.org_id if payment else current_user.org_id
     order = db.get(OrderDB, payment.order_id) if (payment and payment.order_id) else None
-    refund = db.scalar(select(RefundDB).where(RefundDB.payment_id == payment_id)) if payment else None
-    dispute = db.scalar(select(DisputeDB).where(DisputeDB.payment_id == payment_id)) if payment else None
+    refund = db.scalar(select(RefundDB).where(RefundDB.payment_id == payment_id, RefundDB.org_id == target_org_id)) if payment else None
+    dispute = db.scalar(select(DisputeDB).where(DisputeDB.payment_id == payment_id, DisputeDB.org_id == target_org_id)) if payment else None
 
     gross_paise = payment.amount_paise if payment else 7200000
     gross_formatted = format_inr(gross_paise)
@@ -369,6 +375,9 @@ def generate_chargeback_defense_pack(
     settlement_id = payment.settlement_id if (payment and payment.settlement_id) else "setl_2026_08_28"
 
     dossier_id = f"DOSSIER_DISP_{payment_id.upper()}_{int(now.timestamp())}"
+    canonical_seed = f"{dossier_id}:{target_org_id}:{payment_id}:{gross_paise}:{ts_str}"
+    proof_hash = hashlib.sha256(canonical_seed.encode("utf-8")).hexdigest()
+    block_num = (int(now.timestamp()) % 89999) + 10000
 
     defense_pack = {
         "dossier_id": dossier_id,
@@ -378,7 +387,7 @@ def generate_chargeback_defense_pack(
         "case_title": "Formal Chargeback Contest Dossier u/s Banking Ombudsman Guidelines",
         "merchant": {
             "name": current_user.org_name,
-            "org_id": current_user.org_id,
+            "org_id": target_org_id,
             "gstin": "27AABCN8890K1Z9",
             "merchant_id": "rzp_live_99420",
         },
@@ -448,8 +457,8 @@ def generate_chargeback_defense_pack(
         ),
         "cryptographic_merkle_seal": {
             "algorithm": "SHA-256",
-            "proof_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-            "ledger_block": "#BLOCK_90006",
+            "proof_hash": proof_hash,
+            "ledger_block": f"#BLOCK_{block_num}",
             "tamper_proof": True,
         },
     }

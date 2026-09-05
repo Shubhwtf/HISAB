@@ -60,11 +60,13 @@ async def lifespan(app: FastAPI):
 
     with get_sync_db() as db:
         payment_count = db.scalar(select(func.count(PaymentDB.id))) or 0
-        if payment_count == 0:
-            logger.info("Database is empty. Generating synthetic merchant dataset...")
-            clean = generate_synthetic_dataset(record_count=500, seed=42)
-            corrupted = inject_corruptions(clean, seed=42)
-            seed_database_from_dataset(corrupted)
+
+    if payment_count == 0:
+        logger.info("Database is empty. Generating synthetic merchant dataset...")
+        clean = generate_synthetic_dataset(record_count=500, seed=42)
+        corrupted = inject_corruptions(clean, seed=42)
+        seed_database_from_dataset(corrupted)
+        with get_sync_db() as db:
             logger.info("Running initial reconciliation pipeline across seeded records...")
             run_full_reconciliation(batch_id="batch_settlement_2026_08_28", db=db)
             logger.info("Database successfully seeded and reconciled.")
