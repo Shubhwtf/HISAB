@@ -632,7 +632,7 @@ export const AccountSettingsView: React.FC<AccountSettingsViewProps> = ({
             <span className="text-[10px] font-bold text-[#64748B] uppercase">Merchant ID (MID)</span>
             <div className="flex items-center justify-between mt-1">
               <span className={`font-mono font-bold ${rzpStatus?.is_connected ? "text-[#0B72E7] dark:text-[#3395FF]" : "text-[#64748B]"}`}>
-                {rzpStatus?.is_connected ? (rzpStatus?.merchant_id || "rzp_live_99420") : "Not Connected"}
+                {rzpStatus?.is_connected ? (rzpStatus?.merchant_id || "Connected Gateway") : "Not Connected"}
               </span>
               {rzpStatus?.is_connected && rzpStatus?.merchant_id && (
                 <button onClick={() => handleCopy(rzpStatus.merchant_id!, "mid")} className="text-[#64748B] hover:text-[#0F172A]">
@@ -645,7 +645,7 @@ export const AccountSettingsView: React.FC<AccountSettingsViewProps> = ({
           <div className="p-3.5 rounded-xl bg-[#F8FAFC] dark:bg-[#0E0E0E] border border-[#E2E8F0] dark:border-[#262626]">
             <span className="text-[10px] font-bold text-[#64748B] uppercase">Connected By</span>
             <div className="font-semibold text-[#0F172A] dark:text-[#EDEDED] mt-1">
-              {rzpStatus?.is_connected ? (rzpStatus?.connected_by_user_name || "Admin") : "—"}
+              {rzpStatus?.is_connected ? (rzpStatus?.connected_by_user_name || userName || "Admin") : "—"}
             </div>
           </div>
 

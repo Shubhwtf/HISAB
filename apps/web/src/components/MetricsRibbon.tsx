@@ -43,7 +43,7 @@ export const MetricsRibbon: React.FC<MetricsRibbonProps> = ({ summary }) => {
           {settledPayments} / {totalPayments}
         </div>
         <p className="text-[11px] text-[#64748B] dark:text-[#A1A1AA] mt-1">
-          {summary?.total_settlements_count || 15} Batches Cleared to Bank
+          {summary?.total_settlements_count ?? 0} Batches Cleared to Bank
         </p>
       </div>
 

@@ -51,10 +51,10 @@ export const TopNav: React.FC<TopNavProps> = ({
   onOpenInitiatePayment,
   isRunning,
   lastUpdated,
-  userName = "Shubham Verma",
+  userName = "Admin",
   userRole = "ADMIN",
-  orgName = "Nova Commerce Pvt Ltd",
-  userEmail = "admin@novacommerce.com",
+  orgName = "Organization",
+  userEmail = "admin@example.com",
   onLogout = () => {},
   onSelectTab = () => {},
 }) => {

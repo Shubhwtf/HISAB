@@ -173,8 +173,8 @@ class OrgRazorpayConnection(BaseModel):
     status: RazorpayConnectionStatus = RazorpayConnectionStatus.CONNECTED
     masked_client_id: Optional[str] = "rzp_test_K29188••••"
     encrypted_token: Optional[str] = "enc_aes256_99420_secret_demo"
-    connected_by_user_id: Optional[str] = "usr_admin_01"
-    connected_by_user_name: Optional[str] = "Shubham Verma"
+    connected_by_user_id: Optional[str] = None
+    connected_by_user_name: Optional[str] = None
     connected_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     last_connection_test: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     last_sync_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
@@ -205,16 +205,16 @@ USERS: Dict[str, User] = {
     "usr_admin_01": User(
         id="usr_admin_01",
         email="admin@novacommerce.com",
-        name="Shubham Verma",
-        avatar_initials="SV",
+        name="Finance Controller",
+        avatar_initials="FC",
         pw_hash=_SAMPLE_HASH,
         pw_salt=_SAMPLE_SALT,
     ),
     "usr_shubh_admin": User(
         id="usr_shubh_admin",
         email="shubh@test.com",
-        name="Shubham Verma",
-        avatar_initials="SV",
+        name="Shubh",
+        avatar_initials="S",
         pw_hash=_SAMPLE_HASH,
         pw_salt=_SAMPLE_SALT,
     ),
@@ -315,7 +315,7 @@ ORGANIZATION_CONNECTIONS: Dict[str, OrgRazorpayConnection] = {
         environment="TEST",
         status=RazorpayConnectionStatus.CONNECTED,
         connected_by_user_id="usr_admin_01",
-        connected_by_user_name="Shubham Verma",
+        connected_by_user_name="Finance Controller",
     ),
     "org_acme_retail": OrgRazorpayConnection(
         org_id="org_acme_retail",
@@ -323,8 +323,8 @@ ORGANIZATION_CONNECTIONS: Dict[str, OrgRazorpayConnection] = {
         merchant_name="Acme Retail India Ltd",
         environment="TEST",
         status=RazorpayConnectionStatus.DISCONNECTED,
-        connected_by_user_id="usr_admin_01",
-        connected_by_user_name="Shubham Verma",
+        connected_by_user_id=None,
+        connected_by_user_name=None,
     ),
 }
 
@@ -454,6 +454,21 @@ def get_org_connection(org_id: str, db: Optional[Any] = None) -> OrgRazorpayConn
 
         if db_conn:
             is_conn = (db_conn.status == "connected")
+            conn_user_name = None
+            if db_conn.connected_by_user_id:
+                if db_conn.connected_by_user_id in USERS:
+                    conn_user_name = USERS[db_conn.connected_by_user_id].name
+                else:
+                    from packages.domain.db_models import UserDB
+                    def _get_u(s):
+                        return s.get(UserDB, db_conn.connected_by_user_id)
+                    u_rec = _get_u(db) if db is not None else None
+                    if u_rec is None and db is None:
+                        with SyncSessionLocal() as s:
+                            u_rec = _get_u(s)
+                    if u_rec:
+                        conn_user_name = u_rec.name
+
             conn = OrgRazorpayConnection(
                 org_id=org_id,
                 merchant_id=db_conn.merchant_id,
@@ -463,6 +478,7 @@ def get_org_connection(org_id: str, db: Optional[Any] = None) -> OrgRazorpayConn
                 masked_client_id=db_conn.masked_client_id,
                 encrypted_token=db_conn.encrypted_token,
                 connected_by_user_id=db_conn.connected_by_user_id,
+                connected_by_user_name=conn_user_name,
                 last_sync_at=db_conn.last_sync_at.isoformat() if db_conn.last_sync_at else None,
             )
             ORGANIZATION_CONNECTIONS[org_id] = conn

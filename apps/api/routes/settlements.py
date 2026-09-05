@@ -24,7 +24,14 @@ def get_settlement_control_tower(
     Returns settlement lifecycle control tower:
     Processed Payouts vs Bank Statement Credited vs Cash-in-Transit.
     """
-    if not current_user.is_demo_session and not current_user.is_razorpay_connected and current_user.org_id != "org_nova_2026":
+    settlements = db.scalars(
+        select(SettlementDB).where(SettlementDB.org_id == current_user.org_id)
+    ).all()
+    bank_txs = db.scalars(
+        select(BankTransactionDB).where(BankTransactionDB.org_id == current_user.org_id)
+    ).all()
+
+    if len(settlements) == 0 and current_user.org_id != "org_nova_2026":
         return {
             "summary": {
                 "gross_turnover_formatted": "₹0.00",
@@ -35,15 +42,9 @@ def get_settlement_control_tower(
                 "unexplained_cash_paise": 0,
                 "unexplained_cash_formatted": "₹0.00",
             },
+            "settlements_count": 0,
             "timeline": []
         }
-
-    settlements = db.scalars(
-        select(SettlementDB).where(SettlementDB.org_id == current_user.org_id)
-    ).all()
-    bank_txs = db.scalars(
-        select(BankTransactionDB).where(BankTransactionDB.org_id == current_user.org_id)
-    ).all()
 
     total_gross = sum(s.gross_amount_paise for s in settlements)
     total_net_settled = sum(s.amount_paise for s in settlements)

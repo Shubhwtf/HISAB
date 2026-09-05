@@ -24,7 +24,10 @@ def get_daily_finance_brief(
     """
     Returns executive daily finance brief highlighting turnover, cash in transit, disputes, and largest financial risks.
     """
-    if not current_user.is_demo_session and not current_user.is_razorpay_connected and current_user.org_id != "org_nova_2026":
+    from packages.domain.db_models import BankTransactionDB
+
+    total_payments = db.scalar(select(func.count(PaymentDB.id)).where(PaymentDB.org_id == current_user.org_id)) or 0
+    if total_payments == 0 and current_user.org_id != "org_nova_2026":
         return {
             "brief_date": datetime.now(timezone.utc).strftime("%d %b %Y"),
             "merchant_name": current_user.org_name,
@@ -42,8 +45,12 @@ def get_daily_finance_brief(
 
     gross_turnover = db.scalar(select(func.sum(PaymentDB.amount_paise)).where(PaymentDB.org_id == current_user.org_id)) or 0
     total_settled = db.scalar(select(func.sum(SettlementDB.amount_paise)).where(SettlementDB.org_id == current_user.org_id)) or 0
+    total_bank = db.scalar(select(func.sum(BankTransactionDB.amount_paise)).where(BankTransactionDB.org_id == current_user.org_id)) or 0
     total_refunds = db.scalar(select(func.sum(RefundDB.amount_paise)).where(RefundDB.org_id == current_user.org_id)) or 0
     total_disputes = db.scalar(select(func.sum(DisputeDB.amount_paise)).where(DisputeDB.org_id == current_user.org_id)) or 0
+    
+    cash_in_transit_paise = max(0, total_settled - total_bank)
+
     open_exceptions = db.scalars(
         select(ExceptionDB).where(
             ExceptionDB.org_id == current_user.org_id,
@@ -52,55 +59,55 @@ def get_daily_finance_brief(
     ).all()
     unresolved_exp = sum(e.financial_impact_paise for e in open_exceptions)
 
+    top_risks = []
+    for exc in open_exceptions[:5]:
+        top_risks.append({
+            "risk_title": f"{exc.category}: {exc.root_cause or exc.id}",
+            "severity": exc.severity,
+            "exposure": format_inr(exc.financial_impact_paise),
+            "action": exc.recommendation or "Review and resolve in Maker-Checker queue",
+        })
+
     return {
         "brief_date": datetime.now(timezone.utc).strftime("%d %b %Y"),
         "merchant_name": current_user.org_name,
         "key_metrics": {
             "gross_revenue": format_inr(gross_turnover),
             "net_bank_settled": format_inr(total_settled),
-            "cash_in_transit": "₹1,41,521.57",
+            "cash_in_transit": format_inr(cash_in_transit_paise),
             "refunds_outflow": format_inr(total_refunds),
             "active_disputes_exposure": format_inr(total_disputes),
             "unresolved_exposure": format_inr(unresolved_exp),
         },
-        "top_financial_risks": [
-            {
-                "risk_title": "Compounded Double-Loss on Order order_10006",
-                "severity": "CRITICAL",
-                "exposure": "₹1,44,500.00",
-                "action": "Submit representment defense before bank deadline (4 days remaining)"
-            },
-            {
-                "risk_title": "Section 194-O TDS Rate Verification",
-                "severity": "LOW",
-                "exposure": "₹4,953.77",
-                "action": "Statutory 0.1% amended rate verified against Form 26AS"
-            }
-        ],
-        "compliance_status": "7 of 7 Financial Controls Evaluated (1 Critical Action Item)"
+        "top_financial_risks": top_risks,
+        "compliance_status": f"7 of 7 Financial Controls Evaluated ({len(open_exceptions)} Active Anomali{'es' if len(open_exceptions) != 1 else 'y'})" if open_exceptions else "All Systems Reconciled · No Active Variances"
     }
 
 
 @router.get("/journal-entries")
-def get_accounting_journal_entries(current_user: UserSession = Depends(get_current_user)):
+def get_accounting_journal_entries(
+    db: Session = Depends(get_db),
+    current_user: UserSession = Depends(get_current_user),
+):
     """
     Returns standard double-entry journal entries for accounting ingestion (ERP / Tally / SAP / Zoho Books).
     """
-    if not current_user.is_demo_session and not current_user.is_razorpay_connected and current_user.org_id != "org_nova_2026":
+    figs = _get_org_accounting_figures(db, current_user.org_id)
+    if float(figs["gross"]) == 0.0 and current_user.org_id != "org_nova_2026":
         return {
             "journal_batch_id": f"JB_{datetime.now(timezone.utc).strftime('%Y%m%d')}_001",
             "entries": []
         }
 
     return {
-        "journal_batch_id": "JB-2026-08-28-001",
+        "journal_batch_id": f"JB-{datetime.now(timezone.utc).strftime('%Y-%m-%d')}-001",
         "entries": [
-            {"account": "Bank Current Account (HDFC)", "debit": "₹48,12,248.43", "credit": "—", "notes": "Net settlement payout received via RTGS"},
-            {"account": "Payment Gateway Charges (MDR)", "debit": "₹84,210.00", "credit": "—", "notes": "Blended Card & Netbanking MDR"},
-            {"account": "GST Input Tax Credit (18% on MDR)", "debit": "₹15,157.80", "credit": "—", "notes": "CGST + SGST input tax credit"},
-            {"account": "TDS Receivable (Section 194-O)", "debit": "₹4,953.77", "credit": "—", "notes": "0.1% e-commerce operator TDS withheld"},
-            {"account": "Customer Refund Clearing Account", "debit": "₹37,200.00", "credit": "—", "notes": "Settlement debit for customer refunds"},
-            {"account": "Gross Sales Revenue", "debit": "—", "credit": "₹49,53,770.00", "notes": "Gross merchandise value captured"},
+            {"account": "Bank Current Account (HDFC)", "debit": f"₹{float(figs['bank_payout']):,.2f}", "credit": "—", "notes": "Net settlement payout received via RTGS"},
+            {"account": "Payment Gateway Charges (MDR)", "debit": f"₹{float(figs['fee']):,.2f}", "credit": "—", "notes": "Blended Card & Netbanking MDR"},
+            {"account": "GST Input Tax Credit (18% on MDR)", "debit": f"₹{float(figs['tax']):,.2f}", "credit": "—", "notes": "CGST + SGST input tax credit"},
+            {"account": "TDS Receivable (Section 194-O)", "debit": f"₹{float(figs['tds']):,.2f}", "credit": "—", "notes": "0.1% e-commerce operator TDS withheld"},
+            {"account": "Customer Refund Clearing Account", "debit": f"₹{float(figs['refunds']):,.2f}", "credit": "—", "notes": "Settlement debit for customer refunds"},
+            {"account": "Gross Sales Revenue", "debit": "—", "credit": f"₹{float(figs['gross']):,.2f}", "notes": "Gross merchandise value captured"},
         ]
     }
 
@@ -119,13 +126,20 @@ def _get_org_accounting_figures(db: Session, org_id: str) -> Dict[str, str]:
         tax = total_tax / 100.0 if total_tax > 0 else round(fee * 0.18, 2)
         tds = round(gross * 0.001, 2)
         bank_payout = round(gross - fee - tax - tds - refunds, 2)
-    else:
+    elif org_id == "org_nova_2026":
         gross = 4953770.00
         bank_payout = 4812248.43
         fee = 84210.00
         tax = 15157.80
         tds = 4953.77
         refunds = 37200.00
+    else:
+        gross = 0.0
+        bank_payout = 0.0
+        fee = 0.0
+        tax = 0.0
+        tds = 0.0
+        refunds = 0.0
 
     return {
         "gross": f"{gross:.2f}",

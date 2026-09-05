@@ -35,7 +35,7 @@ def list_snapshots(current_user: UserSession = Depends(get_current_user)):
     """
     Returns all immutable reconciliation snapshots in version history.
     """
-    if not current_user.is_demo_session and not current_user.is_razorpay_connected and current_user.org_id != "org_nova_2026":
+    if current_user.org_id != "org_nova_2026":
         return []
     return repo.list_all()
 
@@ -49,7 +49,7 @@ def get_snapshot_by_id(
     Retrieves full manifest, rule versions, and metrics for a specific immutable snapshot.
     Scoped to current organization.
     """
-    if not current_user.is_demo_session and not current_user.is_razorpay_connected and current_user.org_id != "org_nova_2026":
+    if current_user.org_id != "org_nova_2026":
         raise HTTPException(status_code=404, detail=f"Snapshot '{snapshot_id}' not found.")
 
     snap = repo.get(snapshot_id)
@@ -67,7 +67,7 @@ def compare_two_snapshots(
     'What Changed?' diff engine between two immutable snapshots.
     Identifies data changes, rule changes, control changes, and downstream affected cases.
     """
-    if not current_user.is_demo_session and not current_user.is_razorpay_connected and current_user.org_id != "org_nova_2026":
+    if current_user.org_id != "org_nova_2026":
         raise HTTPException(status_code=404, detail="No snapshots available for comparison.")
 
     snap_base = repo.get(req.base_snapshot_id)
@@ -89,7 +89,7 @@ def rerun_affected_cases(
     """
     Selectively re-evaluates only affected transaction cases without re-running the entire dataset.
     """
-    if not current_user.is_demo_session and not current_user.is_razorpay_connected and current_user.org_id != "org_nova_2026":
+    if current_user.org_id != "org_nova_2026":
         raise HTTPException(status_code=404, detail=f"Snapshot '{snapshot_id}' not found.")
 
     snap = repo.get(snapshot_id)

@@ -67,10 +67,10 @@ export const SettingsCenter: React.FC = () => {
 
           {activeSubTab === "users" && (
             <div className="space-y-3 p-4 rounded-xl bg-[#F8FAFC] dark:bg-[#0E0E0E] border border-[#E2E8F0] dark:border-[#262626]">
-              <h4 className="font-bold text-[#0F172A] dark:text-[#EDEDED]">Team & Role-Based Access</h4>
-              <div>• Shubham Verma — <strong>Finance Controller (Admin)</strong></div>
-              <div>• Priya Sharma — <strong>Reconciliation Analyst (Maker)</strong></div>
-              <div>• Rajesh Gupta — <strong>Finance Manager (Checker)</strong></div>
+              <h4 className="font-bold text-[#0F172A] dark:text-[#EDEDED]">Team & Role-Based Access Control</h4>
+              <div>• Organization Owner — <strong>Finance Controller (Admin)</strong></div>
+              <div>• Operational Finance — <strong>Reconciliation Analyst (Maker)</strong></div>
+              <div>• Executive Sign-off — <strong>Finance Manager (Checker)</strong></div>
             </div>
           )}
 

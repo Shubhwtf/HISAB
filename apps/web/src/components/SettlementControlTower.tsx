@@ -32,9 +32,9 @@ export const SettlementControlTower: React.FC = () => {
             1. Total Settled Payout
           </span>
           <div className="text-2xl font-black text-[#0F172A] dark:text-[#EDEDED] mt-1">
-            {data?.summary?.total_settled_payout_formatted || "₹48,12,248.43"}
+            {data?.summary?.total_settled_payout_formatted ?? "₹0.00"}
           </div>
-          <span className="text-xs text-[#64748B] mt-1 block">15 Batches debited by Razorpay</span>
+          <span className="text-xs text-[#64748B] mt-1 block">{data?.settlements_count ?? 0} Batches debited by Razorpay</span>
         </div>
 
         <div className="bg-white dark:bg-[#111111] border border-[#E2E8F0] dark:border-[#262626] p-5 rounded-xl shadow-sm">
@@ -42,7 +42,7 @@ export const SettlementControlTower: React.FC = () => {
             2. Verified Bank Credits
           </span>
           <div className="text-2xl font-black text-[#16A34A] mt-1">
-            {data?.summary?.total_bank_credited_formatted || "₹48,12,248.43"}
+            {data?.summary?.total_bank_credited_formatted ?? "₹0.00"}
           </div>
           <span className="text-xs text-[#16A34A] mt-1 block">Matched to HDFC NEFT/RTGS lines</span>
         </div>
@@ -52,7 +52,7 @@ export const SettlementControlTower: React.FC = () => {
             3. Cash in Transit
           </span>
           <div className="text-2xl font-black text-[#0B72E7] dark:text-[#3395FF] mt-1">
-            {data?.summary?.cash_in_transit_formatted || "₹0.00"}
+            {data?.summary?.cash_in_transit_formatted ?? "₹0.00"}
           </div>
           <span className="text-xs text-[#64748B] mt-1 block">Zero unexplained banking rail leak</span>
         </div>

@@ -181,8 +181,8 @@ def init_db_sync() -> None:
         # Seed admin and shubh@test.com
         pw_hash, pw_salt = hash_password("demo123", "a1b2c3d4e5f60718293a4b5c6d7e8f90")
         users_to_seed = [
-            ("usr_admin_01", "admin@novacommerce.com", "Shubham Verma", "ADMIN"),
-            ("usr_shubh_admin", "shubh@test.com", "Shubham Verma", "ADMIN"),
+            ("usr_admin_01", "admin@novacommerce.com", "Finance Controller", "ADMIN"),
+            ("usr_shubh_admin", "shubh@test.com", "Shubh", "ADMIN"),
             ("usr_mgr_02", "manager@novacommerce.com", "Rajesh Gupta", "FINANCE_MANAGER"),
             ("usr_ana_03", "analyst@novacommerce.com", "Priya Sharma", "ANALYST"),
             ("usr_aud_04", "auditor@deloitte.com", "Ananya Sen", "AUDITOR"),
@@ -202,6 +202,9 @@ def init_db_sync() -> None:
                     updated_at=now,
                 )
                 db.add(u_rec)
+                db.commit()
+            elif existing_u.name == "Shubham Verma":
+                existing_u.name = uname
                 db.commit()
             existing_mem = db.query(OrganizationMemberDB).filter(
                 OrganizationMemberDB.org_id == "org_nova_2026",

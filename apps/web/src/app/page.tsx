@@ -83,6 +83,7 @@ export default function ControlRoomPage() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authInitialMode, setAuthInitialMode] = useState<"SIGN_IN" | "SIGN_UP_STEP_1">("SIGN_IN");
   const [analytics, setAnalytics] = useState<any>(null);
+  const [merchantId, setMerchantId] = useState<string>("");
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("hisab-theme");
@@ -158,6 +159,9 @@ export default function ControlRoomPage() {
       const rzpStatus = await fetchApi<any>("/api/auth/razorpay/status");
       if (rzpStatus && typeof rzpStatus.is_connected === "boolean") {
         setIsRazorpayConnected(rzpStatus.is_connected);
+        if (rzpStatus.merchant_id) {
+          setMerchantId(rzpStatus.merchant_id);
+        }
       }
 
       try {
@@ -358,7 +362,7 @@ export default function ControlRoomPage() {
                           </span>
                         </div>
                         <p className="text-[11px] text-[#64748B] dark:text-[#888888] mt-0.5">
-                          Organization: <span className="font-semibold text-[#0F172A] dark:text-white">{orgName}</span> · MID: <span className="font-mono text-[#0B72E7] dark:text-[#3395FF]">rzp_live_99420</span> · Last synced: {lastUpdated}
+                          Organization: <span className="font-semibold text-[#0F172A] dark:text-white">{orgName}</span> · MID: <span className="font-mono text-[#0B72E7] dark:text-[#3395FF]">{merchantId || "Active Gateway"}</span> · Last synced: {lastUpdated}
                         </p>
                       </div>
                     </div>

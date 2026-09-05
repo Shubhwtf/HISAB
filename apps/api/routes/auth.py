@@ -643,7 +643,7 @@ def get_org_razorpay_status(
         "status": conn.status.value,
         "is_connected": is_conn,
         "masked_client_id": conn.masked_client_id,
-        "connected_by_user_name": conn.connected_by_user_name,
+        "connected_by_user_name": conn.connected_by_user_name or current_user.name,
         "connected_at": conn.connected_at,
         "last_sync_at": conn.last_sync_at,
     }

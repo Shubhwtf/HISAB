@@ -64,22 +64,6 @@ def get_controls_summary(
         {"id": "CTL_07_DISPUTE", "name": "Dispute Exposure & Deadline Tracking", "category": "DISPUTE_EXPOSURE", "assertion": "Cut-off & Exposure (Signature #2)"},
     ]
 
-    if not current_user.is_demo_session and not current_user.is_razorpay_connected and current_user.org_id != "org_nova_2026":
-        return {
-            "controls": [
-                {
-                    "control_id": ctl["id"],
-                    "control_name": ctl["name"],
-                    "financial_assertion": ctl["assertion"],
-                    "status": "PASS",
-                    "active_exceptions_count": 0,
-                    "total_exposure_paise": 0,
-                    "total_exposure_formatted": "₹0.00",
-                }
-                for ctl in controls_meta
-            ]
-        }
-
     results = []
     for ctl in controls_meta:
         exc_count = db.scalar(
@@ -121,8 +105,6 @@ def get_double_loss_alerts(
     """
     Returns active double-loss alerts with timeline forensic reconstruction.
     """
-    if not current_user.is_demo_session and not current_user.is_razorpay_connected and current_user.org_id != "org_nova_2026":
-        return {"alerts": []}
     orders = db.scalars(select(OrderDB).where(OrderDB.org_id == current_user.org_id)).all()
     payments = db.scalars(select(PaymentDB).where(PaymentDB.org_id == current_user.org_id)).all()
     refunds = db.scalars(select(RefundDB).where(RefundDB.org_id == current_user.org_id)).all()
@@ -168,14 +150,6 @@ def list_exceptions(
     """
     Returns paginated exceptions scoped to the authenticated organization.
     """
-    if not current_user.is_demo_session and not current_user.is_razorpay_connected and current_user.org_id != "org_nova_2026":
-        return {
-            "total": 0,
-            "offset": offset,
-            "limit": limit,
-            "items": [],
-        }
-
     stmt = select(ExceptionDB).where(ExceptionDB.org_id == current_user.org_id)
     if status:
         stmt = stmt.where(ExceptionDB.status == status.upper())

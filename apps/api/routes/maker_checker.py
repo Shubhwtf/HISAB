@@ -66,19 +66,26 @@ from packages.domain.auth_rbac import UserSession
 def list_approval_queue(current_user: UserSession = Depends(get_current_user)):
     """
     Returns exceptions currently pending Maker-Checker dual authorization.
+    Scoped strictly to the user's organization.
     """
-    if not current_user.is_demo_session and not current_user.is_razorpay_connected and current_user.org_id != "org_nova_2026":
-        return {"total": 0, "items": []}
-    return {"total": len(APPROVAL_QUEUE), "items": APPROVAL_QUEUE}
+    if current_user.org_id == "org_nova_2026":
+        return {"total": len(APPROVAL_QUEUE), "items": APPROVAL_QUEUE}
+
+    org_items = [a for a in APPROVAL_QUEUE if a.get("org_id") == current_user.org_id]
+    return {"total": len(org_items), "items": org_items}
 
 
 @router.post("/prepare")
-def prepare_exception_for_approval(req: PrepareApprovalRequest, db: Session = Depends(get_db)):
+def prepare_exception_for_approval(
+    req: PrepareApprovalRequest, 
+    db: Session = Depends(get_db),
+    current_user: UserSession = Depends(get_current_user),
+):
     """
     Step 1 (Maker): Financial analyst prepares resolution package with justification.
     """
     exc = db.get(ExceptionDB, req.exception_id)
-    if not exc:
+    if not exc or (exc.org_id and exc.org_id != current_user.org_id and current_user.org_id != "org_nova_2026"):
         raise HTTPException(status_code=404, detail="Exception not found.")
 
     if exc.category == "DOUBLE_LOSS":
@@ -88,15 +95,19 @@ def prepare_exception_for_approval(req: PrepareApprovalRequest, db: Session = De
         )
 
     appr_id = f"APPR-{len(APPROVAL_QUEUE) + 1001}"
+    role_title = current_user.role.value if hasattr(current_user.role, "value") else str(current_user.role)
+    prepared_name = req.analyst_name if req.analyst_name != "Priya Sharma (Analyst)" else f"{current_user.name} ({role_title})"
+
     item = {
         "approval_id": appr_id,
+        "org_id": current_user.org_id,
         "exception_id": req.exception_id,
         "category": exc.category,
         "severity": exc.severity,
         "financial_impact_formatted": format_inr(exc.financial_impact_paise),
         "proposed_action": req.proposed_action,
         "justification": req.justification,
-        "prepared_by": req.analyst_name,
+        "prepared_by": prepared_name,
         "prepared_at": datetime.now(timezone.utc).isoformat(),
         "status": "PENDING_MANAGER_APPROVAL",
         "sla_remaining": "24 hours",
@@ -106,7 +117,12 @@ def prepare_exception_for_approval(req: PrepareApprovalRequest, db: Session = De
 
 
 @router.post("/{approval_id}/decide")
-def decide_approval(approval_id: str, req: DecideApprovalRequest, db: Session = Depends(get_db)):
+def decide_approval(
+    approval_id: str, 
+    req: DecideApprovalRequest, 
+    db: Session = Depends(get_db),
+    current_user: UserSession = Depends(get_current_user),
+):
     """
     Step 2 (Checker): Finance Manager approves/rejects and commits cryptographic audit entry.
     """
@@ -114,8 +130,14 @@ def decide_approval(approval_id: str, req: DecideApprovalRequest, db: Session = 
     if not item:
         raise HTTPException(status_code=404, detail=f"Approval package '{approval_id}' not found.")
 
+    if item.get("org_id") and item.get("org_id") != current_user.org_id and current_user.org_id != "org_nova_2026":
+        raise HTTPException(status_code=403, detail="Not authorized to act on this approval package.")
+
+    role_title = current_user.role.value if hasattr(current_user.role, "value") else str(current_user.role)
+    decided_name = req.manager_name if req.manager_name != "Rajesh Gupta (Finance Manager)" else f"{current_user.name} ({role_title})"
+
     item["status"] = "APPROVED" if req.decision == "APPROVED" else "REJECTED"
-    item["decided_by"] = req.manager_name
+    item["decided_by"] = decided_name
     item["decided_at"] = datetime.now(timezone.utc).isoformat()
     item["manager_comments"] = req.comments
 
@@ -123,7 +145,7 @@ def decide_approval(approval_id: str, req: DecideApprovalRequest, db: Session = 
         exc = db.get(ExceptionDB, item["exception_id"])
         if exc:
             exc.status = "RESOLVED"
-            exc.resolution_method = f"MAKER_CHECKER ({req.manager_name})"
+            exc.resolution_method = f"MAKER_CHECKER ({decided_name})"
             db.commit()
 
             append_audit_entry(
@@ -136,11 +158,11 @@ def decide_approval(approval_id: str, req: DecideApprovalRequest, db: Session = 
                 payload={
                     "approval_id": approval_id,
                     "prepared_by": item["prepared_by"],
-                    "approved_by": req.manager_name,
+                    "approved_by": decided_name,
                     "comments": req.comments
                 },
                 batch_id=exc.batch_id,
-                actor_type="FINANCE_MANAGER",
+                actor_type=role_title,
             )
 
     return {"success": True, "approval_id": approval_id, "status": item["status"]}

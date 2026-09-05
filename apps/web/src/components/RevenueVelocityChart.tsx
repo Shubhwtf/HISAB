@@ -332,11 +332,11 @@ export const RevenueVelocityChart: React.FC = () => {
         <div className="p-3.5 rounded-xl bg-[#F9FAFB] dark:bg-[#141414] border border-[#E5E7EB] dark:border-[#262626]">
           <span className="text-[10px] font-bold text-[#6B7280] dark:text-[#9CA3AF] uppercase">Peak Ingestion Velocity</span>
           <div className="text-base font-bold text-[#111827] dark:text-[#FFFFFF] mt-0.5 font-number">
-            {data?.metrics.peak_velocity_formatted || "₹5,24,304.12 / day"}
+            {data?.metrics.peak_velocity_formatted || "₹0.00 / day"}
           </div>
           <span className="text-[10px] text-[#0B72E7] dark:text-[#3395FF] font-medium flex items-center space-x-0.5 mt-0.5">
             <Zap className="w-3 h-3" />
-            <span>{data?.metrics.peak_txns_count || 26} payments captured in single day</span>
+            <span>{data?.metrics.peak_txns_count || 0} payments captured in single day</span>
           </span>
         </div>
 

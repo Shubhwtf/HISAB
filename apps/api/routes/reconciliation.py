@@ -95,7 +95,7 @@ def get_reconciliation_summary(
 
     total_payments = db.scalar(select(func.count(PaymentDB.id)).where(PaymentDB.org_id == current_user.org_id)) or 0
 
-    if not current_user.is_demo_session and not is_conn and total_payments == 0 and current_user.org_id != "org_nova_2026":
+    if total_payments == 0 and current_user.org_id != "org_nova_2026":
         return ReconciliationSummaryResponse(
             gross_turnover_paise=0,
             gross_turnover_formatted="₹0.00",
@@ -709,7 +709,8 @@ def get_reconciliation_timeline(
     """
     Returns live aggregated daily transaction and settlement velocity from database.
     """
-    if not current_user.is_demo_session and not current_user.is_razorpay_connected and current_user.org_id != "org_nova_2026":
+    total_payments = db.scalar(select(func.count(PaymentDB.id)).where(PaymentDB.org_id == current_user.org_id)) or 0
+    if total_payments == 0 and current_user.org_id != "org_nova_2026":
         return {
             "points": [],
             "metrics": {
