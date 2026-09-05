@@ -1,19 +1,71 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { BarChart3, Info, ArrowDownRight, ArrowUpRight, CheckCircle2 } from "lucide-react";
+import { fetchApi } from "@/lib/api";
 
-export const InteractiveWaterfallChart: React.FC = () => {
+export interface WaterfallStep {
+  label: string;
+  amount: string;
+  delta: string;
+  type: "positive" | "negative" | "total";
+  height: number;
+  color: string;
+  desc: string;
+}
+
+export interface WaterfallData {
+  gross_captured_paise?: number;
+  gross_captured_formatted?: string;
+  gateway_mdr_paise?: number;
+  gateway_mdr_formatted?: string;
+  gst_paise?: number;
+  gst_formatted?: string;
+  tds_paise?: number;
+  tds_formatted?: string;
+  reversals_paise?: number;
+  reversals_formatted?: string;
+  net_cleared_paise?: number;
+  net_cleared_formatted?: string;
+  zero_drift?: boolean;
+  invariant_narrative?: string;
+  steps?: WaterfallStep[];
+}
+
+interface InteractiveWaterfallChartProps {
+  waterfallData?: WaterfallData | null;
+}
+
+const DEFAULT_STEPS: WaterfallStep[] = [
+  { label: "Gross Captured Revenue", amount: "₹49,53,770.00", delta: "+₹49.54L", type: "positive", height: 100, color: "bg-[#0B72E7]", desc: "Total customer order value captured via Cards, UPI, and Netbanking rails" },
+  { label: "Gateway MDR Charges", amount: "-₹80,120.30", delta: "-₹80.12k", type: "negative", height: 14, color: "bg-[#DC2626]", desc: "Blended ~2.0% gateway fee retention on processed card & netbanking volume" },
+  { label: "18% GST on MDR Fee", amount: "-₹14,421.65", delta: "-₹14.42k", type: "negative", height: 8, color: "bg-[#F59E0B]", desc: "Statutory 18% Goods & Services Tax levied strictly on payment gateway service fees" },
+  { label: "Section 194-O E-Commerce TDS", amount: "-₹4,953.77", delta: "-₹4.95k", type: "negative", height: 6, color: "bg-[#8B5CF6]", desc: "Amended 0.10% (10 bps) statutory tax withholding deposited directly under merchant PAN" },
+  { label: "Customer Reversals & Refunds", amount: "-₹37,200.00", delta: "-₹37.20k", type: "negative", height: 10, color: "bg-[#DC2626]", desc: "Principal debited to customers for return orders (original MDR retained per RBI rules)" },
+  { label: "Net Cleared Bank Settlement", amount: "₹48,17,074.28", delta: "₹48.17L", type: "total", height: 97, color: "bg-[#16A34A]", desc: "Final immutable funds credited to merchant current bank account via RBI NEFT/RTGS rail" },
+];
+
+const DEFAULT_INVARIANT = "Gross captured revenue (₹49,53,770.00) minus gateway MDR (₹80,120.30), 18% GST (₹14,421.65), statutory 0.10% Section 194-O TDS (₹4,953.77), and customer reversals (₹37,200.00) perfectly reconciles to net bank settlement of ₹48,17,074.28.";
+
+export const InteractiveWaterfallChart: React.FC<InteractiveWaterfallChartProps> = ({ waterfallData }) => {
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+  const [localData, setLocalData] = useState<WaterfallData | null>(null);
 
-  const steps = [
-    { label: "Gross Captured Revenue", amount: "₹49,53,770.00", delta: "+₹49.54L", type: "positive", height: 100, color: "bg-[#0B72E7]", desc: "Total customer order value captured via Cards, UPI, and Netbanking rails" },
-    { label: "Gateway MDR Charges", amount: "-₹80,120.30", delta: "-₹80.12k", type: "negative", height: 14, color: "bg-[#DC2626]", desc: "Blended ~2.0% gateway fee retention on processed card & netbanking volume" },
-    { label: "18% GST on MDR Fee", amount: "-₹14,421.65", delta: "-₹14.42k", type: "negative", height: 8, color: "bg-[#F59E0B]", desc: "Statutory 18% Goods & Services Tax levied strictly on payment gateway service fees" },
-    { label: "Section 194-O E-Commerce TDS", amount: "-₹4,953.77", delta: "-₹4.95k", type: "negative", height: 6, color: "bg-[#8B5CF6]", desc: "Amended 0.10% (10 bps) statutory tax withholding deposited directly under merchant PAN" },
-    { label: "Customer Reversals & Refunds", amount: "-₹37,200.00", delta: "-₹37.20k", type: "negative", height: 10, color: "bg-[#DC2626]", desc: "Principal debited to customers for return orders (original MDR retained per RBI rules)" },
-    { label: "Net Cleared Bank Settlement", amount: "₹48,17,074.28", delta: "₹48.17L", type: "total", height: 97, color: "bg-[#16A34A]", desc: "Final immutable funds credited to merchant current bank account via RBI NEFT/RTGS rail" },
-  ];
+  useEffect(() => {
+    if (!waterfallData) {
+      fetchApi<any>("/api/reconcile/analytics")
+        .then((res) => {
+          if (res?.waterfall) {
+            setLocalData(res.waterfall);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [waterfallData]);
+
+  const activeWaterfall = waterfallData || localData;
+  const steps = (activeWaterfall?.steps && activeWaterfall.steps.length > 0) ? activeWaterfall.steps : DEFAULT_STEPS;
+  const invariantText = activeWaterfall?.invariant_narrative || DEFAULT_INVARIANT;
 
   return (
     <div className="bg-white dark:bg-[#111111] border border-[#E2E8F0] dark:border-[#262626] rounded-2xl p-6 shadow-sm mb-6 font-sans space-y-4">
@@ -84,7 +136,7 @@ export const InteractiveWaterfallChart: React.FC = () => {
           <span className="text-[#64748B] dark:text-[#A1A1AA] leading-relaxed">
             {hoveredIdx !== null
               ? steps[hoveredIdx].desc
-              : "Gross captured revenue (₹49,53,770.00) minus gateway MDR (₹80,120.30), 18% GST (₹14,421.65), statutory 0.10% Section 194-O TDS (₹4,953.77), and customer reversals (₹37,200.00) perfectly reconciles to net bank settlement of ₹48,17,074.28."}
+              : invariantText}
           </span>
         </div>
       </div>

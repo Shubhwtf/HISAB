@@ -82,6 +82,7 @@ export default function ControlRoomPage() {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authInitialMode, setAuthInitialMode] = useState<"SIGN_IN" | "SIGN_UP_STEP_1">("SIGN_IN");
+  const [analytics, setAnalytics] = useState<any>(null);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("hisab-theme");
@@ -157,6 +158,15 @@ export default function ControlRoomPage() {
       const rzpStatus = await fetchApi<any>("/api/auth/razorpay/status");
       if (rzpStatus && typeof rzpStatus.is_connected === "boolean") {
         setIsRazorpayConnected(rzpStatus.is_connected);
+      }
+
+      try {
+        const analyticsData = await fetchApi<any>("/api/reconcile/analytics");
+        if (analyticsData) {
+          setAnalytics(analyticsData);
+        }
+      } catch (analyticsErr) {
+        console.warn("Analytics fetch failed:", analyticsErr);
       }
     } catch (e) {
       console.error("Failed to load dashboard data:", e);
@@ -403,9 +413,9 @@ export default function ControlRoomPage() {
 
                 {summary && summary.total_payments_count > 0 ? (
                   <>
-                    <RevenueVelocityChart />
-                    <InteractiveWaterfallChart />
-                    <DashboardCharts onNavigateToTab={setActiveTab} />
+                    <RevenueVelocityChart key={lastUpdated} />
+                    <InteractiveWaterfallChart waterfallData={analytics?.waterfall} />
+                    <DashboardCharts analyticsData={analytics} onNavigateToTab={setActiveTab} />
                     {doubleLossAlerts.length > 0 && (
                       <DoubleLossBanner alerts={doubleLossAlerts} onViewEvidence={handleInspectEvidence} />
                     )}

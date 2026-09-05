@@ -54,7 +54,7 @@
     "total_exposure_detected_paise": 61297810,
     "hallucination_count": 0,
     "math_error_count": 0,
-    "execution_time_ms": 6.49
+    "execution_time_ms": 6.33
   },
-  "generated_at_iso": "2026-09-05T12:12:51Z"
+  "generated_at_iso": "2026-09-05T12:44:28Z"
 }
