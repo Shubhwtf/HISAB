@@ -17,7 +17,15 @@ from packages.domain.auth_rbac import (
     RazorpayConnectionStatus,
     OrgRazorpayConnection
 )
-from packages.domain.db_models import PaymentDB, SettlementDB, RefundDB, DisputeDB, OrgRazorpayConnectionDB
+from packages.domain.db_models import (
+    PaymentDB,
+    SettlementDB,
+    RefundDB,
+    DisputeDB,
+    OrgRazorpayConnectionDB,
+    WebhookEventDB,
+    ExceptionDB,
+)
 from packages.domain.money import format_inr
 from packages.domain.crypto_utils import (
     mask_key_id,
@@ -56,10 +64,12 @@ def get_razorpay_connection_status(
     is_conn = (conn.status == RazorpayConnectionStatus.CONNECTED) if conn else False
     mid = conn.merchant_id if (conn and is_conn) else None
 
-    payments_count = db.scalar(select(func.count(PaymentDB.id))) if (is_conn or current_user.is_demo_session) else 0
-    settlements_count = db.scalar(select(func.count(SettlementDB.id))) if (is_conn or current_user.is_demo_session) else 0
-    refunds_count = db.scalar(select(func.count(RefundDB.id))) if (is_conn or current_user.is_demo_session) else 0
-    disputes_count = db.scalar(select(func.count(DisputeDB.id))) if (is_conn or current_user.is_demo_session) else 0
+    target_org = current_user.org_id
+    payments_count = db.scalar(select(func.count(PaymentDB.id)).where(PaymentDB.org_id == target_org)) or 0
+    settlements_count = db.scalar(select(func.count(SettlementDB.id)).where(SettlementDB.org_id == target_org)) or 0
+    refunds_count = db.scalar(select(func.count(RefundDB.id)).where(RefundDB.org_id == target_org)) or 0
+    disputes_count = db.scalar(select(func.count(DisputeDB.id)).where(DisputeDB.org_id == target_org)) or 0
+    active_action_items = db.scalar(select(func.count(ExceptionDB.id)).where(ExceptionDB.org_id == target_org, ExceptionDB.status.in_(["OPEN", "ESCALATED"]))) or 0
 
     return {
         "is_connected": is_conn,
@@ -74,16 +84,17 @@ def get_razorpay_connection_status(
         "status": "HEALTHY" if is_conn else "DISCONNECTED",
         "sync_frequency": "Every 15 minutes",
         "webhook_status": "ACTIVE" if is_conn else "INACTIVE",
-        "webhook_url": f"https://api.hisab.finance/v1/webhooks/razorpay/whk_{current_user.org_id}",
+        "webhook_url": "http://localhost:8000/api/webhooks/razorpay",
         "webhook_secret_status": "CONFIGURED" if is_conn else "NOT_CONFIGURED",
         "metrics": {
             "payments_synced": payments_count,
             "settlements_synced": settlements_count,
             "refunds_synced": refunds_count,
             "disputes_synced": disputes_count,
-            "records_added_last_sync": 12 if is_conn else 0,
-            "records_updated_last_sync": 3 if is_conn else 0,
-            "records_skipped_last_sync": 236 if is_conn else 0,
+            "active_action_items": active_action_items,
+            "records_added_last_sync": 0,
+            "records_updated_last_sync": 0,
+            "records_skipped_last_sync": 0,
         }
     }
 
@@ -215,40 +226,104 @@ def trigger_incremental_sync(current_user: UserSession = Depends(get_current_use
 
 
 @router.get("/webhooks")
-def get_webhook_events(current_user: UserSession = Depends(get_current_user)):
+def get_webhook_events(
+    db: Session = Depends(get_db),
+    current_user: UserSession = Depends(get_current_user),
+):
     """
     Returns list of recent Razorpay webhook event deliveries and signature verification logs.
     """
     conn = ORGANIZATION_CONNECTIONS.get(current_user.org_id)
     is_conn = (conn.status == RazorpayConnectionStatus.CONNECTED) if conn else False
 
-    if not is_conn and not current_user.is_demo_session and current_user.org_id != "org_nova_2026":
-        return {
-            "webhook_url": "https://api.hisab.internal/webhooks/razorpay",
-            "secret_status": "NOT_CONFIGURED",
-            "required_events": [
-                {"event": "payment.captured", "status": "PENDING_CONNECTION", "last_received": "Never"},
-                {"event": "settlement.processed", "status": "PENDING_CONNECTION", "last_received": "Never"},
-                {"event": "refund.processed", "status": "PENDING_CONNECTION", "last_received": "Never"},
-                {"event": "payment.dispute.created", "status": "PENDING_CONNECTION", "last_received": "Never"},
-            ],
-            "recent_deliveries": []
-        }
+    events = db.scalars(
+        select(WebhookEventDB)
+        .where(WebhookEventDB.org_id == current_user.org_id)
+        .order_by(WebhookEventDB.created_at.desc())
+        .limit(20)
+    ).all()
 
+    now = datetime.now(timezone.utc)
+    recent_deliveries = []
+    for evt in events:
+        p = evt.payload or {}
+        inner_p = p.get("payload", {})
+        entity_id = "—"
+        fee_label = "—"
+
+        if "payment" in inner_p or "payment" in p:
+            pent = (inner_p.get("payment") or p.get("payment", {})).get("entity", {})
+            entity_id = pent.get("id") or p.get("payment_id", "pay_—")
+            amt = pent.get("amount") or p.get("amount_paise", 0)
+            if amt:
+                fee_label = format_inr(amt)
+        elif "refund" in inner_p or "refund" in p:
+            rent = (inner_p.get("refund") or p.get("refund", {})).get("entity", {})
+            entity_id = rent.get("id") or p.get("refund_id", "rfnd_—")
+            amt = rent.get("amount") or p.get("amount_paise", 0)
+            if amt:
+                fee_label = format_inr(amt)
+        elif "dispute" in inner_p or "dispute" in p:
+            dent = (inner_p.get("dispute") or p.get("dispute", {})).get("entity", {})
+            entity_id = dent.get("id") or p.get("dispute_id", "disp_—")
+            amt = dent.get("amount") or p.get("amount_paise", 0)
+            if amt:
+                fee_label = f"{format_inr(amt)} Hold"
+        elif "settlement" in inner_p or "settlement" in p:
+            sent = (inner_p.get("settlement") or p.get("settlement", {})).get("entity", {})
+            entity_id = sent.get("id") or p.get("settlement_id", "setl_—")
+            utr = sent.get("utr") or p.get("utr", "")
+            fee_label = f"UTR: {utr}" if utr else "UTR Cleared"
+        else:
+            entity_id = p.get("entity_data", {}).get("id") or p.get("payment_id") or p.get("id", "—")
+            amt = p.get("entity_data", {}).get("amount") or p.get("amount_paise", 0)
+            if amt:
+                fee_label = format_inr(amt)
+
+        if "dispute" in evt.event_type:
+            badge_status = "DOUBLE_LOSS_ALERT"
+        elif evt.signature_verified:
+            badge_status = "HMAC_VERIFIED"
+        else:
+            badge_status = evt.status
+
+        created = evt.created_at
+        if created.tzinfo is None:
+            created = created.replace(tzinfo=timezone.utc)
+        diff_sec = max(0, int((now - created).total_seconds()))
+        if diff_sec < 60:
+            time_str = f"{diff_sec}s ago" if diff_sec > 5 else "Just now"
+        elif diff_sec < 3600:
+            time_str = f"{diff_sec // 60} mins ago"
+        elif diff_sec < 86400:
+            time_str = f"{diff_sec // 3600} hours ago"
+        else:
+            time_str = f"{diff_sec // 86400} days ago"
+
+        recent_deliveries.append({
+            "id": evt.id,
+            "event": evt.event_type,
+            "entity": entity_id,
+            "entity_id": entity_id,
+            "time": time_str,
+            "status": badge_status,
+            "fee": fee_label,
+            "amount_formatted": fee_label,
+            "signature_valid": evt.signature_verified,
+            "timestamp": created.strftime("%Y-%m-%d %H:%M UTC"),
+        })
+
+    webhook_url = "http://localhost:8000/api/webhooks/razorpay"
     return {
-        "webhook_url": "https://api.hisab.internal/webhooks/razorpay",
-        "secret_status": "VERIFIED_HMAC_SHA256",
+        "webhook_url": webhook_url,
+        "secret_status": "CONFIGURED_HMAC_SHA256" if is_conn else "NOT_CONFIGURED",
         "required_events": [
-            {"event": "payment.captured", "status": "LISTENING", "last_received": "3 mins ago"},
-            {"event": "settlement.processed", "status": "LISTENING", "last_received": "10 mins ago"},
-            {"event": "refund.processed", "status": "LISTENING", "last_received": "2 hours ago"},
-            {"event": "payment.dispute.created", "status": "LISTENING", "last_received": "5 hours ago"},
+            {"event": "payment.captured", "status": "ACTIVE" if is_conn else "PENDING_CONNECTION", "last_received": "Active"},
+            {"event": "settlement.processed", "status": "ACTIVE" if is_conn else "PENDING_CONNECTION", "last_received": "Active"},
+            {"event": "refund.processed", "status": "ACTIVE" if is_conn else "PENDING_CONNECTION", "last_received": "Active"},
+            {"event": "dispute.created", "status": "ACTIVE" if is_conn else "PENDING_CONNECTION", "last_received": "Active"},
         ],
-        "recent_deliveries": [
-            {"id": "evt_99420_01", "event": "settlement.processed", "entity_id": "setl_8800", "status": "PROCESSED", "signature_valid": True, "timestamp": "2026-08-28 23:45 UTC"},
-            {"id": "evt_99420_02", "event": "payment.captured", "entity_id": "pay_90006", "status": "PROCESSED", "signature_valid": True, "timestamp": "2026-08-28 22:30 UTC"},
-            {"id": "evt_99420_03", "event": "payment.dispute.created", "entity_id": "disp_dbl_pay_90006", "status": "ALERTED", "signature_valid": True, "timestamp": "2026-08-28 20:15 UTC"},
-        ]
+        "recent_deliveries": recent_deliveries
     }
 
 

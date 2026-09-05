@@ -334,7 +334,7 @@ export const RazorpayConnectionCenter: React.FC = () => {
               <div className="p-4 rounded-xl bg-[#F8FAFC] dark:bg-[#18181B] border border-[#E2E8F0] dark:border-[#27272A]">
                 <span className="text-[10px] uppercase font-bold text-[#64748B] block">Payments Synced</span>
                 <div className="text-2xl font-bold text-[#0F172A] dark:text-white mt-1">
-                  {status?.metrics?.payments_synced ?? 251}
+                  {status?.metrics?.payments_synced ?? 0}
                 </div>
                 <span className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-1 block">100% Invariant Checked</span>
               </div>
@@ -342,7 +342,7 @@ export const RazorpayConnectionCenter: React.FC = () => {
               <div className="p-4 rounded-xl bg-[#F8FAFC] dark:bg-[#18181B] border border-[#E2E8F0] dark:border-[#27272A]">
                 <span className="text-[10px] uppercase font-bold text-[#64748B] block">Settlement Batches</span>
                 <div className="text-2xl font-bold text-[#0F172A] dark:text-white mt-1">
-                  {status?.metrics?.settlements_synced ?? 15}
+                  {status?.metrics?.settlements_synced ?? 0}
                 </div>
                 <span className="text-[10px] text-blue-600 dark:text-blue-400 mt-1 block">Matched to Bank UTRs</span>
               </div>
@@ -350,7 +350,7 @@ export const RazorpayConnectionCenter: React.FC = () => {
               <div className="p-4 rounded-xl bg-[#F8FAFC] dark:bg-[#18181B] border border-[#E2E8F0] dark:border-[#27272A]">
                 <span className="text-[10px] uppercase font-bold text-[#64748B] block">Refunds Monitored</span>
                 <div className="text-2xl font-bold text-[#0F172A] dark:text-white mt-1">
-                  {status?.metrics?.refunds_synced ?? 37}
+                  {status?.metrics?.refunds_synced ?? 0}
                 </div>
                 <span className="text-[10px] text-purple-600 dark:text-purple-400 mt-1 block">Cross-checked vs Disputes</span>
               </div>
@@ -358,9 +358,13 @@ export const RazorpayConnectionCenter: React.FC = () => {
               <div className="p-4 rounded-xl bg-[#F8FAFC] dark:bg-[#18181B] border border-[#E2E8F0] dark:border-[#27272A]">
                 <span className="text-[10px] uppercase font-bold text-[#64748B] block">Disputes / Double Losses</span>
                 <div className="text-2xl font-bold text-red-600 dark:text-red-400 mt-1">
-                  {status?.metrics?.disputes_synced ?? 13}
+                  {status?.metrics?.disputes_synced ?? 0}
                 </div>
-                <span className="text-[10px] text-red-600 dark:text-red-400 mt-1 block">1 Action Item Pending</span>
+                <span className="text-[10px] text-red-600 dark:text-red-400 mt-1 block">
+                  {status?.metrics?.active_action_items 
+                    ? `${status.metrics.active_action_items} Action Item${status.metrics.active_action_items > 1 ? "s" : ""} Pending`
+                    : "No Pending Action Items"}
+                </span>
               </div>
             </div>
 
@@ -371,12 +375,10 @@ export const RazorpayConnectionCenter: React.FC = () => {
                 <span className="text-[11px] font-normal text-[#64748B]">Receiver: /api/webhooks/razorpay</span>
               </h4>
               <div className="space-y-2">
-                {[
-                  { id: "evt_live_01", event: "payment.captured", entity: "pay_90006", time: "3 mins ago", status: "HMAC_VERIFIED", fee: "₹1,440.00" },
-                  { id: "evt_live_02", event: "refund.processed", entity: "rfnd_90006", time: "12 mins ago", status: "HMAC_VERIFIED", fee: "₹0.00" },
-                  { id: "evt_live_03", event: "dispute.created", entity: "disp_90006", time: "25 mins ago", status: "DOUBLE_LOSS_ALERT", fee: "₹72,000.00 Hold" },
-                  { id: "evt_live_04", event: "settlement.processed", entity: "setl_2026_08_28", time: "1 hour ago", status: "HMAC_VERIFIED", fee: "UTR Cleared" },
-                ].map((d) => (
+                {((webhooks?.recent_deliveries && webhooks.recent_deliveries.length > 0)
+                  ? webhooks.recent_deliveries
+                  : []
+                ).map((d: any) => (
                   <div
                     key={d.id}
                     className="p-3.5 rounded-xl border border-[#E2E8F0] dark:border-[#27272A] bg-[#F8FAFC] dark:bg-[#18181B] flex flex-wrap items-center justify-between gap-2 text-xs"
@@ -386,7 +388,7 @@ export const RazorpayConnectionCenter: React.FC = () => {
                         {d.event}
                       </span>
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded font-mono ${
-                        d.status.includes("ALERT") 
+                        d.status?.includes("ALERT") 
                           ? "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20"
                           : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
                       }`}>
@@ -394,12 +396,17 @@ export const RazorpayConnectionCenter: React.FC = () => {
                       </span>
                     </div>
                     <div className="flex items-center space-x-3 text-[11px] text-[#64748B] font-mono">
-                      <span>{d.entity}</span>
-                      <span>{d.fee}</span>
-                      <span>{d.time}</span>
+                      <span>{d.entity || d.entity_id}</span>
+                      <span>{d.fee || d.amount_formatted}</span>
+                      <span>{d.time || d.timestamp}</span>
                     </div>
                   </div>
                 ))}
+                {(!webhooks?.recent_deliveries || webhooks.recent_deliveries.length === 0) && (
+                  <div className="p-4 rounded-xl border border-dashed border-[#CBD5E1] dark:border-[#334155] text-center text-xs text-[#64748B]">
+                    No webhook events received yet. Use the Simulator tab to dispatch verified events.
+                  </div>
+                )}
               </div>
             </div>
 
