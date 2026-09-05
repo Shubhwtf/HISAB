@@ -165,35 +165,62 @@ def init_db_sync() -> None:
     with get_sync_db() as db:
         from packages.domain.db_models import OrganizationDB, UserDB, OrganizationMemberDB, OrgRazorpayConnectionDB
         from packages.domain.auth_rbac import hash_password
+        now = datetime.now(timezone.utc)
         demo_org = db.get(OrganizationDB, "org_nova_2026")
         if not demo_org:
-            now = datetime.now(timezone.utc)
-            pw_hash, pw_salt = hash_password("Admin2026!")
-            demo_user = UserDB(
-                id="usr_demo_admin_2026",
-                email="admin@nova.com",
-                name="Nova Finance Admin",
-                pw_hash=pw_hash,
-                pw_salt=pw_salt,
+            demo_org = OrganizationDB(
+                id="org_nova_2026",
+                name="Nova Commerce Pvt Ltd",
+                owner_user_id="usr_admin_01",
                 created_at=now,
                 updated_at=now,
             )
-            db.add(demo_user)
-            db.add(OrganizationDB(
-                id="org_nova_2026",
-                name="Nova Commerce Pvt Ltd",
-                owner_user_id="usr_demo_admin_2026",
-                created_at=now,
-                updated_at=now,
-            ))
-            db.add(OrganizationMemberDB(
-                id="mem_demo_admin_2026",
-                org_id="org_nova_2026",
-                user_id="usr_demo_admin_2026",
-                role="ADMIN",
-                status="ACTIVE",
-                created_at=now,
-            ))
+            db.add(demo_org)
+            db.commit()
+
+        # Seed admin and shubh@test.com
+        pw_hash, pw_salt = hash_password("demo123", "a1b2c3d4e5f60718293a4b5c6d7e8f90")
+        users_to_seed = [
+            ("usr_admin_01", "admin@novacommerce.com", "Shubham Verma", "ADMIN"),
+            ("usr_shubh_admin", "shubh@test.com", "Shubham Verma", "ADMIN"),
+            ("usr_mgr_02", "manager@novacommerce.com", "Rajesh Gupta", "FINANCE_MANAGER"),
+            ("usr_ana_03", "analyst@novacommerce.com", "Priya Sharma", "ANALYST"),
+            ("usr_aud_04", "auditor@deloitte.com", "Ananya Sen", "AUDITOR"),
+        ]
+        for uid, uemail, uname, urole in users_to_seed:
+            existing_u = db.get(UserDB, uid) or db.query(UserDB).filter(UserDB.email == uemail).first()
+            if not existing_u:
+                u_rec = UserDB(
+                    id=uid,
+                    email=uemail,
+                    name=uname,
+                    pw_hash=pw_hash,
+                    pw_salt=pw_salt,
+                    is_active=True,
+                    avatar_initials="".join([p[0] for p in uname.split()[:2]]),
+                    created_at=now,
+                    updated_at=now,
+                )
+                db.add(u_rec)
+                db.commit()
+            existing_mem = db.query(OrganizationMemberDB).filter(
+                OrganizationMemberDB.org_id == "org_nova_2026",
+                OrganizationMemberDB.user_id == uid,
+            ).first()
+            if not existing_mem:
+                mem_rec = OrganizationMemberDB(
+                    id=f"mem_{uid}",
+                    org_id="org_nova_2026",
+                    user_id=uid,
+                    role=urole,
+                    status="ACTIVE",
+                    created_at=now,
+                )
+                db.add(mem_rec)
+                db.commit()
+
+        conn_db = db.get(OrgRazorpayConnectionDB, "conn_demo_nova")
+        if not conn_db:
             db.add(OrgRazorpayConnectionDB(
                 id="conn_demo_nova",
                 org_id="org_nova_2026",

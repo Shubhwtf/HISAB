@@ -210,6 +210,14 @@ USERS: Dict[str, User] = {
         pw_hash=_SAMPLE_HASH,
         pw_salt=_SAMPLE_SALT,
     ),
+    "usr_shubh_admin": User(
+        id="usr_shubh_admin",
+        email="shubh@test.com",
+        name="Shubham Verma",
+        avatar_initials="SV",
+        pw_hash=_SAMPLE_HASH,
+        pw_salt=_SAMPLE_SALT,
+    ),
     "usr_mgr_02": User(
         id="usr_mgr_02",
         email="manager@novacommerce.com",
@@ -263,6 +271,13 @@ MEMBERSHIPS: Dict[str, OrganizationMembership] = {
     "mem_01": OrganizationMembership(
         id="mem_01",
         user_id="usr_admin_01",
+        org_id="org_nova_2026",
+        role=Role.ADMIN,
+        status="ACTIVE",
+    ),
+    "mem_shubh_01": OrganizationMembership(
+        id="mem_shubh_01",
+        user_id="usr_shubh_admin",
         org_id="org_nova_2026",
         role=Role.ADMIN,
         status="ACTIVE",
@@ -321,6 +336,10 @@ SEEDED_ORGANIZATIONS = ORGANIZATIONS
 
 def get_user_by_email(email: str, db: Optional[Any] = None) -> Optional[User]:
     clean_email = email.strip().lower()
+    if clean_email in ("admin", "admin@test.com", "admin@nova.com"):
+        clean_email = "admin@novacommerce.com"
+    elif clean_email in ("shubh", "shubh@test.com"):
+        clean_email = "shubh@test.com"
     user_id = USERS_BY_EMAIL.get(clean_email)
     if user_id and user_id in USERS:
         return USERS[user_id]

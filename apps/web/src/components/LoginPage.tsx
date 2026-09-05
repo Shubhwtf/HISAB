@@ -249,22 +249,34 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onClose, i
               </div>
 
               <form onSubmit={handleSignIn} className="space-y-4 text-xs">
-                <div>
-                  <label className="block text-[11px] font-semibold text-[#0F172A] dark:text-[#EDEDED] mb-1">
-                    Work Email
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-[11px] font-semibold text-[#0F172A] dark:text-[#EDEDED]">
+                      Work Email or Username
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSignInEmail("shubh@test.com");
+                        setSignInPassword("admin");
+                      }}
+                      className="text-[10px] text-[#0B72E7] dark:text-[#3395FF] hover:underline font-semibold"
+                    >
+                      Autofill Admin (shubh@test.com)
+                    </button>
+                  </div>
                   <div className="relative">
                     <Mail className="w-4 h-4 text-[#64748B] absolute left-3 top-2.5" />
                     <input
-                      type="email"
+                      type="text"
+                      autoCapitalize="none"
+                      autoCorrect="off"
                       value={signInEmail}
                       onChange={(e) => setSignInEmail(e.target.value)}
-                      placeholder="name@company.com"
+                      placeholder="shubh@test.com or admin@novacommerce.com"
                       className="w-full bg-[#F8FAFC] dark:bg-[#161616] text-[#0F172A] dark:text-[#EDEDED] pl-9 pr-3 py-2.5 rounded-xl border border-[#E2E8F0] dark:border-[#262626] focus:outline-none focus:border-[#0B72E7] text-xs"
                       required
                     />
                   </div>
-                </div>
 
                 <div>
                   <div className="flex items-center justify-between mb-1">
@@ -731,7 +743,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onClose, i
                 <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
               <div className="font-semibold text-xs text-[#0F172A] dark:text-[#EDEDED] mt-0.5">Shubham</div>
-              <div className="text-[9px] text-[#64748B] dark:text-[#888888] truncate">Full Access & Gates</div>
+              <div className="text-[9px] text-[#64748B] dark:text-[#888888] truncate">shubh@test.com</div>
             </button>
 
             <button
